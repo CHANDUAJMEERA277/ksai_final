@@ -18,7 +18,9 @@ model User {
   phone        String?
   role         String          @default("Student") // Student | Employee | Admin | Recruiter | Company
   country      String?         @default("United States")
-  provider String @default("CREDENTIALS")
+  provider     String @default("CREDENTIALS")
+  activeSessionId String?
+
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   sessions     Session[]
