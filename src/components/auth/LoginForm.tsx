@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { signIn } from "next-auth/react";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 
 interface LoginFormProps {
@@ -16,33 +17,38 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp }: LoginFormProps)
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  setError(null);
+  setSubmitting(true);
 
-      const data = await res.json();
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-      if (!res.ok || data.error) {
-        setError(data.error || "Authentication failed.");
-        setSubmitting(false);
-        return;
-      }
-
-      onSubmitSuccess(data.user);
-    } catch (err) {
-      console.error(err);
-      setError("Network error connecting to local database.");
+    if (!result) {
+      setError("Something went wrong.");
       setSubmitting(false);
+      return;
     }
-  };
+
+    if (result.error) {
+      setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+
+    window.location.href = "/dashboard";
+  } catch (err) {
+    console.error(err);
+    setError("Something went wrong.");
+    setSubmitting(false);
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,7 +127,7 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp }: LoginFormProps)
         disabled={submitting}
         className="w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 group shadow-xl shadow-blue-500/25 mt-2 disabled:opacity-60"
       >
-        {submitting ? "Verifying local DB..." : "Login to AI Workspace"}
+        {submitting ? "Signing in..." : "Login to AI Workspace"}
         <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
       </button>
 
@@ -146,10 +152,24 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp }: LoginFormProps)
           <button
             key={provider.name}
             type="button"
-            onClick={() => {
-              setEmail(`demo@${provider.name.toLowerCase()}.com`);
-              setPassword("demo12345");
-            }}
+            onClick={async () => {
+            if (provider.name === "Google") {
+  await signIn("google", {
+    callbackUrl: "/dashboard",
+  });
+  return;
+}
+
+            if (provider.name === "GitHub") {
+  await signIn("github", {
+    callbackUrl: "/dashboard",
+  });
+  return;
+}
+
+  setEmail(`demo@${provider.name.toLowerCase()}.com`);
+  setPassword("demo12345");
+}}
             className="py-2.5 rounded-xl glass-panel border border-white/10 hover:border-blue-500/40 text-xs font-semibold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 transition-all"
           >
             <span>{provider.icon}</span>

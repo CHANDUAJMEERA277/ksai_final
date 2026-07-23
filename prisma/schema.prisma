@@ -9,14 +9,16 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+
 model User {
   id           String          @id @default(uuid())
   name         String
   email        String          @unique
-  passwordHash String
+  passwordHash String?
   phone        String?
   role         String          @default("Student") // Student | Employee | Admin | Recruiter | Company
   country      String?         @default("United States")
+  provider String @default("CREDENTIALS")
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   sessions     Session[]

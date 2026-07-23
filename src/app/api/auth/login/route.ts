@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
@@ -26,28 +27,64 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify password hash
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    // Google/GitHub users don't have a password
+if (!user.passwordHash) {
+  return NextResponse.json(
+    {
+      error:
+        "This account was created using Google or GitHub. Please sign in using that provider.",
+    },
+    { status: 401 }
+  );
+}
 
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Invalid email or password." },
-        { status: 401 }
-      );
-    }
+// Verify password hash
+const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
+if (!isPasswordValid) {
+  return NextResponse.json(
+    { error: "Invalid email or password." },
+    { status: 401 }
+  );
+}
+// Delete any previous sessions (One device login)
+await db.session.deleteMany({
+  where: {
+    userId: user.id,
+  },
+});
+
+// Create a new session
+const session = await db.session.create({
+  data: {
+    userId: user.id,
+    token: randomUUID(),
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+  },
+});
     // Return authenticated user details
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        country: user.country,
-        createdAt: user.createdAt,
-      },
-    });
+ const response = NextResponse.json({
+  success: true,
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    country: user.country,
+    createdAt: user.createdAt,
+  },
+});
+
+response.cookies.set("sessionToken", session.token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  expires: session.expiresAt,
+  path: "/",
+});
+
+return response;
+
   } catch (error) {
     console.error("Login API Error:", error);
     return NextResponse.json(

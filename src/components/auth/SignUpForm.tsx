@@ -53,7 +53,13 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin }: SignUpFormProps
         return;
       }
 
-      onSubmitSuccess(data.user);
+     alert("🎉 Account created successfully! Please login.");
+     setName("");
+     setEmail("");
+     setPhone("");
+     setPassword("");
+     setConfirmPassword(""); 
+     onSwitchToLogin();
     } catch (err) {
       console.error(err);
       setError("Network error connecting to local DB.");

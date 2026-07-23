@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
+import { Providers } from "@/components/providers/Providers";
 
 export const metadata: Metadata = {
   title: "KnowledgeStream AI — Futuristic AI Operating System",
@@ -23,9 +24,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className="bg-[#09090B] text-white antialiased selection:bg-blue-500 selection:text-white">
-        <SmoothScroll>{children}</SmoothScroll>
-      </body>
+     <body className="bg-[#09090B] text-white antialiased selection:bg-blue-500 selection:text-white">
+  <Providers>
+    <SmoothScroll>{children}</SmoothScroll>
+  </Providers>
+</body> 
     </html>
   );
 }

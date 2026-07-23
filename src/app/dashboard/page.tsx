@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { RightAIPanel } from "@/components/dashboard/RightAIPanel";
@@ -11,37 +12,64 @@ import { MyCoursesWidget } from "@/components/courses/MyCoursesWidget";
 import { Sparkles, Star, BookOpen, Layers } from "lucide-react";
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
+
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [activeSection, setActiveSection] = useState<"catalog" | "my-courses">("catalog");
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<CourseData | null>(null);
   const [learningCourse, setLearningCourse] = useState<CourseData | null>(null);
-  const [userEmail] = useState("chandu@gmail.com");
+ const [user, setUser] = useState<{
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  country?: string;
+} | null>(null);
 
   useEffect(() => {
-    // Fetch available programming courses (C, C++, Python, Java - 90 Days Validity)
-    fetch("/api/courses")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.courses) setCourses(data.courses);
-      })
-      .catch(console.error);
+  // Fetch available courses
+  fetch("/api/courses")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.courses) setCourses(data.courses);
+    })
+    .catch(console.error);
 
-    // Fetch user enrollments
-    fetch(`/api/courses/my-courses?email=${userEmail}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.enrollments) setEnrollments(data.enrollments);
-      })
-      .catch(console.error);
-  }, [userEmail]);
+  // Fetch logged-in user
+  if (status === "authenticated" && session?.user) {
+  const currentUser = {
+    id: (session.user as any).id,
+    name: session.user.name ?? "",
+    email: session.user.email ?? "",
+    role: (session.user as any).role ?? "Student",
+    country: (session.user as any).country,
+  };
+
+  setUser(currentUser);
+
+  fetch(`/api/courses/my-courses?email=${currentUser.email}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.enrollments) {
+        setEnrollments(data.enrollments);
+      }
+    })
+    .catch(console.error);
+}
+}, [session, status]);
+
+  
+  
 
   const handlePaymentSuccess = (course: CourseData) => {
     setSelectedCourse(null);
     alert(`🎉 Payment verified for ${course.title}! Unlocked in My Courses.`);
 
-    fetch(`/api/courses/my-courses?email=${userEmail}`)
+    if (!user) return;
+
+    fetch(`/api/courses/my-courses?email=${user.email}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.enrollments) setEnrollments(data.enrollments);
@@ -52,7 +80,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
       {/* Top Navbar */}
-      <TopNavbar userName="Chandu" userRole="Student" />
+      <TopNavbar
+  userName={user?.name || "Loading..."}
+  userRole={user?.role || "Student"}
+/>
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex w-full">
@@ -67,7 +98,7 @@ export default function DashboardPage() {
               <Sparkles size={13} className="text-cyan-400" /> KnowledgeStream AI &bull; Student Portal
             </div>
             <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Welcome Back, <span className="gradient-text-hero">Chandu 👋</span>
+              Welcome Back, {user?.name || "Loading..."} 👋
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm">
               Explore available programming courses with 90-day validity or start learning from your purchased courses.
@@ -174,7 +205,7 @@ export default function DashboardPage() {
       {selectedCourse && (
         <CourseDetailsModal
           course={selectedCourse}
-          userEmail={userEmail}
+          userEmail={user?.email || ""}
           onClose={() => setSelectedCourse(null)}
           onPaymentSuccess={handlePaymentSuccess}
         />

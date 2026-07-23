@@ -13,7 +13,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
     // Check if user already exists
     const existingUser = await db.user.findUnique({
       where: { email: email.toLowerCase() },
