@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Volume2, VolumeX, Play, Pause, Sparkles, CheckCircle2 } from "lucide-react";
+import { Volume2, Play, Pause } from "lucide-react";
 
-interface TopicExplanationSpeechProps {
+interface ChapterExplanationSpeechProps {
   title: string;
   explanation: string;
   onCompleteExplanation: () => void;
 }
 
-export function TopicExplanationSpeech({
+export function ChapterExplanationSpeech({
   title,
   explanation,
   onCompleteExplanation,
-}: TopicExplanationSpeechProps) {
+}: ChapterExplanationSpeechProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speechRate, setSpeechRate] = useState(1.0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -78,7 +78,7 @@ export function TopicExplanationSpeech({
           <select
             value={speechRate}
             onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-            className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-white text-xs"
+            className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-white text-xs cursor-pointer focus:outline-none"
           >
             <option value="0.8">0.8x Speed</option>
             <option value="1.0">1.0x Speed</option>
@@ -88,10 +88,10 @@ export function TopicExplanationSpeech({
 
           <button
             onClick={toggleSpeech}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all ${
               isPlaying
                 ? "bg-purple-600 text-white animate-pulse"
-                : "bg-gradient-to-r from-blue-600 to-cyan-500 text-white glow-btn"
+                : "bg-gradient-to-r from-blue-600 to-cyan-500 text-white hover:opacity-95"
             }`}
           >
             {isPlaying ? <Pause size={14} /> : <Play size={14} />}
@@ -100,27 +100,8 @@ export function TopicExplanationSpeech({
         </div>
       </div>
 
-      {/* Explanation Text */}
-      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-slate-200 text-sm leading-relaxed font-sans">
-        {explanation}
-      </div>
-
-      <div className="flex items-center justify-between pt-2">
-        <span className="text-xs text-slate-400 flex items-center gap-1.5">
-          <Sparkles size={14} className="text-cyan-400" /> Listen to full audio or mark complete to proceed to Quiz.
-        </span>
-
-        <button
-          onClick={handleComplete}
-          className={`px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-            isCompleted
-              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-              : "glass-panel text-white hover:border-cyan-400"
-          }`}
-        >
-          <CheckCircle2 size={14} className={isCompleted ? "text-emerald-400" : "text-slate-400"} />
-          {isCompleted ? "Step A Completed" : "Mark Step A Complete"}
-        </button>
+      <div className="text-xs text-slate-300 leading-relaxed max-h-36 overflow-y-auto custom-scrollbar p-1 bg-black/10 rounded-2xl border border-white/5 font-mono">
+        💡 <span className="font-sans italic">"Press Listen to hear the AI explanation of this chapter's key notes..."</span>
       </div>
     </div>
   );

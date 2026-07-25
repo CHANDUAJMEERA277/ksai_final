@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { HelpCircle, CheckCircle2, XCircle, ArrowRight, Award, Sparkles } from "lucide-react";
+import { HelpCircle, CheckCircle2, XCircle, Award } from "lucide-react";
 
 export interface QuizQuestion {
   id: number;
@@ -10,12 +10,12 @@ export interface QuizQuestion {
   answer: number;
 }
 
-interface TopicQuizWidgetProps {
+interface ChapterQuizWidgetProps {
   quizDataJson: string;
   onCompleteQuiz: (score: number) => void;
 }
 
-export function TopicQuizWidget({ quizDataJson, onCompleteQuiz }: TopicQuizWidgetProps) {
+export function ChapterQuizWidget({ quizDataJson, onCompleteQuiz }: ChapterQuizWidgetProps) {
   const questions: QuizQuestion[] = quizDataJson
     ? JSON.parse(quizDataJson)
     : [
@@ -57,7 +57,7 @@ export function TopicQuizWidget({ quizDataJson, onCompleteQuiz }: TopicQuizWidge
             <HelpCircle size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Step B: Topic Concept Quiz ({questions.length} Questions)</h3>
+            <h3 className="text-sm font-bold text-white">Step B: Chapter Concept Quiz ({questions.length} Questions)</h3>
             <span className="text-[10px] text-purple-300 font-mono">Test your comprehension before coding</span>
           </div>
         </div>
@@ -103,11 +103,12 @@ export function TopicQuizWidget({ quizDataJson, onCompleteQuiz }: TopicQuizWidge
                   return (
                     <button
                       key={optIndex}
-                      type="button"
+                      disabled={submitted}
                       onClick={() => handleSelectOption(q.id, optIndex)}
-                      className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${btnClass}`}
+                      className={`p-2.5 rounded-xl border text-left text-xs transition-all ${btnClass}`}
                     >
-                      <span>{opt}</span>
+                      <span className="font-mono text-slate-500 mr-1.5">{["A", "B", "C", "D"][optIndex]}.</span>
+                      {opt}
                     </button>
                   );
                 })}
@@ -117,21 +118,14 @@ export function TopicQuizWidget({ quizDataJson, onCompleteQuiz }: TopicQuizWidge
         })}
       </div>
 
-      {!submitted ? (
+      {!submitted && (
         <button
           onClick={handleSubmitQuiz}
           disabled={Object.keys(selectedAnswers).length < questions.length}
-          className="w-full py-3 rounded-xl font-bold text-white text-xs bg-gradient-to-r from-purple-600 to-cyan-500 glow-btn disabled:opacity-50"
+          className="w-full py-3.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:opacity-95 disabled:opacity-50 transition-all glow-btn"
         >
-          Submit Quiz &amp; Calculate Score
+          Submit Quiz Answers
         </button>
-      ) : (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 size={16} className="text-emerald-400" />
-            <span>Quiz Passed ({score}%)! Proceed to Step C Practical Coding below.</span>
-          </span>
-        </div>
       )}
     </div>
   );

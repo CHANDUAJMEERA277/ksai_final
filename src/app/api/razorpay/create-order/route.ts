@@ -13,10 +13,16 @@ export async function POST(req: Request) {
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!key_id || !key_secret) {
-      return NextResponse.json(
-        { error: "Razorpay Key ID or Key Secret is missing in .env file." },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: true,
+        order: {
+          id: `order_mock_${Date.now()}`,
+          amount: Math.round(amount * 100),
+          currency,
+        },
+        key: "rzp_test_mock_key_id",
+        isMock: true,
+      });
     }
 
     const razorpay = new Razorpay({

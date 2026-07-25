@@ -198,3 +198,321 @@ html.light .gradient-text-hero {
 .animate-spin-slow {
   animation: rotateRing 20s linear infinite;
 }
+
+/* Light Mode Overrides for Authenticated Pages & Elements */
+html.light,
+body.light {
+  background-color: #F8FAFC !important; /* light background slate-50 */
+  color: #0F172A !important;
+}
+
+html.light div.min-h-screen,
+html.light main {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+html.light .glass-panel {
+  background: #FFFFFF !important; /* solid white */
+  backdrop-filter: none !important;
+  border: 1px solid #E2E8F0 !important; /* border slate-200 */
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05) !important;
+  color: #0F172A !important;
+}
+
+html.light header {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Light mode for normal sidebars except the main dashboard sidebar */
+html.light aside:not(.dark-sidebar) {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
+  color: #0F172A !important;
+}
+
+html.light .text-white {
+  color: #0F172A !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400,
+html.light .text-slate-200 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748B !important;
+}
+html.light .text-slate-600 {
+  color: #475569 !important;
+}
+
+html.light .bg-gradient-to-r.from-blue-950\/30 {
+  background-image: linear-gradient(to right, rgba(59, 130, 246, 0.05), rgba(147, 51, 234, 0.05)) !important;
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-gradient-to-b.from-\[\#0A0A10\] {
+  background-image: none !important;
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-gradient-to-r.from-purple-950\/20 {
+  background-image: linear-gradient(to right, rgba(168, 85, 247, 0.05), rgba(59, 130, 246, 0.05)) !important;
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-emerald-950\/5 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}
+html.light .bg-emerald-950\/10 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+html.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+html.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+html.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+html.light .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+html.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html.light .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light input,
+html.light textarea {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+html.light .bg-gradient-to-r.from-blue-600\/30 {
+  background-image: linear-gradient(to right, rgba(59, 130, 246, 0.15), rgba(124, 58, 237, 0.1)) !important;
+  color: #2563EB !important;
+}
+
+html.light article.prose {
+  color: #334155 !important;
+}
+
+html.light article.prose h1,
+html.light article.prose h2,
+html.light article.prose h3,
+html.light article.prose h4,
+html.light article.prose h5,
+html.light article.prose h6 {
+  color: #0F172A !important;
+}
+
+html.light article.prose code {
+  color: #0F172A !important;
+  background-color: #F1F5F9 !important;
+}
+
+html.light article.prose pre {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+}
+
+html.light article.prose strong {
+  color: #0F172A !important;
+}
+
+html.light article.prose blockquote {
+  color: #475569 !important;
+  border-left-color: #CBD5E1 !important;
+}
+
+/* Sidebar Dark-Mode Preservation Rule */
+html.light aside.dark-sidebar {
+  background-color: #09090B !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.light aside.dark-sidebar button {
+  color: #94A3B8 !important; /* slate-400 */
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+html.light aside.dark-sidebar button:hover {
+  color: #E2E8F0 !important; /* slate-200 */
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Active tab override inside dark sidebar */
+html.light aside.dark-sidebar button.bg-gradient-to-r {
+  background-image: linear-gradient(to right, rgba(37, 99, 235, 0.3), rgba(124, 58, 237, 0.2)) !important;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  color: #FFFFFF !important;
+}
+
+html.light aside.dark-sidebar button.bg-gradient-to-r span {
+  color: #FFFFFF !important;
+}
+
+html.light aside.dark-sidebar button.bg-gradient-to-r svg {
+  color: #22D3EE !important; /* cyan-400 */
+}
+
+html.light aside.dark-sidebar svg {
+  color: #94A3B8 !important; /* slate-400 */
+}
+
+html.light aside.dark-sidebar button:hover svg {
+  color: #22D3EE !important; /* cyan-300 */
+}
+
+html.light aside.dark-sidebar .glass-panel {
+  background: rgba(18, 18, 24, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #F8FAFC !important;
+}
+
+html.light aside.dark-sidebar .p-3.border-t {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: #060609 !important;
+}
+
+html.light aside.dark-sidebar a.text-red-400 {
+  color: #F87171 !important;
+}
+html.light aside.dark-sidebar a.text-red-400:hover {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Light Mode modal backdrop overlay */
+html.light .fixed.bg-\[\#09090B\]\/95 {
+  background-color: rgba(241, 245, 249, 0.92) !important;
+}
+
+/* Mentor Sidebar Panel & Tabs Light Theme overrides */
+html.light .mentor-sidebar-panel {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #E2E8F0 !important;
+}
+
+html.light .mentor-sidebar-panel h4 {
+  color: #0F172A !important;
+}
+
+html.light .mentor-sidebar-panel button {
+  color: #64748B !important;
+}
+
+html.light .mentor-sidebar-panel button:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+html.light .mentor-sidebar-tabs {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+}
+
+html.light .mentor-sidebar-tabs button {
+  color: #64748B !important;
+  background-color: transparent !important;
+}
+
+html.light .mentor-sidebar-tabs button:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+html.light .mentor-sidebar-tabs button.bg-cyan-500 {
+  background-color: #06B6D4 !important;
+  color: #FFFFFF !important;
+}
+
+html.light .mentor-sidebar-tabs button.bg-cyan-500 svg {
+  color: #FFFFFF !important;
+}
+
+html.light .mentor-sidebar-panel .bg-blue-50 {
+  background-color: #EFF6FF !important;
+  border-color: #BFDBFE !important;
+  color: #1E40AF !important;
+}
+
+html.light .mentor-sidebar-panel .bg-blue-50 p {
+  color: #1E40AF !important;
+}
+
+html.light .mentor-sidebar-panel .bg-slate-50 {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #334155 !important;
+}
+
+html.light .mentor-sidebar-panel .bg-slate-50 p {
+  color: #334155 !important;
+}
+
+html.light .mentor-sidebar-panel input {
+  background-color: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+html.light .mentor-sidebar-panel button.bg-cyan-500 {
+  background-color: #06B6D4 !important;
+  color: #FFFFFF !important;
+}
+
+html.light .mentor-sidebar-panel button.bg-cyan-500 svg {
+  color: #FFFFFF !important;
+}
+
+/* Light Mode dividers and header tints */
+html.light .mentor-sidebar-panel .bg-slate-100\/50 {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+  border-color: #E2E8F0 !important;
+}
+
+html.light .mentor-sidebar-panel .divide-y-4 > * + * {
+  border-color: #E2E8F0 !important;
+}
+
+html.light .mentor-sidebar-tabs button {
+  color: #64748B !important;
+  background-color: transparent !important;
+  border: 1px solid #E2E8F0 !important;
+}
+
+html.light .mentor-sidebar-tabs button:hover {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+/* Light Theme scrollbar overrides */
+html.light ::-webkit-scrollbar-track {
+  background: #F1F5F9 !important;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1 !important;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8 !important;
+}

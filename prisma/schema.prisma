@@ -25,7 +25,7 @@ model User {
   updatedAt    DateTime        @updatedAt
   sessions     Session[]
   enrollments  Enrollment[]
-  progresses   TopicProgress[]
+  progresses   ChapterProgress[]
 }
 
 model Session {
@@ -52,35 +52,35 @@ model Course {
   lessons      Int
   rating       Float        @default(4.9)
   createdAt    DateTime     @default(now())
-  topics       Topic[]
+  chapters     Chapter[]
   enrollments  Enrollment[]
 }
 
-model Topic {
-  id          String          @id @default(uuid())
+model Chapter {
+  id          String            @id @default(uuid())
   courseId    String
-  course      Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  orderNumber Int             // 1, 2, 3, 4...
-  title       String          // e.g. "Topic 1: Variables & Data Types"
-  explanation String          // Full text content for AI Speech Synthesis
-  quizData    String          // JSON string of 5-10 quiz questions
-  challenges  String          // JSON string of Easy, Medium, Hard coding problems
-  createdAt   DateTime        @default(now())
-  progresses  TopicProgress[]
+  course      Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  orderNumber Int               // 1, 2, 3, 4...
+  title       String            // e.g. "Topic 1: Variables & Data Types"
+  explanation String            // Full text content for AI Speech Synthesis
+  quizData    String            // JSON string of 5-10 quiz questions
+  challenges  String            // JSON string of Easy, Medium, Hard coding problems
+  createdAt   DateTime          @default(now())
+  progresses  ChapterProgress[]
 }
 
-model TopicProgress {
+model ChapterProgress {
   id          String   @id @default(uuid())
   userId      String
-  topicId     String
+  chapterId   String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   isCompleted Boolean  @default(false)
   quizScore   Int      @default(0)
   codeSolved  Boolean  @default(false)
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, topicId])
+  @@unique([userId, chapterId])
 }
 
 model Enrollment {

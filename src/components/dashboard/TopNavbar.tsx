@@ -115,18 +115,7 @@ export function TopNavbar({ userName = "Chandu", userRole = "Student" }: TopNavb
           <MessageSquare size={17} />
         </button>
 
-        {/* Working Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          className="w-9 h-9 rounded-xl glass-panel border border-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all hover:scale-105"
-        >
-          {darkMode ? (
-            <Moon size={17} className="text-purple-400" />
-          ) : (
-            <Sun size={17} className="text-amber-500 fill-amber-400" />
-          )}
-        </button>
+
 
         {/* User Profile Pill */}
         <div className="relative">

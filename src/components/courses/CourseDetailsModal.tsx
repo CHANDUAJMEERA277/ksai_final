@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ExternalLink,
   ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import { SyllabusDocViewerModal } from "./SyllabusDocViewerModal";
 
@@ -143,6 +144,7 @@ export function CourseDetailsModal({
 }: CourseDetailsModalProps) {
   const [docViewerOpen, setDocViewerOpen] = useState(false);
   const [loadingRazorpay, setLoadingRazorpay] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Dynamically load Official Razorpay Checkout Script
   useEffect(() => {
@@ -185,15 +187,18 @@ export function CourseDetailsModal({
       if (enrollData.success) {
         onPaymentSuccess(course);
       } else {
+        setPaymentError(enrollData.error || "Payment verification failed.");
         alert(enrollData.error || "Payment verification failed.");
       }
     } catch (err) {
       console.error("Enrollment error:", err);
+      setPaymentError("Network error completing enrollment.");
     }
   };
 
   const handleOpenRealRazorpayCheckout = async () => {
     setLoadingRazorpay(true);
+    setPaymentError(null);
 
     try {
       // 1. Create order on backend API with user's real Razorpay keys
@@ -211,12 +216,20 @@ export function CourseDetailsModal({
       const data = await resData.json();
 
       if (!data.success || !data.order) {
+        setPaymentError(data.error || "Could not create order.");
         alert(`Razorpay API Error: ${data.error || "Could not create order"}`);
         setLoadingRazorpay(false);
         return;
       }
 
-      const { order, key } = data;
+      const { order, key, isMock } = data;
+
+      if (isMock) {
+        alert("🔧 Local Dev Mode: Simulating Razorpay Payment Gateway. Click OK to confirm purchase.");
+        await completeEnrollment(`pay_mock_${Date.now()}`);
+        setLoadingRazorpay(false);
+        return;
+      }
 
       // 2. Configure Official Razorpay SDK options with REAL order.id
       const options: any = {
@@ -245,7 +258,9 @@ export function CourseDetailsModal({
       if (typeof window !== "undefined" && window.Razorpay) {
         const rzp1 = new window.Razorpay(options);
         rzp1.on("payment.failed", function (response: any) {
-          alert(`Razorpay Payment Failed: ${response.error?.description || "Payment was cancelled or failed."}`);
+          const errMsg = response.error?.description || "Payment was cancelled or failed.";
+          setPaymentError(errMsg);
+          alert(`Razorpay Payment Failed: ${errMsg}`);
         });
         rzp1.open();
       } else {
@@ -253,6 +268,7 @@ export function CourseDetailsModal({
       }
     } catch (err: any) {
       console.error("Razorpay Checkout Error:", err);
+      setPaymentError(err.message || "Checkout setup failed.");
       alert(`Razorpay Error: ${err.message}`);
       setLoadingRazorpay(false);
     }
@@ -347,9 +363,20 @@ export function CourseDetailsModal({
           </div>
         </div>
 
+        {/* Payment Error Alert */}
+        {paymentError && (
+          <div className="mx-6 p-4 rounded-2xl bg-red-50 text-red-800 border border-red-200 text-xs flex items-start gap-2 shadow-sm shrink-0">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 text-left">
+              <p className="font-extrabold">Checkout Status: Action Required</p>
+              <p className="text-slate-600">{paymentError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Footer Price & Official Razorpay Action */}
-        <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between shrink-0">
-          <div>
+        <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between shrink-0 px-6 pb-6">
+          <div className="text-left">
             <span className="text-xs text-slate-400 uppercase font-mono block">90 Days Full Course Access</span>
             <div className="text-3xl font-black text-white font-mono flex items-baseline gap-1">
               <span>₹{course.price}</span>
@@ -357,14 +384,29 @@ export function CourseDetailsModal({
             </div>
           </div>
 
-          <button
-            onClick={handleOpenRealRazorpayCheckout}
-            disabled={loadingRazorpay}
-            className="px-8 py-3.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center gap-2 shadow-xl shadow-blue-500/25 disabled:opacity-50"
-          >
-            <CreditCard size={18} />
-            {loadingRazorpay ? "Creating Order..." : "Subscribe & Pay with Razorpay"}
-          </button>
+          <div className="flex items-center gap-3">
+            {course.category.toLowerCase().includes("python") && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  window.location.href = "/courses/python/chapter/0";
+                }}
+                className="px-5 py-3.5 rounded-full text-xs font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <BookOpen size={14} className="text-slate-500" /> Try Free Preview (Chapter 0)
+              </button>
+            )}
+
+            <button
+              onClick={handleOpenRealRazorpayCheckout}
+              disabled={loadingRazorpay}
+              className="px-8 py-3.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center gap-2 shadow-xl shadow-blue-500/25 disabled:opacity-50"
+            >
+              <CreditCard size={18} />
+              {loadingRazorpay ? "Creating Order..." : "Subscribe & Pay"}
+            </button>
+          </div>
         </div>
 
         {/* Full Document Reader Modal */}

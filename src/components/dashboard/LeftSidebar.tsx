@@ -56,12 +56,12 @@ export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
 
   return (
     <aside
-      className={`h-[calc(100vh-4rem)] border-r border-white/10 bg-[#09090B]/90 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 sticky top-16 z-30 select-none ${
+      className={`dark-sidebar h-[calc(100vh-4rem)] border-r border-white/10 bg-[#09090B]/90 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 sticky top-16 z-30 select-none ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
-      {/* Scrollable Navigation List */}
-      <div className="p-3 overflow-y-auto flex-1 space-y-1 custom-scrollbar">
+      {/* Navigation List */}
+      <div className="p-3 overflow-hidden flex-1 space-y-0.5">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
