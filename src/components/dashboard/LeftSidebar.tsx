@@ -31,24 +31,68 @@ interface LeftSidebarProps {
 }
 
 const MENU_ITEMS = [
-  { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard, category: "Main" },
-  { id: "AI Assistant", label: "AI Assistant", icon: Bot, category: "Main" },
-  { id: "Workspace", label: "Workspace", icon: LayoutGrid, category: "Main" },
-  { id: "Learning", label: "Learning Path", icon: GraduationCap, category: "Academic" },
-  { id: "Courses", label: "Courses", icon: BookOpen, category: "Academic" },
-  { id: "Projects", label: "Projects", icon: FolderGit2, category: "Build" },
-  { id: "Tasks", label: "Tasks", icon: CheckSquare, category: "Build" },
-  { id: "Attendance", label: "Attendance", icon: Clock, category: "Academic" },
-  { id: "AI Mentor", label: "AI Mentor", icon: Code2, category: "AI Tools" },
-  { id: "Coding Practice", label: "Coding Practice", icon: Terminal, category: "AI Tools" },
-  { id: "Resume Builder", label: "Resume Builder", icon: FileText, category: "Career" },
-  { id: "Interview Prep", label: "Interview Prep", icon: Video, category: "Career" },
-  { id: "Certificates", label: "Certificates", icon: Award, category: "Career" },
-  { id: "Jobs", label: "Jobs & Matching", icon: Briefcase, category: "Career" },
-  { id: "Community", label: "Community", icon: Users, category: "Social" },
-  { id: "Leaderboard", label: "Leaderboard", icon: Trophy, category: "Social" },
-  { id: "Analytics", label: "Analytics", icon: BarChart3, category: "System" },
-  { id: "Settings", label: "Settings", icon: Settings, category: "System" },
+  {
+    id: "Dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    category: "Main",
+  },
+
+  {
+    id: "Courses",
+    label: "My Courses",
+    icon: BookOpen,
+    category: "Academic",
+  },
+
+  {
+    id: "AI Mentor",
+    label: "CodeAI",
+    icon: Code2,
+    category: "AI Tools",
+  },
+
+  {
+    id: "Workspace",
+    label: "Editor",
+    icon: LayoutGrid,
+    category: "Main",
+  },
+
+  {
+    id: "Certificates",
+    label: "Certificates",
+    icon: Award,
+    category: "Career",
+  },
+
+  {
+    id: "Settings",
+    label: "Settings",
+    icon: Settings,
+    category: "System",
+  },
+
+  {
+    id: "Leaderboard",
+    label: "Leaderboard",
+    icon: Trophy,
+    category: "Social",
+  },
+
+  {
+    id: "Resume Builder",
+    label: "Resume Builder",
+    icon: FileText,
+    category: "Career",
+  },
+
+  {
+    id: "Interview Prep",
+    label: "Interview Prep",
+    icon: Video,
+    category: "Career",
+  },
 ];
 
 export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {

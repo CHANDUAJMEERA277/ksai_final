@@ -58,20 +58,24 @@ const CHAPTER_SECTIONS: Record<number, string[]> = {
     "Quiz Assessment"
   ],
   1: [
-    "1.1 Python Syntax & Variables",
-    "1.3 Naming Conventions & Data Types",
-    "1.5 Type Conversion & Operators",
-    "1.7 User Input & String Formatting",
-    "1.9 Comments & PEP 8 Coding Style",
-    "1.10 Practice Exercises & Mini Project",
+    "1. Installing Python, Running Scripts & IDE/REPL",
+    "2. Variables, Naming & Dynamic Typing",
+    "3. Data Types: int, float, str, bool, None",
+    "4. Type Casting and Conversion",
+    "5. Operators (Arithmetic, Logical, Bitwise)",
+    "6. Input / Output & String Formatting",
+    "7. Comments & PEP 8 Basics",
+    "Mini Project: Personal Profile Card",
     "Quiz Assessment"
   ],
   2: [
-    "2.1 Boolean Expressions & if-else",
-    "2.4 Nested Conditions & for Loops",
-    "2.6 while Loops, break, continue",
-    "2.10 range(), enumerate(), and zip()",
-    "Practice Exercises & Mini Project",
+    "1. if / elif / else Conditionals",
+    "2. for Loops and while Loops",
+    "3. break, continue, and pass",
+    "4. Nested Loops and Conditionals",
+    "5. range(), enumerate(), and zip() in Loops",
+    "6. Common Loop Patterns",
+    "Mini Project: Number Guessing Game",
     "Quiz Assessment"
   ],
   3: [

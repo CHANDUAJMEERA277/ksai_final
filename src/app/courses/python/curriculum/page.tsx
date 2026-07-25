@@ -326,8 +326,8 @@ export default function PythonCurriculumPage() {
                 const lessonCount = "1 Lesson Notes";
                 let assesmentLabel = "No Assessment";
                 if (chapter.orderNumber === 0) assesmentLabel = "12 Quiz Questions";
-                else if (chapter.orderNumber === 1) assesmentLabel = "5 Quiz Questions";
-                else if (chapter.orderNumber === 2) assesmentLabel = "1 Quiz Question";
+                else if (chapter.orderNumber === 1) assesmentLabel = "14 Quiz Questions";
+                else if (chapter.orderNumber === 2) assesmentLabel = "15 Quiz Questions";
 
                 return (
                   <div

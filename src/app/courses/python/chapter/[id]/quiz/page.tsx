@@ -22,6 +22,13 @@ interface QuizQuestion {
   options: string[];
 }
 
+interface ShuffledQuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  optionMapping: number[];
+}
+
 interface QuizBreakdownItem {
   questionId: number;
   question: string;
@@ -41,6 +48,38 @@ interface QuizResult {
   timeTakenString: string;
 }
 
+function shuffleArray<T>(array: T[]): { shuffled: T[]; mapping: number[] } {
+  const arrWithIndex = array.map((item, index) => ({ item, index }));
+  for (let i = arrWithIndex.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arrWithIndex[i], arrWithIndex[j]] = [arrWithIndex[j], arrWithIndex[i]];
+  }
+  return {
+    shuffled: arrWithIndex.map((x) => x.item),
+    mapping: arrWithIndex.map((x) => x.index),
+  };
+}
+
+function shuffleQuiz(questions: QuizQuestion[]): ShuffledQuizQuestion[] {
+  const questionsWithOptionsShuffled = questions.map((q) => {
+    const { shuffled, mapping } = shuffleArray(q.options);
+    return {
+      id: q.id,
+      question: q.question,
+      options: shuffled,
+      optionMapping: mapping,
+    };
+  });
+
+  const shuffledQuestions = [...questionsWithOptionsShuffled];
+  for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+  }
+
+  return shuffledQuestions;
+}
+
 export default function PythonQuizPage() {
   const router = useRouter();
   const params = useParams();
@@ -53,6 +92,7 @@ export default function PythonQuizPage() {
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [courseTitle, setCourseTitle] = useState("Python AI & Data Structures Architecture");
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [shuffledQuestions, setShuffledQuestions] = useState<ShuffledQuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
@@ -88,6 +128,7 @@ export default function PythonQuizPage() {
             setError("No quiz assessment is available for this chapter.");
           } else {
             setQuizQuestions(data.questions);
+            setShuffledQuestions(shuffleQuiz(data.questions));
             setStartTime(Date.now());
           }
         } else {
@@ -106,15 +147,17 @@ export default function PythonQuizPage() {
 
   const handleSelectOption = (optionIndex: number) => {
     if (quizResult) return;
-    const currentQuestion = quizQuestions[currentQuestionIndex];
+    const currentQuestion = shuffledQuestions[currentQuestionIndex];
+    if (!currentQuestion) return;
+    const originalOptionIndex = currentQuestion.optionMapping[optionIndex];
     setSelectedAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: optionIndex,
+      [currentQuestion.id]: originalOptionIndex,
     }));
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < quizQuestions.length - 1) {
+    if (currentQuestionIndex < shuffledQuestions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
@@ -137,12 +180,12 @@ export default function PythonQuizPage() {
   };
 
   const handleQuizSubmit = async () => {
-    if (quizQuestions.length === 0) return;
+    if (shuffledQuestions.length === 0) return;
 
     // Check if all questions are answered
     const answeredCount = Object.keys(selectedAnswers).length;
-    if (answeredCount < quizQuestions.length) {
-      alert(`⚠️ Please answer all questions before submitting. (${answeredCount} of ${quizQuestions.length} answered)`);
+    if (answeredCount < shuffledQuestions.length) {
+      alert(`⚠️ Please answer all questions before submitting. (${answeredCount} of ${shuffledQuestions.length} answered)`);
       return;
     }
 
@@ -185,12 +228,13 @@ export default function PythonQuizPage() {
     setSelectedAnswers({});
     setQuizResult(null);
     setCurrentQuestionIndex(0);
+    setShuffledQuestions(shuffleQuiz(quizQuestions));
     setStartTime(Date.now());
   };
 
-  const currentQuestion = quizQuestions[currentQuestionIndex];
-  const progressPercent = quizQuestions.length
-    ? Math.round(((currentQuestionIndex + 1) / quizQuestions.length) * 100)
+  const currentQuestion = shuffledQuestions[currentQuestionIndex];
+  const progressPercent = shuffledQuestions.length
+    ? Math.round(((currentQuestionIndex + 1) / shuffledQuestions.length) * 100)
     : 0;
 
   return (
@@ -312,7 +356,7 @@ export default function PythonQuizPage() {
 
                 <div className="grid grid-cols-1 gap-3 pt-1">
                   {currentQuestion.options.map((option, optIdx) => {
-                    const isSelected = selectedAnswers[currentQuestion.id] === optIdx;
+                    const isSelected = selectedAnswers[currentQuestion.id] === currentQuestion.optionMapping[optIdx];
                     return (
                       <button
                         key={optIdx}

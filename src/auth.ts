@@ -57,12 +57,21 @@ providers.push(
         );
       }
 
-      const valid = await bcrypt.compare(
-        String(credentials.password),
-        user.passwordHash
-      );
+      console.log("========== LOGIN DEBUG ==========");
+console.log("Entered Email:", credentials.email);
+console.log("DB Email:", user.email);
+console.log("Entered Password:", credentials.password);
+console.log("Password Hash:", user.passwordHash);
 
-      if (!valid) return null;
+const valid = await bcrypt.compare(
+  String(credentials.password),
+  user.passwordHash
+);
+
+console.log("Password Match:", valid);
+console.log("===============================");
+
+if (!valid) return null;
 
       return {
         id: user.id,
