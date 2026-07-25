@@ -57,7 +57,7 @@ export async function GET(
     });
 
     const orderNum = parseInt(chapterId, 10);
-    const currentChapter = chapters.find((c) => c.orderNumber === orderNum);
+    const currentChapter = chapters.find((c: { orderNumber: number }) => c.orderNumber === orderNum);
 
     if (!currentChapter) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
@@ -83,7 +83,7 @@ export async function GET(
     const progresses = await db.chapterProgress.findMany({
       where: {
         userId: user.id,
-        chapterId: { in: chapters.map((c) => c.id) },
+        chapterId: { in: chapters.map((c: { id: string }) => c.id) },
       },
     });
 
@@ -119,12 +119,12 @@ export async function GET(
         estimatedTime,
         difficulty,
       },
-      chapters: chapters.map((c) => ({
+      chapters: chapters.map((c: { id: string; title: string; orderNumber: number }) => ({
         id: c.id,
         title: c.title,
         orderNumber: c.orderNumber,
       })),
-      progresses: progresses.map((p) => ({
+      progresses: progresses.map((p: { chapterId: string; isCompleted: boolean; quizScore: number }) => ({
         chapterId: p.chapterId,
         isCompleted: p.isCompleted,
         quizScore: p.quizScore,

@@ -6,61 +6,77 @@ import bcrypt from "bcryptjs";
 
 import { db } from "@/lib/db";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
+const providers: any[] = [];
+
+// Only add Google provider if credentials are available
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })
+  );
+}
 
+// Only add GitHub provider if credentials are available
+if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
+  providers.push(
     GitHub({
-    clientId: process.env.GITHUB_ID!,
-    clientSecret: process.env.GITHUB_SECRET!,
-}),
-    Credentials({
-      name: "Credentials",
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+    })
+  );
+}
 
-      credentials: {
-        email: {},
-        password: {},
-      },
+// Always add Credentials provider
+providers.push(
+  Credentials({
+    name: "Credentials",
 
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+    credentials: {
+      email: {},
+      password: {},
+    },
 
-        const user = await db.user.findUnique({
-          where: {
-            email: String(credentials.email).toLowerCase(),
-          },
-        });
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) {
+        return null;
+      }
 
-        if (!user) return null;
+      const user = await db.user.findUnique({
+        where: {
+          email: String(credentials.email).toLowerCase(),
+        },
+      });
 
-        if (!user.passwordHash) {
-          throw new Error(
-            "This account uses Google Sign-In."
-          );
-        }
+      if (!user) return null;
 
-        const valid = await bcrypt.compare(
-          String(credentials.password),
-          user.passwordHash
+      if (!user.passwordHash) {
+        throw new Error(
+          "This account uses OAuth Sign-In."
         );
+      }
 
-        if (!valid) return null;
+      const valid = await bcrypt.compare(
+        String(credentials.password),
+        user.passwordHash
+      );
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          country: user.country,
-        };
-      },
-    }),
-  ],
+      if (!valid) return null;
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        country: user.country,
+      };
+    },
+  })
+);
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers,
 
   session: {
     strategy: "jwt",
@@ -117,5 +133,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 },
 
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || "dev-secret-key-change-in-production",
 });

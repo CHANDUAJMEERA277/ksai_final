@@ -7,8 +7,8 @@ export function ThemeManager() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const isLandingPage = pathname === "/";
-    if (!isLandingPage) {
+    const isDarkPage = pathname === "/" || pathname === "/auth";
+    if (!isDarkPage) {
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.add("light");
       document.body.classList.remove("dark");

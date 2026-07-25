@@ -70,8 +70,8 @@ export async function GET() {
     // Re-seed C, C++, Python, Java catalog if empty, outdated, or chapters are missing
     if (
       courses.length === 0 ||
-      !courses.some((c) => c.language === "c") ||
-      courses.some((c) => !c.chapters || c.chapters.length === 0)
+      !courses.some((c: { language: string }) => c.language === "c") ||
+      courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0)
     ) {
       await db.course.deleteMany({});
       

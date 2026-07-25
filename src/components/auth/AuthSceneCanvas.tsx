@@ -53,7 +53,7 @@ function CoreSphere() {
   });
 
   return (
-    <group scale={1.1}>
+    <group scale={1.38}>
       <mesh ref={meshRef}>
         <icosahedronGeometry args={[1.4, 2]} />
         <meshStandardMaterial
@@ -114,10 +114,10 @@ function OrbitingBadges() {
             <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.5}>
               <Html center distanceFactor={11}>
                 <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-panel border border-white/20 text-xs font-semibold whitespace-nowrap shadow-lg select-none"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full glass-panel border border-white/20 text-[8.5px] font-semibold whitespace-nowrap shadow-lg select-none"
                   style={{
-                    boxShadow: `0 0 15px ${tech.color}40`,
-                    borderColor: `${tech.color}60`,
+                    boxShadow: `0 0 12px ${tech.color}35`,
+                    borderColor: `${tech.color}55`,
                   }}
                 >
                   <span>{tech.icon}</span>
@@ -146,7 +146,7 @@ export function AuthSceneCanvas() {
   const Icon = activeHighlight.icon;
 
   return (
-    <div className="w-full h-full relative flex flex-col justify-between p-8 sm:p-12 z-10 overflow-hidden">
+    <div className="w-full h-full relative flex flex-col justify-between p-4 sm:p-6 lg:p-8 z-10 overflow-hidden">
       {/* Ambient Radial Lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute top-1/4 left-1/3 w-[350px] h-[350px] bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
@@ -190,12 +190,12 @@ export function AuthSceneCanvas() {
       </div>
 
       {/* Bottom Text & Auto-Rotating Feature Checklist */}
-      <div className="space-y-4 z-20 max-w-xl">
+      <div className="space-y-2.5 z-20 max-w-xl">
         <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
           Where Learning Meets <span className="gradient-text-hero">Intelligence.</span>
         </h1>
 
-        <div className="h-10 flex items-center">
+        <div className="h-8 flex items-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeHighlight.text}

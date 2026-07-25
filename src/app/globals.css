@@ -516,3 +516,34 @@ html.light ::-webkit-scrollbar-thumb {
 html.light ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8 !important;
 }
+
+/* Responsive scaling for the hero illustration container */
+.hero-scale-wrapper {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-height: 900px) {
+  .hero-scale-wrapper {
+    transform: scale(0.95);
+  }
+}
+
+@media (max-height: 760px) {
+  .hero-scale-wrapper {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-height: 660px) {
+  .hero-scale-wrapper {
+    transform: scale(0.9);
+  }
+}
+
