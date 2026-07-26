@@ -68,11 +68,30 @@ export async function GET() {
     });
 
     // Re-seed C, C++, Python, Java catalog if empty, outdated, or chapters are missing
-    if (
-      courses.length === 0 ||
-      !courses.some((c: { language: string }) => c.language === "c") ||
-      courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0)
-    ) {
+   const pythonCourse = courses.find(
+  (c: { language: string }) => c.language === "python"
+);
+
+const needsPythonReseed =
+  !pythonCourse ||
+  pythonCourse.chapters.some(
+    (ch: { orderNumber: number; explanation: string }) =>
+      (ch.orderNumber === 1 &&
+        ch.explanation !== "content/python/chapter1.md") ||
+      (ch.orderNumber === 2 &&
+        ch.explanation !== "content/python/chapter2.md") ||
+      (ch.orderNumber === 3 &&
+        ch.explanation !== "content/python/chapter3.md") ||
+      (ch.orderNumber === 4 &&
+        ch.explanation !== "content/python/chapter4.md")
+  );
+
+if (
+  courses.length === 0 ||
+  !courses.some((c: { language: string }) => c.language === "c") ||
+  courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0) ||
+  needsPythonReseed
+) {
       await db.course.deleteMany({});
       
       for (const courseData of LANGUAGE_COURSES) {
@@ -154,16 +173,48 @@ export async function GET() {
             },
             {
               orderNumber: 3,
-              title: "Chapter 3: Functions, Scope & Recursion",
-              explanation: "Chapter 3 covers modular programming: function definitions, parameters, return types, call stack execution, and recursive algorithm design.",
-              quizData: "[]",
+              title: "Chapter 3: Data Structures",
+              explanation: "content/python/chapter3.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the index of the first item in a Python list?", options: ["-1", "1", "0", "It depends on the list"], answer: 2 },
+                { id: 2, question: "What does this code print?\n\nletters = [\"a\",\"b\",\"c\",\"d\"]\nprint(letters[1:3])", options: ["['b','c']", "['b','c','d']", "['a','b','c']", "['c','d']"], answer: 0 },
+                { id: 3, question: "Which of these correctly describes a tuple?", options: ["An ordered, mutable collection", "An ordered, immutable collection", "An unordered collection of unique items", "A key-value store"], answer: 1 },
+                { id: 4, question: "What does this code print?\n\npoint=(1,2,3)\nx,y,z=point\nprint(x,y,z)", options: ["(1,2,3)", "1 2 3", "An error", "[1,2,3]"], answer: 1 },
+                { id: 5, question: "Which method safely looks up a dictionary key, returning None instead of raising an error if it's missing?", options: ["dict.find()", "dict.get()", "dict.search()", "dict.lookup()"], answer: 1 },
+                { id: 6, question: "What does this code print?\n\nd={\"a\":1,\"b\":2}\nfor k,v in d.items():\n    print(k,v)", options: ["dict_items([('a',1),('b',2)])", "a 1 / b 2 (each on its own line)", "An error — dictionaries can't be looped over", "['a','b']"], answer: 1 },
+                { id: 7, question: "What is the result of {1,2,3} & {2,3,4}?", options: ["{1,2,3,4}", "{2,3}", "{1}", "{1,4}"], answer: 1 },
+                { id: 8, question: "Why might converting a list to a set to remove duplicates be risky?", options: ["Sets cannot hold strings", "Sets don't preserve the original order", "Sets only allow numbers", "It always raises an error"], answer: 1 },
+                { id: 9, question: "What does word[::-1] do to a string?", options: ["Removes all whitespace", "Converts it to uppercase", "Reverses the string", "Returns the first character only"], answer: 2 },
+                { id: 10, question: "Why can't you do word[0] = \"P\" on a string called word?", options: ["Strings don't support indexing", "Strings are immutable", "Only lists support assignment", "It's actually allowed"], answer: 1 },
+                { id: 11, question: "What is the output of this list comprehension?\n\nnums=[1,2,3,4,5]\nresult=[n**2 for n in nums]\nprint(result)", options: ["[1,2,3,4,5]", "[1,4,9,16,25]", "[2,4,6,8,10]", "An error"], answer: 1 },
+                { id: 12, question: "In inventory[\"fruits\"].append(\"mango\"), what type must inventory[\"fruits\"] be?", options: ["A dictionary", "A set", "A list", "A tuple"], answer: 2 },
+                { id: 13, question: "Fill in the blank so this correctly counts word frequency without a KeyError on new words:\n\nfrequency={}\nfor word in words:\n    ____", options: ["frequency[word] += 1", "frequency[word] = frequency.get(word, 0) + 1", "frequency.add(word)", "frequency[word] = 1"], answer: 1 },
+                { id: 14, question: "Which data structure would best model a user's fixed home coordinates (latitude, longitude) that should never change?", options: ["List", "Dictionary", "Set", "Tuple"], answer: 3 },
+                { id: 15, question: "What does print(inventory[\"vegetables\"][0]) require to work correctly?", options: ["inventory must be a list", "\"vegetables\" must be a valid key, and its value must be a list", "inventory must be a set", "Nothing — it always works"], answer: 1 }
+              ]),
               challenges: "[]",
             },
             {
               orderNumber: 4,
-              title: "Chapter 4: Arrays, Pointers & Memory Management",
-              explanation: "Chapter 4 delves into memory layout, array indexing, pointer arithmetic, and heap vs stack allocation.",
-              quizData: "[]",
+              title: "Chapter 4: Functions",
+              explanation: "content/python/chapter4.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What keyword is used to define a function in Python?", options: ["func", "define", "def", "function"], answer: 2 },
+                { id: 2, question: "What does this code print?\n\ndef greet(name):\n    print(f\"Hello, {name}!\")\ngreet(\"Ravi\")", options: ["Nothing — it just defines the function", "Hello, Ravi!", "An error", "Hello, name!"], answer: 1 },
+                { id: 3, question: "In describe_pet(name, animal_type=\"dog\"), what happens if you call describe_pet(\"Rex\")?", options: ["TypeError — animal_type is required", "animal_type defaults to \"dog\"", "animal_type is None", "It's a syntax error"], answer: 1 },
+                { id: 4, question: "What data type does *args collect its values into?", options: ["A list", "A dictionary", "A tuple", "A set"], answer: 2 },
+                { id: 5, question: "What data type does **kwargs collect its values into?", options: ["A list", "A dictionary", "A tuple", "A set"], answer: 1 },
+                { id: 6, question: "What does this function return when called as result = add_side_effect(2, 3)?\n\ndef add_side_effect(a,b):\n    print(a+b)", options: ["5", "None", "An error", "\"5\""], answer: 1 },
+                { id: 7, question: "Why does this code raise an UnboundLocalError?\n\ncounter=0\ndef increment():\n    counter+=1", options: ["counter was never defined anywhere", "Python treats counter as local inside increment() without the global keyword", "+= is not a valid operator", "It doesn't — this code runs fine"], answer: 1 },
+                { id: 8, question: "Which keyword lets a nested inner() function modify a variable from its enclosing outer() function (not the global scope)?", options: ["global", "nonlocal", "local", "outer"], answer: 1 },
+                { id: 9, question: "Which of these is a valid lambda that squares a number?", options: ["lambda n: n ** 2", "lambda n: return n ** 2", "def lambda(n): n ** 2", "lambda(n) => n ** 2"], answer: 0 },
+                { id: 10, question: "Why can't a lambda contain an if/else block with multiple statements?", options: ["Lambdas can only contain a single expression", "Lambdas don't support conditionals at all", "Lambdas must always return None", "This is actually allowed"], answer: 0 },
+                { id: 11, question: "What are the two essential parts of any correct recursive function?", options: ["A loop and a counter", "A base case and a recursive case", "A return statement and a print statement", "Two function calls"], answer: 1 },
+                { id: 12, question: "What error occurs if a recursive function's base case is never reached?", options: ["SyntaxError", "TypeError", "RecursionError (maximum recursion depth exceeded)", "No error — it just runs forever silently"], answer: 2 },
+                { id: 13, question: "What does this code print?\n\ndef factorial(n):\n    if n==0 or n==1:\n        return 1\n    return n*factorial(n-1)\nprint(factorial(4))", options: ["6", "24", "120", "An error"], answer: 2 },
+                { id: 14, question: "Where should a function's docstring be placed?", options: ["Anywhere in the file", "As the first line inside the function body", "Only in a separate documentation file", "Before the def keyword"], answer: 1 },
+                { id: 15, question: "Which best describes when to prefer iteration over recursion?", options: ["Never — recursion is always better", "When either approach works cleanly, since iteration is typically faster and uses less memory", "Only when working with strings", "Iteration should never be used in Python"], answer: 1 }
+              ]),
               challenges: "[]",
             },
             {

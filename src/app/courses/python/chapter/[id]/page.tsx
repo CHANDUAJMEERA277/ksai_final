@@ -79,16 +79,29 @@ const CHAPTER_SECTIONS: Record<number, string[]> = {
     "Quiz Assessment"
   ],
   3: [
-    "3.1 Lists, Tuples, Dictionaries, Sets",
-    "3.6 Nested Data Structures",
-    "List, Dict & Set Comprehensions",
-    "Practice Exercises & Mini Project"
+    "1. Lists — Indexing & Slicing",
+    "2. List Methods & List Comprehensions",
+    "3. Tuples — Immutability & Packing/Unpacking",
+    "4. Dictionaries — Methods, Comprehensions & Iteration",
+    "5. Sets — Operations & Use Cases",
+    "6. Strings as Sequences",
+    "7. Nested Data Structures",
+    "8. Choosing the Right Data Structure",
+    "Mini Project: Student Database",
+    "Chapter Summary",
+    "Quiz Assessment"
   ],
   4: [
-    "4.1 Intro to Functions & Parameters",
-    "4.3 Return Values & Scope",
-    "4.5 Lambda Functions & Recursion",
-    "Function Documentation & Projects"
+    "1. Defining and Calling Functions",
+    "2. Positional, Keyword, Default & Variable-Length Arguments",
+    "3. Return Values vs. Side Effects",
+    "4. Scope — Local, Global & Nonlocal",
+    "5. Lambda Functions",
+    "6. Recursion Basics & Recursion vs. Iteration",
+    "7. Docstrings & Function Documentation",
+    "Mini Project: Simple ATM Simulator",
+    "Chapter Summary",
+    "Quiz Assessment"
   ],
   5: [
     "5.1 Classes, Objects & Constructors",
