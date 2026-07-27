@@ -127,6 +127,47 @@ const CHAPTER_SECTIONS: Record<number, string[]> = {
     "Mini Project: Log Processor with Generators & Decorators",
     "Chapter Summary",
     "Quiz Assessment"
+  ],
+  7: [
+    "1. try / except / else / finally",
+    "2. Raising Exceptions & Custom Exception Classes",
+    "3. Reading and Writing Files (Text, CSV, JSON)",
+    "4. Working with File Paths — os and pathlib",
+    "5. Context Managers for File Handling",
+    "Mini Project: Expense Tracker with CSV & Error Handling",
+    "Chapter Summary",
+    "Quiz Assessment"
+  ],
+  8: [
+    "1. Importing Modules and Packages, and __init__.py",
+    "2. Standard Library Highlights",
+    "3. Virtual Environments (venv) and pip",
+    "4. requirements.txt Basics",
+    "5. Writing and Organizing Your Own Modules",
+    "Mini Project: Personal Utility Package",
+    "Chapter Summary",
+    "Quiz Assessment"
+  ],
+  9: [
+    "1. Working with APIs (requests & JSON)",
+    "2. Basic Web Scraping Concepts",
+    "3. Automating Simple Tasks (File Handling & Scheduling)",
+    "4. Intro to Regular Expressions (re module)",
+    "5. Working with Dates and Times",
+    "Mini Project: Weather CLI Tool",
+    "Chapter Summary",
+    "Quiz Assessment"
+  ],
+  10: [
+    "1. Python's Data Model / Dunder Methods in Depth",
+    "2. Memory Management Basics",
+    "3. Mutable vs. Immutable Objects, Shallow vs. Deep Copy",
+    "4. Concurrency Basics — Threading, Multiprocessing, asyncio",
+    "5. Metaclasses (Overview Level)",
+    "6. Type Hints and Static Typing (typing module)",
+    "Mini Project: Type-Hinted Concurrent Downloader (Simulated)",
+    "Chapter Summary",
+    "Quiz Assessment"
   ]
 };
 

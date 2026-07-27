@@ -197,7 +197,7 @@ export default function PythonCurriculumPage() {
 
   // Progress summary
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 7;
+  const totalChaptersCount = chapters.length || 11;
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   return (

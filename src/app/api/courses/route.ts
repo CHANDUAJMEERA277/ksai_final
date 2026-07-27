@@ -74,7 +74,7 @@ export async function GET() {
 
 const needsPythonReseed =
   !pythonCourse ||
-  pythonCourse.chapters.length < 7 ||
+  pythonCourse.chapters.length < 11 ||
   pythonCourse.chapters.some(
     (ch: { orderNumber: number; explanation: string }) =>
       (ch.orderNumber === 1 &&
@@ -88,7 +88,15 @@ const needsPythonReseed =
       (ch.orderNumber === 5 &&
         ch.explanation !== "content/python/chapter5.md") ||
       (ch.orderNumber === 6 &&
-        ch.explanation !== "content/python/chapter6.md")
+        ch.explanation !== "content/python/chapter6.md") ||
+      (ch.orderNumber === 7 &&
+        ch.explanation !== "content/python/chapter7.md") ||
+      (ch.orderNumber === 8 &&
+        ch.explanation !== "content/python/chapter8.md") ||
+      (ch.orderNumber === 9 &&
+        ch.explanation !== "content/python/chapter9.md") ||
+      (ch.orderNumber === 10 &&
+        ch.explanation !== "content/python/chapter10.md")
   );
 
 if (
@@ -265,6 +273,98 @@ if (
                 { id: 13, question: "What best describes \"first-class functions\" in Python?", options: ["Functions that run faster than others", "Functions that can be assigned to variables, passed as arguments, and returned from other functions", "Only functions defined at the top of a file", "Functions that cannot take any arguments"], answer: 1 },
                 { id: 14, question: "In the closure example, what allows double and triple to behave differently even though both come from make_multiplier?", options: ["They are actually copies of the same function with no real difference", "Each closure remembers its own captured value of factor from when it was created", "Python re-runs make_multiplier every time double or triple is called", "It's random behavior"], answer: 1 },
                 { id: 15, question: "What does this code print?\n\ndef make_multiplier(factor):\n    def multiplier(n):\n        return n*factor\n    return multiplier\ndouble=make_multiplier(2)\ntriple=make_multiplier(3)\nprint(double(5), triple(5))", options: ["10 15", "5 5", "An error", "None None"], answer: 0 }
+              ]),
+              challenges: "[]",
+            },
+            {
+              orderNumber: 7,
+              title: "Chapter 7: Error Handling & File I/O",
+              explanation: "content/python/chapter7.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Which block runs only if the try block completes with no exception?", options: ["except", "else", "finally", "raise"], answer: 1 },
+                { id: 2, question: "Which block always runs, whether or not an exception occurred?", options: ["else", "except", "finally", "try"], answer: 2 },
+                { id: 3, question: "Why is a bare except: (catching everything) considered risky?", options: ["It's a syntax error in Python 3", "It can silently hide bugs you didn't anticipate, not just the errors you expected", "It only works with ValueError", "It runs slower than specific except blocks"], answer: 1 },
+                { id: 4, question: "What does this code print?\n\ndef safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        print(\"Cannot divide by zero.\")\n        return None\n\nprint(safe_divide(10, 0))", options: ["5.0", "Cannot divide by zero. / None", "An error is raised and the program crashes", "None, with no message"], answer: 1 },
+                { id: 5, question: "What does the raise keyword do?", options: ["Catches an exception", "Deliberately triggers an exception", "Suppresses all future errors", "Only works inside except blocks"], answer: 1 },
+                { id: 6, question: "How do you define a custom exception class in Python?", options: ["class MyError(Exception): pass", "def MyError(): raise", "exception MyError: pass", "class MyError(): pass"], answer: 0 },
+                { id: 7, question: "Why define a custom exception instead of always using a built-in one like ValueError?", options: ["Custom exceptions run faster", "It gives calling code a precise, descriptive name to catch, clarifying intent", "Built-in exceptions are deprecated", "There's no real difference"], answer: 1 },
+                { id: 8, question: "Which function writes a Python dictionary directly to an open file as JSON?", options: ["json.write()", "json.dump()", "json.save()", "json.export()"], answer: 1 },
+                { id: 9, question: "What's the key difference between json.dump() and json.dumps()?", options: ["There is no difference", "dump() writes to a file object; dumps() returns a JSON string", "dumps() only works with lists", "dump() is for reading, dumps() is for writing"], answer: 1 },
+                { id: 10, question: "Which csv reader lets you access each row's values by column name (like a dictionary)?", options: ["csv.reader", "csv.DictReader", "csv.ListReader", "csv.NamedReader"], answer: 1 },
+                { id: 11, question: "In pathlib, what does the / operator do between two path parts?", options: ["Performs division", "Joins them into a combined path", "Raises an error — / isn't valid for paths", "Deletes the first path"], answer: 1 },
+                { id: 12, question: "For a Path object p pointing to \"data/report.csv\", what does p.suffix return?", options: ["\"data\"", "\"report\"", "\".csv\"", "\"data/report.csv\""], answer: 2 },
+                { id: 13, question: "Why is with open(...) as f: preferred over manual open()/close()?", options: ["It's shorter to type, with no other benefit", "It guarantees the file is closed automatically, even if an error occurs while reading/writing", "It's the only way to open a file in Python", "It automatically converts the file to JSON"], answer: 1 },
+                { id: 14, question: "What does this code print if settings.txt does not exist?\n\ndef read_config(path):\n    try:\n        with open(path, \"r\") as f:\n            return f.read()\n    except FileNotFoundError:\n        print(f\"Config file not found: {path}\")\n        return None\n\nread_config(\"settings.txt\")", options: ["An unhandled FileNotFoundError, crashing the program", "Config file not found: settings.txt", "An empty string with no message", "It creates the file automatically with no error"], answer: 1 },
+                { id: 15, question: "In the expense tracker project, why does add_expense() check amount <= 0 and raise before writing to the CSV?", options: ["To make the function run faster", "To prevent invalid data from ever being written to the file", "Because CSV files can't store negative numbers", "There's no real reason — it's just a style choice"], answer: 1 }
+              ]),
+              challenges: "[]",
+            },
+            {
+              orderNumber: 8,
+              title: "Chapter 8: Modules, Packages & Environment",
+              explanation: "content/python/chapter8.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the main difference between a module and a package?", options: ["There is no difference", "A module is a single .py file; a package is a folder of related modules", "A package can only contain one module", "Modules can only be built-in, packages must be custom"], answer: 1 },
+                { id: 2, question: "What is the traditional purpose of __init__.py in a package folder?", options: ["It stores the package's version number only", "Its presence marks the folder as a Python package (and can run setup code)", "It must contain all the package's functions directly", "It is required to run any Python script"], answer: 1 },
+                { id: 3, question: "What does from math import sqrt as square_root do?", options: ["Imports the entire math module under a new name", "Imports only the sqrt function, accessible as square_root", "Raises an ImportError", "Imports sqrt but keeps its original name only"], answer: 1 },
+                { id: 4, question: "Which standard library module would you use to get today's date?", options: ["os", "datetime", "itertools", "sys"], answer: 1 },
+                { id: 5, question: "What does Counter(words) from the collections module return?", options: ["A sorted list of unique words", "A dictionary-like object mapping each word to its count", "The total number of words", "A single string of all words joined together"], answer: 1 },
+                { id: 6, question: "Why is defaultdict(list) useful compared to a plain dictionary?", options: ["It automatically sorts its keys", "Accessing a missing key returns a new empty list instead of raising a KeyError", "It only stores lists, never other types", "It's simply a faster version of dict"], answer: 1 },
+                { id: 7, question: "What is the main purpose of a virtual environment (venv)?", options: ["To make Python code run faster", "To isolate a project's dependencies from the system Python and other projects", "To automatically write your code for you", "To replace the need for pip entirely"], answer: 1 },
+                { id: 8, question: "What happens if you run pip install requests without an activated virtual environment?", options: ["It fails immediately", "It typically installs the package globally on the system Python", "It only installs it temporarily for one script", "Nothing happens — pip requires a venv to function at all"], answer: 1 },
+                { id: 9, question: "What command generates a requirements.txt from the currently installed packages?", options: ["pip list > requirements.txt", "pip freeze > requirements.txt", "pip save requirements.txt", "python freeze requirements.txt"], answer: 1 },
+                { id: 10, question: "What does pip install -r requirements.txt do?", options: ["Creates a new requirements.txt file", "Installs every package listed in requirements.txt", "Removes all installed packages", "Only works for a single package at a time"], answer: 1 },
+                { id: 11, question: "What's the difference between requests==2.31.0 and requests>=2.31.0 in a requirements.txt?", options: ["There is no difference", "== pins that exact version; >= allows that version or any newer one", "== means \"do not install\"; >= means \"install\"", ">= is not valid syntax in requirements.txt"], answer: 1 },
+                { id: 12, question: "In from utils.validators import is_valid_email, what does utils.validators refer to?", options: ["A single file named utils.validators.py", "The validators module inside the utils package", "A built-in Python function", "An error — dots aren't allowed in imports"], answer: 1 },
+                { id: 13, question: "What is the purpose of if __name__ == \"__main__\": in a module?", options: ["It prevents the file from ever being imported", "It lets code run only when the file is executed directly, not when imported elsewhere", "It marks the file as the main package file", "It has no functional effect in Python"], answer: 1 },
+                { id: 14, question: "When validators.py is imported by main.py (not run directly), what is __name__ equal to inside validators.py?", options: ["\"__main__\"", "The module's own name, e.g. \"validators\"", "\"main.py\"", "An empty string"], answer: 1 },
+                { id: 15, question: "Which real-world scenario best matches the purpose of splitting code into your own modules?", options: ["Making a single script file as long as possible", "Structuring a production codebase into organized, reusable pieces like models/, utils/, services/", "Avoiding the use of functions entirely", "Preventing any code reuse between files"], answer: 1 }
+              ]),
+              challenges: "[]",
+            },
+            {
+              orderNumber: 9,
+              title: "Chapter 9: Applied Python",
+              explanation: "content/python/chapter9.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Which library is the standard way to make HTTP requests to a web API in Python?", options: ["sockets", "requests", "http.client only", "urllib2"], answer: 1 },
+                { id: 2, question: "What does response.json() do?", options: ["Saves the response to a file named response.json", "Parses the response body as JSON into a Python dict/list", "Converts a dict into a JSON string", "Checks whether the response was successful"], answer: 1 },
+                { id: 3, question: "What does a status code of 200 indicate?", options: ["The request failed", "The request succeeded", "The server is down", "The response body is empty"], answer: 1 },
+                { id: 4, question: "Why call response.raise_for_status() before using response.json()?", options: ["It formats the JSON nicely", "It raises an exception automatically if the response indicates an error (4xx/5xx)", "It speeds up the request", "It has no real effect"], answer: 1 },
+                { id: 5, question: "What should you check before scraping a website's HTML?", options: ["Nothing — scraping is always allowed", "The site's robots.txt and terms of service", "Only the website's color scheme", "The scraping library's version number"], answer: 1 },
+                { id: 6, question: "Which library is commonly used alongside requests to parse and search HTML content?", options: ["json", "BeautifulSoup", "re", "pathlib"], answer: 1 },
+                { id: 7, question: "Why are OS-level schedulers (like cron) often preferred over a Python script with an infinite sleep loop for production automation?", options: ["Python can't use loops for scheduling", "They survive reboots and don't depend on one long-running process staying alive", "cron is written in Python internally", "sleep() doesn't work outside virtual environments"], answer: 1 },
+                { id: 8, question: "What does the regex pattern \\d+ match?", options: ["Exactly one digit", "One or more digits", "Any word character", "Zero or more letters"], answer: 1 },
+                { id: 9, question: "What does re.findall(r\"[\\w.]+@[\\w.]+\", text) return?", options: ["True or False depending on a match", "A list of all matching substrings (e.g. email addresses) found in text", "The first match only, as a string", "A modified version of text with matches removed"], answer: 1 },
+                { id: 10, question: "Why should regex patterns in Python be written as raw strings (r\"...\")?", options: ["Raw strings run faster", "Without the r prefix, backslashes get interpreted as Python escape sequences first, breaking the pattern", "re.findall() only accepts raw strings as an argument type", "It's purely a style preference with no functional effect"], answer: 1 },
+                { id: 11, question: "What does re.sub(r\"\\d\", \"*\", \"PIN 4821\") return?", options: ["\"PIN 4821\"", "\"PIN ****\"", "\"4821\"", "An error"], answer: 1 },
+                { id: 12, question: "Which function converts a date string like \"2026-07-16\" into a datetime object?", options: ["datetime.strftime()", "datetime.strptime()", "datetime.parse()", "datetime.now()"], answer: 1 },
+                { id: 13, question: "Which function converts a datetime object into a formatted display string?", options: ["datetime.strptime()", "datetime.strftime()", "datetime.today()", "datetime.format()"], answer: 1 },
+                { id: 14, question: "What does due_date = parsed + timedelta(days=30) compute?", options: ["30 days before parsed", "A new datetime, 30 days after parsed", "The current date plus 30 days, ignoring parsed entirely", "An error, since datetimes can't be added to"], answer: 1 },
+                { id: 15, question: "In the Weather CLI project, what is the purpose of is_valid_city() using a regex?", options: ["To fetch the weather data directly", "To reject clearly invalid input (like symbols or numbers) before making an API call", "To format the final display string", "To convert the city name to JSON"], answer: 1 }
+              ]),
+              challenges: "[]",
+            },
+            {
+              orderNumber: 10,
+              title: "Chapter 10: Advanced Python Concepts",
+              explanation: "content/python/chapter10.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Which dunder method allows a custom object to support the + operator?", options: ["__plus__", "__add__", "__sum__", "__combine__"], answer: 1 },
+                { id: 2, question: "Which dunder method allows a custom object to be indexed like obj[0]?", options: ["__index__", "__getitem__", "__get__", "__item__"], answer: 1 },
+                { id: 3, question: "What is the primary mechanism CPython uses to manage memory for most objects?", options: ["Manual memory allocation by the programmer", "Reference counting", "A fixed memory pool per variable", "Memory is never freed automatically"], answer: 1 },
+                { id: 4, question: "Why can't reference counting alone free a circular reference (two objects referencing each other)?", options: ["Circular references are not allowed in Python", "Each object's reference count never reaches zero because they keep each other \"alive\"", "Python doesn't support object references at all", "Reference counting only works for numbers"], answer: 1 },
+                { id: 5, question: "What does Python's cyclic garbage collector do?", options: ["It deletes all objects periodically, regardless of use", "It periodically detects and cleans up circular references that reference counting can't free", "It only runs when the program exits", "It prevents any object from ever being freed"], answer: 1 },
+                { id: 6, question: "What does this code print for `original`?\n\noriginal = [1, 2, 3]\nsame_object = original\nsame_object[0] = 99\nprint(original)", options: ["[1, 2, 3]", "[99, 2, 3]", "An error", "None"], answer: 1 },
+                { id: 7, question: "In a shallow copy of a list containing a nested list, what happens if you modify the nested list through the copy?", options: ["Only the copy changes; the original is unaffected", "Both the copy and the original are affected, since the nested list is still shared", "It raises a TypeError", "Shallow copies don't allow modifying nested lists"], answer: 1 },
+                { id: 8, question: "Which function creates a copy where even nested objects are fully independent?", options: ["copy.copy()", "copy.deepcopy()", "list.copy()", "Plain assignment (=)"], answer: 1 },
+                { id: 9, question: "Which concurrency approach is best suited for CPU-bound, heavy computation?", options: ["threading", "multiprocessing", "asyncio", "None of these help with CPU-bound work"], answer: 1 },
+                { id: 10, question: "Why doesn't threading speed up CPU-heavy Python code?", options: ["Threads can't be created in Python", "The Global Interpreter Lock (GIL) allows only one thread to run Python bytecode at a time", "Threads only work with asyncio", "threading is deprecated in modern Python"], answer: 1 },
+                { id: 11, question: "What keyword pair is used to define and call asynchronous functions with asyncio?", options: ["async and await", "thread and join", "yield and next", "lambda and def"], answer: 0 },
+                { id: 12, question: "What is a metaclass?", options: ["A class that has no methods", "A blueprint for classes themselves — classes are instances of it", "A synonym for a regular class", "A built-in Python data type like list or dict"], answer: 1 },
+                { id: 13, question: "Are type hints enforced at runtime by the Python interpreter?", options: ["Yes, Python raises an error if a hinted type is violated", "No — they're optional annotations checked by external tools (linters, mypy), not enforced by the interpreter itself", "Only inside classes", "Only when using the asyncio module"], answer: 1 },
+                { id: 14, question: "What does Optional[dict] from the typing module indicate?", options: ["The value must always be a dict", "The value is either a dict or None", "The value must be a list of dicts", "The function must return nothing"], answer: 1 },
+                { id: 15, question: "Which is a strong real-world reason to use type hints in a large codebase?", options: ["They make the code run faster at runtime", "They make a function's expected inputs/outputs explicit, helping tools and teammates catch mismatches early", "They are required for Python code to execute at all", "They replace the need for testing entirely"], answer: 1 }
               ]),
               challenges: "[]",
             }
