@@ -83,7 +83,7 @@ export default function PythonOverviewPage() {
 
   // Calculate Progress Stats
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 6;
+  const totalChaptersCount = chapters.length || 7;
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   // Continue Learning Logic

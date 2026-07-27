@@ -74,6 +74,7 @@ export async function GET() {
 
 const needsPythonReseed =
   !pythonCourse ||
+  pythonCourse.chapters.length < 7 ||
   pythonCourse.chapters.some(
     (ch: { orderNumber: number; explanation: string }) =>
       (ch.orderNumber === 1 &&
@@ -83,7 +84,11 @@ const needsPythonReseed =
       (ch.orderNumber === 3 &&
         ch.explanation !== "content/python/chapter3.md") ||
       (ch.orderNumber === 4 &&
-        ch.explanation !== "content/python/chapter4.md")
+        ch.explanation !== "content/python/chapter4.md") ||
+      (ch.orderNumber === 5 &&
+        ch.explanation !== "content/python/chapter5.md") ||
+      (ch.orderNumber === 6 &&
+        ch.explanation !== "content/python/chapter6.md")
   );
 
 if (
@@ -219,9 +224,48 @@ if (
             },
             {
               orderNumber: 5,
-              title: "Chapter 5: Object-Oriented Design & Projects",
-              explanation: "Chapter 5 brings everything together: classes, objects, inheritance, polymorphism, and building full-scale applications.",
-              quizData: "[]",
+              title: "Chapter 5: Object-Oriented Programming",
+              explanation: "content/python/chapter5.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the purpose of the __init__ method in a class?", options: ["It deletes an object when no longer needed", "It runs automatically to set up a new object's initial state", "It defines the class name", "It is optional and rarely used"], answer: 1 },
+                { id: 2, question: "In a method definition like def bark(self):, what does self refer to?", options: ["The class itself", "The specific object the method is called on", "A global variable", "Nothing — it's just a naming convention with no real use"], answer: 1 },
+                { id: 3, question: "What will this code print?\n\nclass Dog:\n    def __init__(self,name):\n        self.name=name\nrex=Dog(\"Rex\")\nmilo=Dog(\"Milo\")\nprint(rex.name, milo.name)", options: ["Rex Rex", "Rex Milo", "An error", "None None"], answer: 1 },
+                { id: 4, question: "What is a class attribute, as opposed to an instance attribute?", options: ["An attribute only usable inside __init__", "An attribute shared by every instance of the class", "An attribute that can never change", "An attribute only accessible from outside the class"], answer: 1 },
+                { id: 5, question: "What does @classmethod change about a method's first parameter?", options: ["It becomes self, same as normal", "It becomes cls, referring to the class itself", "It is removed entirely", "It must be named class"], answer: 1 },
+                { id: 6, question: "What does this code print?\n\nclass Animal:\n    def speak(self):\n        print(\"...makes a sound.\")\nclass Cat(Animal):\n    def speak(self):\n        print(\"Whiskers says Meow!\")\nCat().speak()", options: ["Whiskers makes a sound.", "Whiskers says Meow!", "An error — Cat has no speak method", "Nothing prints"], answer: 1 },
+                { id: 7, question: "What is the purpose of calling super().__init__(...) inside a subclass's constructor?", options: ["To delete the parent class", "To reuse the parent class's setup logic instead of repeating it", "To make the subclass abstract", "It has no real purpose"], answer: 1 },
+                { id: 8, question: "What best describes \"duck typing\" in Python?", options: ["Objects must share a common parent class to be used interchangeably", "Python checks whether an object has the needed method/behavior, regardless of its type", "It only applies to numeric types", "It means all objects are automatically compatible"], answer: 1 },
+                { id: 9, question: "In Python's naming convention, what does a single leading underscore (e.g. self._pin) signal?", options: ["It is a private attribute enforced by the interpreter", "It is \"internal use\" by convention, but still accessible", "It is a syntax error", "It behaves identically to a double underscore"], answer: 1 },
+                { id: 10, question: "Why does self.__balance get renamed internally to _BankAccount__balance?", options: ["This is called name mangling, discouraging accidental outside access", "It's a bug in Python", "It only happens with class attributes, not instance attributes", "It only happens if you use inheritance"], answer: 0 },
+                { id: 11, question: "Which dunder method controls what print(my_object) displays?", options: ["__init__", "__repr__ only", "__str__", "__print__"], answer: 2 },
+                { id: 12, question: "Without defining __eq__, what does b1 == b2 check for two objects with identical attribute values?", options: ["Whether all their attributes match", "Whether they are the exact same object in memory (identity)", "It always raises an error", "Whether their __str__ output matches"], answer: 1 },
+                { id: 13, question: "What happens if you try to instantiate an abstract class directly, e.g. Shape() where Shape(ABC) has an @abstractmethod area()?", options: ["It works fine, returning an empty object", "TypeError — abstract classes with unimplemented abstract methods can't be instantiated", "It silently returns None", "It only fails when area() is later called"], answer: 1 },
+                { id: 14, question: "Which relationship does composition model?", options: ["\"is-a\" (e.g. a Cat is an Animal)", "\"has-a\" (e.g. a Car has an Engine)", "Exactly the same thing as inheritance", "No relationship at all"], answer: 1 },
+                { id: 15, question: "In the Library example, why is self.__books declared with a double underscore?", options: ["To make it faster to access", "To discourage code outside the class from directly modifying the book list, routing changes through methods like add_book()", "Because lists require double underscores in Python", "It has no functional purpose here"], answer: 1 }
+              ]),
+              challenges: "[]",
+            },
+            {
+              orderNumber: 6,
+              title: "Chapter 6: Functional & Pythonic Concepts",
+              explanation: "content/python/chapter6.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What exception does an iterator raise when it has no more values to produce?", options: ["IndexError", "StopIteration", "EndOfLoop", "ValueError"], answer: 1 },
+                { id: 2, question: "Which two dunder methods must a custom class implement to be a valid iterator?", options: ["__init__ and __str__", "__iter__ and __next__", "__enter__ and __exit__", "__get__ and __set__"], answer: 1 },
+                { id: 3, question: "What keyword turns a regular function into a generator function?", options: ["return", "yield", "async", "gen"], answer: 1 },
+                { id: 4, question: "What does calling a generator function (e.g. countdown(3)) do immediately?", options: ["Runs the whole function body right away", "Returns a generator object without running the body yet", "Raises an error unless used in a loop", "Returns a list of all values"], answer: 1 },
+                { id: 5, question: "Why are generators considered more memory-efficient than building a full list?", options: ["They compress data automatically", "They produce one value at a time instead of holding the entire sequence in memory", "They run on a separate thread", "They don't actually use any memory"], answer: 1 },
+                { id: 6, question: "What does @timer above a function definition actually do?", options: ["Nothing — it's just a comment", "It replaces the function with timer(func), wrapping it with extra behavior", "It deletes the original function", "It only works on class methods"], answer: 1 },
+                { id: 7, question: "What is a common real-world use of decorators?", options: ["Defining new data types", "Logging, timing, caching, or authentication checks", "Replacing all loops in a program", "Creating abstract classes"], answer: 1 },
+                { id: 8, question: "What guarantee does a with statement provide over manual open()/close()?", options: ["It runs faster", "Cleanup (like closing a file) happens automatically, even if an error occurs inside the block", "It prevents all possible errors", "It automatically retries failed operations"], answer: 1 },
+                { id: 9, question: "Which two dunder methods does a custom context manager need to implement?", options: ["__start__ and __stop__", "__enter__ and __exit__", "__open__ and __close__", "__init__ and __del__"], answer: 1 },
+                { id: 10, question: "What does this code print?\n\nnumbers=[1,2,3,4,5]\ndoubled=list(map(lambda n: n*2, numbers))\nprint(doubled)", options: ["[1,2,3,4,5]", "[2,4,6,8,10]", "An error, since map needs to be converted first", "A generator object description"], answer: 1 },
+                { id: 11, question: "Which module must be imported to use reduce()?", options: ["itertools", "functools", "collections", "operator"], answer: 1 },
+                { id: 12, question: "Which bracket type produces a lazy generator expression instead of building the full sequence immediately?", options: ["Square brackets [ ]", "Curly braces { }", "Parentheses ( )", "Angle brackets < >"], answer: 2 },
+                { id: 13, question: "What best describes \"first-class functions\" in Python?", options: ["Functions that run faster than others", "Functions that can be assigned to variables, passed as arguments, and returned from other functions", "Only functions defined at the top of a file", "Functions that cannot take any arguments"], answer: 1 },
+                { id: 14, question: "In the closure example, what allows double and triple to behave differently even though both come from make_multiplier?", options: ["They are actually copies of the same function with no real difference", "Each closure remembers its own captured value of factor from when it was created", "Python re-runs make_multiplier every time double or triple is called", "It's random behavior"], answer: 1 },
+                { id: 15, question: "What does this code print?\n\ndef make_multiplier(factor):\n    def multiplier(n):\n        return n*factor\n    return multiplier\ndouble=make_multiplier(2)\ntriple=make_multiplier(3)\nprint(double(5), triple(5))", options: ["10 15", "5 5", "An error", "None None"], answer: 0 }
+              ]),
               challenges: "[]",
             }
           ];

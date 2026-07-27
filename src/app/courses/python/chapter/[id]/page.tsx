@@ -104,10 +104,29 @@ const CHAPTER_SECTIONS: Record<number, string[]> = {
     "Quiz Assessment"
   ],
   5: [
-    "5.1 Classes, Objects & Constructors",
-    "5.4 Attributes, Methods & Encapsulation",
-    "5.6 Inheritance & Polymorphism",
-    "5.10 Abstract Classes & Magic Methods"
+    "1. Classes and Objects — the __init__ Constructor",
+    "2. Instance vs. Class Attributes and Methods",
+    "3. Inheritance and Method Overriding",
+    "4. Polymorphism and Duck Typing",
+    "5. Encapsulation — Public, Protected & Private",
+    "6. Dunder / Magic Methods",
+    "7. Abstract Classes and Interfaces (abc module)",
+    "8. Composition vs. Inheritance",
+    "Mini Project: Library Management System",
+    "Chapter Summary",
+    "Quiz Assessment"
+  ],
+  6: [
+    "1. Iterators and Iterables",
+    "2. Generators and the yield Keyword",
+    "3. Decorators",
+    "4. Context Managers",
+    "5. map(), filter(), reduce()",
+    "6. Comprehensions — List, Dict, Set & Generator",
+    "7. First-Class Functions and Closures",
+    "Mini Project: Log Processor with Generators & Decorators",
+    "Chapter Summary",
+    "Quiz Assessment"
   ]
 };
 

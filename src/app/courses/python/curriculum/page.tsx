@@ -197,7 +197,7 @@ export default function PythonCurriculumPage() {
 
   // Progress summary
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 6;
+  const totalChaptersCount = chapters.length || 7;
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   return (
@@ -215,7 +215,7 @@ export default function PythonCurriculumPage() {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/dashboard")}
+             onClick={() => router.push("/dashboard")}
             className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <ArrowLeft size={14} /> Back to Dashboard
@@ -327,7 +327,7 @@ export default function PythonCurriculumPage() {
                 let assesmentLabel = "No Assessment";
                 if (chapter.orderNumber === 0) assesmentLabel = "12 Quiz Questions";
                 else if (chapter.orderNumber === 1) assesmentLabel = "14 Quiz Questions";
-                else if (chapter.orderNumber === 2) assesmentLabel = "15 Quiz Questions";
+                else if (chapter.orderNumber >= 2) assesmentLabel = "15 Quiz Questions";
 
                 return (
                   <div
