@@ -223,7 +223,7 @@ export default function PythonChapterPage() {
 
   // Floating panel tabs state
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(true);
-  const [rightPanelExpanded, setRightPanelExpanded] = useState(false);
+  const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
   const [expandedSummary, setExpandedSummary] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
