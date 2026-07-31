@@ -59,8 +59,9 @@ export default function MyCoursesPage() {
   const handleStartLearning = (course: any) => {
     if (course.title.toLowerCase().includes("python")) {
       router.push("/courses/python");
+    } else if (course.title.toLowerCase().includes("java")) {
+      router.push("/courses/java");
     } else {
-      // Stub player trigger for other courses on dashboard
       router.push("/dashboard");
     }
   };

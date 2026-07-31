@@ -89,6 +89,8 @@ export default function DashboardPage() {
         // Immediately start learning
         if (course.title.toLowerCase().includes("python")) {
           router.push("/courses/python");
+        } else if (course.title.toLowerCase().includes("java")) {
+          router.push("/courses/java");
         } else {
           setLearningCourse(course);
         }

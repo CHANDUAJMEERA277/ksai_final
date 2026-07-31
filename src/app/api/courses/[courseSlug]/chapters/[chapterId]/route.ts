@@ -56,27 +56,34 @@ export async function GET(
       orderBy: { orderNumber: "asc" },
     });
 
-    const orderNum = parseInt(chapterId, 10);
+    const orderNum = parseInt(chapterId.replace(/[^0-9]/g, ""), 10) || 1;
     const currentChapter = chapters.find((c: { orderNumber: number }) => c.orderNumber === orderNum);
 
     if (!currentChapter) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
 
-    // Check if user is enrolled
-    const enrollment = await db.enrollment.findFirst({
+    // Check if user is enrolled or auto-enroll active user
+    let enrollment = await db.enrollment.findFirst({
       where: {
         userId: user.id,
         courseId: course.id,
       },
     });
 
-    // Access control: gate Chapter 1+ behind purchase enrollment
-    if (orderNum > 0 && !enrollment) {
-      return NextResponse.json(
-        { error: "Access Gated. Please subscribe to this course to unlock all chapters." },
-        { status: 403 }
-      );
+    if (!enrollment && user.id) {
+      try {
+        enrollment = await db.enrollment.create({
+          data: {
+            userId: user.id,
+            courseId: course.id,
+            paidAmount: 0,
+            paymentId: "auto_preview",
+          },
+        });
+      } catch (e) {
+        // Fallback if duplicate or constraint
+      }
     }
 
     // Fetch progress for this user in this course

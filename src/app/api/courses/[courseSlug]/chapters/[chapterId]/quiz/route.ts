@@ -48,7 +48,7 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    const orderNum = parseInt(chapterId, 10);
+    const orderNum = parseInt(chapterId.replace(/[^0-9]/g, ""), 10) || 1;
     const chapter = await db.chapter.findFirst({
       where: {
         courseId: course.id,

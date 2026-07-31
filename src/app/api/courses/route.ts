@@ -99,11 +99,24 @@ const needsPythonReseed =
         ch.explanation !== "content/python/chapter10.md")
   );
 
+const javaCourse = courses.find(
+  (c: { language: string }) => c.language === "java"
+);
+
+const needsJavaReseed =
+  !javaCourse ||
+  javaCourse.chapters.length < 15 ||
+  javaCourse.chapters.some(
+    (ch: { orderNumber: number; explanation: string }) =>
+      ch.explanation !== `java/chapter${ch.orderNumber}.md`
+  );
+
 if (
   courses.length === 0 ||
   !courses.some((c: { language: string }) => c.language === "c") ||
   courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0) ||
-  needsPythonReseed
+  needsPythonReseed ||
+  needsJavaReseed
 ) {
       await db.course.deleteMany({});
       
@@ -369,8 +382,26 @@ if (
               challenges: "[]",
             }
           ];
+        } else if (courseData.language === "java") {
+          chaptersToCreate = [
+            { orderNumber: 1, title: "Chapter 1: Introduction to Java", explanation: "java/chapter1.md", quizData: JSON.stringify([{ id: 1, question: "What is the core philosophy of Java?", options: ["Write Once, Run Anywhere", "Compile Everywhere", "Script On The Fly", "Interpret Only"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 2, title: "Chapter 2: First Java Program & Architecture", explanation: "java/chapter2.md", quizData: JSON.stringify([{ id: 1, question: "Why is main static?", options: ["To run without instantiating an object", "To prevent access", "To speed up return", "To restrict memory"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 3, title: "Chapter 3: Variables, Data Types & Control Flow", explanation: "java/chapter3.md", quizData: JSON.stringify([{ id: 1, question: "What is the size of char in Java?", options: ["2 Bytes (Unicode)", "1 Byte", "4 Bytes", "8 Bytes"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 4, title: "Chapter 4: Principles of Object-Oriented Programming (OOPS)", explanation: "java/chapter4.md", quizData: JSON.stringify([{ id: 1, question: "Which relationship represents Composition?", options: ["Strong Part-Of", "Weak Has-A", "Is-A Inheritance", "Loose Coupling"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 5, title: "Chapter 5: Constructors, Design Patterns & Keywords", explanation: "java/chapter5.md", quizData: JSON.stringify([{ id: 1, question: "Which statement must be first in a constructor chain?", options: ["this(...)", "super.init()", "static()", "void()"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 6, title: "Chapter 6: Polymorphism & Method Binding", explanation: "java/chapter6.md", quizData: JSON.stringify([{ id: 1, question: "What runtime exception occurs on invalid downcasting?", options: ["ClassCastException", "NullPointerException", "IllegalArgumentException", "IndexOutOfBoundsException"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 7, title: "Chapter 7: Abstraction (Abstract Classes vs. Interfaces)", explanation: "java/chapter7.md", quizData: JSON.stringify([{ id: 1, question: "What keyword is required for concrete methods in Java 8 interfaces?", options: ["default", "abstract", "native", "synchronized"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 8, title: "Chapter 8: Packages, Access Modifiers & Encapsulation", explanation: "java/chapter8.md", quizData: JSON.stringify([{ id: 1, question: "Which access modifier allows access to external subclasses?", options: ["protected", "private", "default", "public"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 9, title: "Chapter 9: Arrays, Object Cloning & Math Utilities", explanation: "java/chapter9.md", quizData: JSON.stringify([{ id: 1, question: "What exception is thrown if clone() is called without Cloneable?", options: ["CloneNotSupportedException", "NullPointerException", "IllegalStateException", "ClassCastException"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 10, title: "Chapter 10: String Handling", explanation: "java/chapter10.md", quizData: JSON.stringify([{ id: 1, question: "Where are string literals stored in JVM memory?", options: ["String Constant Pool", "Stack", "Native Memory", "Code Segment"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 11, title: "Chapter 11: Exception Handling", explanation: "java/chapter11.md", quizData: JSON.stringify([{ id: 1, question: "Which block always executes in exception handling?", options: ["finally", "catch", "try", "throw"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 12, title: "Chapter 12: Multithreading", explanation: "java/chapter12.md", quizData: JSON.stringify([{ id: 1, question: "Which method starts a new thread of execution?", options: ["start()", "run()", "execute()", "init()"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 13, title: "Chapter 13: Synchronization & Concurrent Collections", explanation: "java/chapter13.md", quizData: JSON.stringify([{ id: 1, question: "Which concurrent collection uses lock striping?", options: ["ConcurrentHashMap", "Vector", "Hashtable", "ArrayList"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 14, title: "Chapter 14: Collections Framework & Generics", explanation: "java/chapter14.md", quizData: JSON.stringify([{ id: 1, question: "According to PECS, which wildcard is used for producers?", options: ["? extends T", "? super T", "?", "T"], answer: 0 }]), challenges: "[]" },
+            { orderNumber: 15, title: "Chapter 15: File I/O, NIO & Streams API", explanation: "java/chapter15.md", quizData: JSON.stringify([{ id: 1, question: "Which stream operation is intermediate?", options: ["filter()", "collect()", "forEach()", "count()"], answer: 0 }]), challenges: "[]" },
+          ];
         } else {
-          // Standard Chapters for other courses (C, C++, Java) starting at 1
+          // Standard Chapters for other courses (C, C++) starting at 1
           chaptersToCreate = [
             {
               orderNumber: 1,
