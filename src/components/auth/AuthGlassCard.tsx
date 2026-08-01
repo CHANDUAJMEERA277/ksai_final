@@ -13,7 +13,14 @@ interface AuthGlassCardProps {
 export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [isLoading, setIsLoading] = useState(false);
+  const isSignupActive = activeTab === "signup";
   const [authenticatedUser, setAuthenticatedUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
+  const [googlePrefill, setGooglePrefill] = useState<{
+    name: string;
+    email: string;
+    googleId?: string;
+    emailVerified?: boolean;
+  } | null>(null);
 
   const handleStartAuth = (user: { name?: string; email?: string; role?: string }) => {
     setAuthenticatedUser(user);
@@ -27,6 +34,16 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
     }
   };
 
+  const handleGooglePrefill = (data: {
+    name: string;
+    email: string;
+    googleId?: string;
+    emailVerified?: boolean;
+  }) => {
+    setGooglePrefill(data);
+    setActiveTab("signup");
+  };
+
   return (
     <div className="w-full max-w-md mx-auto">
       {/* Floating Glassmorphic Container */}
@@ -34,7 +51,7 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/15 shadow-2xl relative overflow-hidden bg-[#0C0C14]/80 backdrop-blur-2xl glow-border-blue animate-float max-h-[min(90dvh,900px)] w-full flex flex-col min-h-0"
+        className={`glass-panel p-6 sm:p-8 rounded-3xl border border-white/15 shadow-2xl relative overflow-hidden bg-[#0C0C14]/80 backdrop-blur-2xl glow-border-blue animate-float w-full flex flex-col min-h-0 ${isSignupActive ? "h-[min(84dvh,760px)] max-h-[min(84dvh,760px)]" : "max-h-[min(90dvh,900px)]"}`}
       >
         {/* Top Radial Glow */}
         <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
@@ -99,6 +116,7 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
                 <LoginForm
                   onSubmitSuccess={handleStartAuth}
                   onSwitchToSignUp={() => setActiveTab("signup")}
+                  onGooglePrefill={handleGooglePrefill}
                 />
               </motion.div>
             ) : (
@@ -113,6 +131,7 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
                 <SignUpForm
                   onSubmitSuccess={handleStartAuth}
                   onSwitchToLogin={() => setActiveTab("login")}
+                  googlePrefill={googlePrefill}
                 />
               </motion.div>
             )}

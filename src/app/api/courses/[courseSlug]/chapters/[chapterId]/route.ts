@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
 import fs from "fs";
 import path from "path";
 
@@ -12,25 +11,19 @@ export async function GET(
   try {
     const { courseSlug, chapterId } = await params;
     
-    // Resolve user via NextAuth or custom sessionToken
-    const nextAuthSession = await auth();
-    let user = null;
-    if (nextAuthSession?.user?.email) {
-      user = await db.user.findUnique({
-        where: { email: nextAuthSession.user.email.toLowerCase() },
-      });
-    }
+    // Resolve user via Better Auth or custom sessionToken cookie
+    const cookieStore = await cookies();
+    const sessionToken =
+      cookieStore.get("better-auth.session_token")?.value ||
+      cookieStore.get("sessionToken")?.value;
 
-    if (!user) {
-      const cookieStore = await cookies();
-      const sessionToken = cookieStore.get("sessionToken")?.value;
-      if (sessionToken) {
-        const session = await db.session.findUnique({
-          where: { token: sessionToken },
-          include: { user: true },
-        });
-        user = session?.user;
-      }
+    let user = null;
+    if (sessionToken) {
+      const session = await db.session.findUnique({
+        where: { token: sessionToken },
+        include: { user: true },
+      });
+      user = session?.user;
     }
 
     if (!user) {

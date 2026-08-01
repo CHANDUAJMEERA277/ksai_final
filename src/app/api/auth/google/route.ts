@@ -5,69 +5,78 @@ import { db } from "@/lib/db";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email } = body;
+    const { name, email, googleId, image } = body;
 
     if (!email || !name) {
       return NextResponse.json(
-        { error: "Name and email are required." },
+        { error: "Name and email are required from Google verification." },
         { status: 400 }
       );
     }
-    // Check if the user already exists
-let user = await db.user.findUnique({
-  where: {
-    email: email.toLowerCase(),
-  },
-});
-// If the user doesn't exist, create a new Google account
-if (!user) {
-  user = await db.user.create({
-    data: {
-      name,
-      email: email.toLowerCase(),
-      passwordHash: null,
-      provider: "GOOGLE",
-      role: "Student",
-      country: "United States",
-    },
-  });
-}
-// Delete any previous sessions (One device login)
-await db.session.deleteMany({
-  where: {
-    userId: user.id,
-  },
-});
-// Create a new session
-const session = await db.session.create({
-  data: {
-    userId: user.id,
-    token: randomUUID(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-  },
-});
-// Create the response
-const response = NextResponse.json({
-  message: "Google login successful.",
-  user,
-});
 
-// Set the session cookie
-response.cookies.set("sessionToken", session.token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  expires: session.expiresAt,
-  path: "/",
-});
+    const cleanEmail = email.toLowerCase().trim();
 
-return response;
+    // Check if user already exists
+    let user = await db.user.findUnique({
+      where: { email: cleanEmail },
+    });
 
+    // If user exists and profile is fully set up with a password, log them in
+    if (user && user.passwordHash) {
+      await db.session.deleteMany({ where: { userId: user.id } });
+
+      const sessionToken = randomUUID();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const session = await db.session.create({
+        data: {
+          userId: user.id,
+          token: sessionToken,
+          expiresAt,
+        },
+      });
+
+      const response = NextResponse.json({
+        action: "login",
+        message: "Google login successful.",
+        user,
+      });
+
+      response.cookies.set("better-auth.session_token", session.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        expires: session.expiresAt,
+        path: "/",
+      });
+
+      response.cookies.set("sessionToken", session.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        expires: session.expiresAt,
+        path: "/",
+      });
+
+      return response;
+    }
+
+    // User is new or incomplete Google account -> return prefill data for existing SignUp form
+    return NextResponse.json({
+      action: "register",
+      message: "Google email verified. Please complete your registration details.",
+      prefill: {
+        name,
+        email: cleanEmail,
+        googleId: googleId || `google_${randomUUID()}`,
+        image: image || null,
+        emailVerified: true,
+      },
+    });
   } catch (error) {
     console.error("Google Login Error:", error);
-
     return NextResponse.json(
-      { error: "Internal Server Error." },
+      { error: "Internal Server Error during Google authentication." },
       { status: 500 }
     );
   }

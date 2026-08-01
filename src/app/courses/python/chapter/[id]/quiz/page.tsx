@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import {
   Award,
   ArrowLeft,
@@ -86,7 +86,7 @@ export default function PythonQuizPage() {
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -105,14 +105,14 @@ export default function PythonQuizPage() {
 
   // Fetch logged in user and page data
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, status]);
+  }, [session, isPending]);
 
   // Load quiz details
   useEffect(() => {

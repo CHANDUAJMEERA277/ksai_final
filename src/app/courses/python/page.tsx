@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
   Award,
@@ -29,7 +28,7 @@ interface ProgressItem {
 
 export default function PythonOverviewPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -44,14 +43,14 @@ export default function PythonOverviewPage() {
 
   // User resolution
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, status]);
+  }, [session, isPending]);
 
   // Fetch course metadata
   useEffect(() => {

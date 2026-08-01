@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
@@ -14,7 +13,6 @@ import { Sparkles, Star, BookOpen, Layers } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [activeSection, setActiveSection] = useState<"catalog" | "my-courses">("catalog");
@@ -44,28 +42,26 @@ export default function DashboardPage() {
         setLoading(false);
       });
 
-    // Fetch logged-in user
-    if (status === "authenticated" && session?.user) {
-      const currentUser = {
-        id: (session.user as any).id,
-        name: session.user.name ?? "",
-        email: session.user.email ?? "",
-        role: (session.user as any).role ?? "Student",
-        country: (session.user as any).country,
-      };
-
-      setUser(currentUser);
-
-      fetch(`/api/courses/my-courses?email=${currentUser.email}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.enrollments) {
-            setEnrollments(data.enrollments);
-          }
-        })
-        .catch(console.error);
-    }
-  }, [session, status]);
+    // Fetch logged-in user from /api/auth/me
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user);
+          fetch(`/api/courses/my-courses?email=${data.user.email}`)
+            .then((res) => res.json())
+            .then((enrollData) => {
+              if (enrollData.enrollments) {
+                setEnrollments(enrollData.enrollments);
+              }
+            })
+            .catch(console.error);
+        }
+      })
+      .catch((err) => {
+        console.error("Dashboard user fetch error:", err);
+      });
+  }, []);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);

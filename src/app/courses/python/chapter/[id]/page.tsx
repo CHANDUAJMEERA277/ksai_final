@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { renderMarkdown } from "@/lib/markdown";
 import { ChapterExplanationSpeech } from "@/components/learning/ChapterExplanationSpeech";
 import {
@@ -194,7 +194,7 @@ export default function PythonChapterPage() {
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -336,14 +336,14 @@ export default function PythonChapterPage() {
 
   // Fetch logged in user and page data
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, status]);
+  }, [session, isPending]);
 
   // Load notes and quiz details
   const loadPageData = async () => {
@@ -549,7 +549,7 @@ export default function PythonChapterPage() {
           
           <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              {session?.user?.name?.charAt(0) || "N"}
+              {user?.name?.charAt(0) || "N"}
             </div>
             <ChevronDown size={14} className="text-slate-500" />
           </div>

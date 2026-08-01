@@ -11,21 +11,28 @@ datasource db {
 
 
 model User {
-  id           String          @id @default(uuid())
-  name         String
-  email        String          @unique
-  passwordHash String?
-  phone        String?
-  role         String          @default("Student") // Student | Employee | Admin | Recruiter | Company
-  country      String?         @default("United States")
-  provider     String @default("CREDENTIALS")
+  id              String            @id @default(uuid())
+  name            String
+  email           String            @unique
+  emailVerified   Boolean           @default(false)
+  image           String?
+  passwordHash    String?
+  phone           String?
+  college         String?
+  department      String?
+  currentYear     String?
+  role            String            @default("Student") // Student | Employee | Admin | Recruiter | Company
+  country         String?           @default("United States")
+  provider        String            @default("CREDENTIALS")
+  googleId        String?
   activeSessionId String?
 
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  sessions     Session[]
-  enrollments  Enrollment[]
-  progresses   ChapterProgress[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  enrollments     Enrollment[]
+  progresses      ChapterProgress[]
 }
 
 model Session {
@@ -34,7 +41,47 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Otp {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  lastSentAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Course {
