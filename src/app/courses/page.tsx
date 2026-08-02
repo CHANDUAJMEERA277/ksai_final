@@ -57,10 +57,12 @@ export default function MyCoursesPage() {
   };
 
   const handleStartLearning = (course: any) => {
-    if (course.title.toLowerCase().includes("python")) {
+    if (course.title.toLowerCase().includes("python") || course.language === "python") {
       router.push("/courses/python");
-    } else if (course.title.toLowerCase().includes("java")) {
+    } else if (course.title.toLowerCase().includes("java") || course.language === "java") {
       router.push("/courses/java");
+    } else if (course.title.toLowerCase().includes("c language") || course.language === "c" || course.title.toLowerCase() === "c") {
+      router.push("/courses/c");
     } else {
       router.push("/dashboard");
     }

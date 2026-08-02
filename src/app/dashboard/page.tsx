@@ -83,10 +83,14 @@ export default function DashboardPage() {
         setActiveSection("my-courses");
         
         // Immediately start learning
-        if (course.title.toLowerCase().includes("python")) {
+        if (course.language === "python" || course.title.toLowerCase().includes("python")) {
           router.push("/courses/python");
-        } else if (course.title.toLowerCase().includes("java")) {
+        } else if (course.language === "java" || course.title.toLowerCase().includes("java")) {
           router.push("/courses/java");
+        } else if (course.language === "c" || course.title.toLowerCase().includes("c language") || course.title.toLowerCase() === "c") {
+          router.push("/courses/c");
+        } else if (course.language === "cpp" || course.title.toLowerCase().includes("c++") || course.title.toLowerCase().includes("cpp")) {
+          router.push("/courses/cpp");
         } else {
           setLearningCourse(course);
         }
@@ -181,8 +185,14 @@ export default function DashboardPage() {
                         key={c.id}
                         onClick={() => {
                           if (isPurchased) {
-                            if (c.title.toLowerCase().includes("python")) {
+                            if (c.language === "python" || c.title.toLowerCase().includes("python")) {
                               window.location.href = "/courses/python";
+                            } else if (c.language === "java" || c.title.toLowerCase().includes("java")) {
+                              window.location.href = "/courses/java";
+                            } else if (c.language === "c" || c.title.toLowerCase().includes("c language") || c.title.toLowerCase() === "c") {
+                              window.location.href = "/courses/c";
+                            } else if (c.language === "cpp" || c.title.toLowerCase().includes("c++") || c.title.toLowerCase().includes("cpp")) {
+                              window.location.href = "/courses/cpp";
                             } else {
                               setLearningCourse(c);
                             }
@@ -223,8 +233,14 @@ export default function DashboardPage() {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (isPurchased) {
-                                if (c.title.toLowerCase().includes("python")) {
+                                if (c.language === "python" || c.title.toLowerCase().includes("python")) {
                                   window.location.href = "/courses/python";
+                                } else if (c.language === "java" || c.title.toLowerCase().includes("java")) {
+                                  window.location.href = "/courses/java";
+                                } else if (c.language === "c" || c.title.toLowerCase().includes("c language") || c.title.toLowerCase() === "c") {
+                                  window.location.href = "/courses/c";
+                                } else if (c.language === "cpp" || c.title.toLowerCase().includes("c++") || c.title.toLowerCase().includes("cpp")) {
+                                  window.location.href = "/courses/cpp";
                                 } else {
                                   setLearningCourse(c);
                                 }
@@ -249,8 +265,14 @@ export default function DashboardPage() {
               <MyCoursesWidget
                 enrollments={enrollments}
                 onStartLearning={(course) => {
-                  if (course.title.toLowerCase().includes("python")) {
+                  if (course.language === "python" || course.title.toLowerCase().includes("python")) {
                     window.location.href = "/courses/python";
+                  } else if (course.language === "java" || course.title.toLowerCase().includes("java")) {
+                    window.location.href = "/courses/java";
+                  } else if (course.language === "c" || course.title.toLowerCase().includes("c language") || course.title.toLowerCase() === "c") {
+                    window.location.href = "/courses/c";
+                  } else if (course.language === "cpp" || course.title.toLowerCase().includes("c++") || course.title.toLowerCase().includes("cpp")) {
+                    window.location.href = "/courses/cpp";
                   } else {
                     setLearningCourse(course);
                   }

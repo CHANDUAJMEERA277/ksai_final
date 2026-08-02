@@ -49,7 +49,8 @@ export async function GET(
       orderBy: { orderNumber: "asc" },
     });
 
-    const orderNum = parseInt(chapterId.replace(/[^0-9]/g, ""), 10) || 1;
+    const parsed = parseInt(chapterId.replace(/[^0-9]/g, ""), 10);
+    const orderNum = isNaN(parsed) ? 0 : parsed;
     const currentChapter = chapters.find((c: { orderNumber: number }) => c.orderNumber === orderNum);
 
     if (!currentChapter) {

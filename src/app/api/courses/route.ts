@@ -111,12 +111,36 @@ const needsJavaReseed =
       ch.explanation !== `java/chapter${ch.orderNumber}.md`
   );
 
+const cCourse = courses.find(
+  (c: { language: string }) => c.language === "c"
+);
+
+const needsCReseed =
+  !cCourse ||
+  cCourse.chapters.length < 6 ||
+  cCourse.chapters.some(
+    (ch: { orderNumber: number; explanation: string }) =>
+      (ch.orderNumber === 0 &&
+        ch.explanation !== "content/c/chapter0.md") ||
+      (ch.orderNumber === 1 &&
+        ch.explanation !== "content/c/chapter1.md") ||
+      (ch.orderNumber === 2 &&
+        ch.explanation !== "content/c/chapter2.md") ||
+      (ch.orderNumber === 3 &&
+        ch.explanation !== "content/c/chapter3.md") ||
+      (ch.orderNumber === 4 &&
+        ch.explanation !== "content/c/chapter4.md") ||
+      (ch.orderNumber === 5 &&
+        ch.explanation !== "content/c/chapter5.md")
+  );
+
 if (
   courses.length === 0 ||
   !courses.some((c: { language: string }) => c.language === "c") ||
   courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0) ||
   needsPythonReseed ||
-  needsJavaReseed
+  needsJavaReseed ||
+  needsCReseed
 ) {
       await db.course.deleteMany({});
       
@@ -400,12 +424,151 @@ if (
             { orderNumber: 14, title: "Chapter 14: Collections Framework & Generics", explanation: "java/chapter14.md", quizData: JSON.stringify([{ id: 1, question: "According to PECS, which wildcard is used for producers?", options: ["? extends T", "? super T", "?", "T"], answer: 0 }]), challenges: "[]" },
             { orderNumber: 15, title: "Chapter 15: File I/O, NIO & Streams API", explanation: "java/chapter15.md", quizData: JSON.stringify([{ id: 1, question: "Which stream operation is intermediate?", options: ["filter()", "collect()", "forEach()", "count()"], answer: 0 }]), challenges: "[]" },
           ];
+        } else if (courseData.language === "c") {
+          chaptersToCreate = [
+            {
+              orderNumber: 0,
+              title: "Chapter 0: Setup & First Program",
+              explanation: "content/c/chapter0.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Who created the C programming language, and where?", options: ["James Gosling at Sun Microsystems", "Dennis Ritchie at Bell Labs", "Guido van Rossum at CWI", "Bjarne Stroustrup at AT&T"], answer: 1 },
+                { id: 2, question: "C is often described as a:", options: ["Purely high-level scripting language", "Mid-level language balancing control and readability", "Markup language", "Query language"], answer: 1 },
+                { id: 3, question: "Which of the following is NOT a real-world use of C mentioned in this chapter?", options: ["Operating system kernels", "Embedded systems", "Designing website layouts with CSS", "Writing compilers and interpreters"], answer: 2 },
+                { id: 4, question: "What must happen before a C program can run, unlike a Python script?", options: ["Nothing extra — it runs directly", "It must be compiled into an executable first", "It must be uploaded to a server", "It must be converted to bytecode by a virtual machine only"], answer: 1 },
+                { id: 5, question: "Which command compiles hello.c into an executable named hello using GCC?", options: ["gcc run hello.c", "gcc hello.c -o hello", "python hello.c", "compile hello.c"], answer: 1 },
+                { id: 6, question: "What will happen when this program is compiled?\n\n#include <stdio.h>\nint main() {\n printf(\"Hello\")\n return 0;\n}", options: ["It compiles and runs with no issues", "It fails with an error because of the missing semicolon", "It only produces a warning", "It runs but prints nothing"], answer: 1 },
+                { id: 7, question: "What is the key difference between a compiler error and a warning?", options: ["Warnings stop compilation; errors do not", "Errors prevent an executable from being produced; warnings do not", "There is no real difference", "Warnings only appear in Python, not C"], answer: 1 },
+                { id: 8, question: "In the line #include <stdio.h>, what does this do?", options: ["Declares the main function", "Includes the Standard Input/Output library needed for functions like printf()", "Compiles the program", "Prints text to the screen"], answer: 1 },
+                { id: 9, question: "What does return 0; at the end of main() conventionally indicate?", options: ["The program crashed", "The program ran with errors", "The program finished successfully", "The program is still running"], answer: 2 },
+                { id: 10, question: "What will this program print?\n\n#include <stdio.h>\nint main() {\n printf(\"Hello\\nWorld!\");\n return 0;\n}", options: ["Hello World! (with quotes)", "Hello then World! on two lines (because of \\n mid-string)", "An error", "Nothing"], answer: 1 },
+                { id: 11, question: "If you edit and save your .c file after compiling, what must you do before your changes take effect when running the program?", options: ["Nothing, the executable updates automatically", "Re-compile the file to produce a new executable", "Restart your computer", "Rename the file"], answer: 1 },
+                { id: 12, question: "Why should compiler warnings never be ignored, even if the program still runs?", options: ["Warnings always mean the program will crash immediately", "Some warnings point to real bugs (like uninitialized variables) that may cause problems later", "Warnings are just stylistic suggestions with no real risk", "The compiler will refuse to produce an executable if warnings are ignored"], answer: 1 }
+              ]),
+              challenges: JSON.stringify([
+                { id: "easy", title: "Print Hello World & User Age", difficulty: "Easy", initialCode: "// Write your code below\n" },
+                { id: "medium", title: "Calculate Circle Area & Perimeter", difficulty: "Medium", initialCode: "// Calculate area = PI * r * r\n" },
+                { id: "hard", title: "Swap Two Variables Without Temp Variable", difficulty: "Hard", initialCode: "// Swap a and b without third variable\n" }
+              ])
+            },
+            {
+              orderNumber: 1,
+              title: "Chapter 1: C Basics",
+              explanation: "content/c/chapter1.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the entry point of every C program?", options: ["start()", "main()", "begin()", "init()"], answer: 1 },
+                { id: 2, question: "What does #include <stdio.h> do?", options: ["Declares the main function", "Pulls in the Standard Input/Output library before compilation", "Compiles the program", "Runs the program"], answer: 1 },
+                { id: 3, question: "What must end every statement in C?", options: ["A colon", "A period", "A semicolon", "Nothing is required"], answer: 2 },
+                { id: 4, question: "Which data type would you use to store a value like 3.14159265 with high precision?", options: ["int", "char", "float", "double"], answer: 3 },
+                { id: 5, question: "What is true about variables in C, unlike Python?", options: ["Their type must be declared explicitly and cannot change later", "They never need a type", "They can hold any type interchangeably at runtime", "They are always global"], answer: 0 },
+                { id: 6, question: "What does the const keyword do to a variable?", options: ["Makes it print automatically", "Prevents it from being modified after initialization", "Converts it to a string", "Deletes it after use"], answer: 1 },
+                { id: 7, question: "In scanf(\"%d\", &age);, why is & used before age?", options: ["It's a typo and has no effect", "It passes the memory address of age so scanf can store a value there", "It converts age to a string", "It multiplies age by itself"], answer: 1 },
+                { id: 8, question: "What is the result of 2 + 3 * 4 in C?", options: ["20", "14", "24", "9"], answer: 1 },
+                { id: 9, question: "What does the %d format specifier represent?", options: ["A character", "A string", "An integer", "A float"], answer: 2 },
+                { id: 10, question: "What is the difference between implicit and explicit type conversion?", options: ["There is no difference", "Implicit happens automatically; explicit (casting) is done manually by the programmer", "Explicit only happens with strings", "Implicit only works with char types"], answer: 1 }
+              ]),
+              challenges: JSON.stringify([
+                { id: "easy", title: "Check Even or Odd Number", difficulty: "Easy", initialCode: "// Write code to check if n is even or odd\n" }
+              ])
+            },
+            {
+              orderNumber: 2,
+              title: "Chapter 2: Control Flow",
+              explanation: "content/c/chapter2.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Which keyword is used to test a condition in C?", options: ["loop", "if", "check", "test"], answer: 1 },
+                { id: 2, question: "Which loop always executes its body at least once?", options: ["for", "while", "do-while", "switch"], answer: 2 },
+                { id: 3, question: "What does the break statement do inside a loop?", options: ["Skips to the next iteration", "Ends the loop immediately", "Restarts the loop", "Pauses the program"], answer: 1 },
+                { id: 4, question: "Which statement is required to prevent fall-through in a switch case?", options: ["return", "continue", "break", "exit"], answer: 2 },
+                { id: 5, question: "What is the output of: for (int i = 0; i < 3; i++) printf(\"%d\", i);", options: ["123", "012", "0123", "321"], answer: 1 },
+                { id: 6, question: "What is wrong with: if (x = 5) { printf(\"yes\"); }", options: ["Missing semicolon", "It assigns 5 to x instead of comparing, and is always true", "It won't compile", "Nothing, it's correct"], answer: 1 },
+                { id: 7, question: "What does continue do inside a for loop?", options: ["Ends the loop", "Skips the rest of the current iteration and moves to the update step", "Restarts the program", "Skips the next two iterations"], answer: 1 },
+                { id: 8, question: "What is the output of this code? for (int i = 1; i <= 3; i++) { if (i == 2) continue; printf(\"%d \", i); }", options: ["1 2 3", "1 3", "2 3", "1 2"], answer: 1 },
+                { id: 9, question: "In a nested loop with an outer loop running 4 times and an inner loop running 3 times each, how many total times does the inner body execute?", options: ["4", "3", "7", "12"], answer: 3 },
+                { id: 10, question: "Which of these correctly avoids an infinite loop?", options: ["while (1) { }", "for (int i = 0; i < 5;) { printf(\"%d\", i); }", "for (int i = 0; i < 5; i++) { printf(\"%d\", i); }", "while (i <= 5) { printf(\"%d\", i); }"], answer: 2 },
+                { id: 11, question: "What does this switch print for day = 6? switch (day) { case 6: case 7: printf(\"Weekend\"); break; default: printf(\"Weekday\"); }", options: ["Weekday", "Weekend", "Nothing", "Compile error"], answer: 1 },
+                { id: 12, question: "What is the output? int i = 5; do { printf(\"%d \", i); i++; } while (i < 5);", options: ["Nothing is printed", "5", "5 6 7 ...", "Infinite loop"], answer: 1 },
+                { id: 13, question: "Find the bug: for (int i = 0; i < 5; i++); { printf(\"%d\", i); }", options: ["The condition should be i <= 5", "The semicolon after the header makes the loop body empty; the block runs once afterward", "printf needs a format specifier", "i must start at 1"], answer: 1 },
+                { id: 14, question: "What values can a standard C switch statement compare against?", options: ["Any type, including floats and strings", "Only integer (or char/enum) constant expressions", "Only strings", "Only boolean expressions"], answer: 1 },
+                { id: 15, question: "What is the output of this nested loop? for (int i = 1; i <= 2; i++) { for (int j = 1; j <= 2; j++) { printf(\"%d%d \", i, j); } }", options: ["11 12 21 22", "11 21 12 22", "12 21", "1 2 1 2"], answer: 0 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 3,
+              title: "Chapter 3: Functions",
+              explanation: "content/c/chapter3.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What keyword is used for a function that returns nothing?", options: ["null", "void", "empty", "none"], answer: 1 },
+                { id: 2, question: "What is the term for the values passed into a function when it's called?", options: ["Parameters", "Arguments", "Returns", "Declarations"], answer: 1 },
+                { id: 3, question: "How does C pass arguments to functions by default?", options: ["By reference", "By value", "By pointer only", "By global copy"], answer: 1 },
+                { id: 4, question: "What must every correct recursive function have to avoid infinite recursion?", options: ["A loop", "A base case", "A global variable", "A static variable"], answer: 1 },
+                { id: 5, question: "Where is a local variable's memory freed?", options: ["When the program ends", "When the function that declared it returns", "Never", "When main() starts"], answer: 1 },
+                { id: 6, question: "What does this print?\n\nvoid f(int x) { x = x + 10; }\nint main() {\n int a = 5;\n f(a);\n printf(\"%d\", a);\n}", options: ["15", "5", "10", "0"], answer: 1 },
+                { id: 7, question: "What is the output?\n\nvoid counter() {\n static int c = 0;\n c++;\n printf(\"%d \", c);\n}\nint main() {\n counter();\n counter();\n counter();\n}", options: ["1 1 1", "1 2 3", "0 1 2", "3 3 3"], answer: 1 },
+                { id: 8, question: "What does factorial(0) return in the standard recursive definition?", options: ["0", "1", "-1", "Undefined"], answer: 1 },
+                { id: 9, question: "Which keyword tells the compiler a global variable is defined in a different file?", options: ["static", "global", "extern", "const"], answer: 2 },
+                { id: 10, question: "In fibonacci(n) = fibonacci(n-1) + fibonacci(n-2), what are the two base cases typically used?", options: ["n == 1 and n == 2", "n == 0 and n == 1", "n == 0 only", "There are no base cases"], answer: 1 },
+                { id: 11, question: "Find the bug:\n\nint square(int n) {\n int result = n * n;\n}\nint main() {\n printf(\"%d\", square(4));\n}", options: ["Missing semicolon", "square() never returns result, so its return value is undefined", "n should be a float", "printf format is wrong"], answer: 1 },
+                { id: 12, question: "What is the output?\n\nint x = 100;\nvoid change() {\n x = x + 1;\n}\nint main() {\n change();\n change();\n printf(\"%d\", x);\n}", options: ["100", "101", "102", "Compile error"], answer: 2 },
+                { id: 13, question: "Tracing factorial(3) using factorial(n) = n * factorial(n-1) with factorial(0) = 1, what is the very first call to actually return a value (not wait on another call)?", options: ["factorial(3)", "factorial(2)", "factorial(1)", "factorial(0)"], answer: 3 },
+                { id: 14, question: "Why is naive recursive fibonacci(n) considered inefficient for large n?", options: ["It uses too much global memory", "It recomputes the same smaller fibonacci values many times", "It cannot return a value", "It requires static variables"], answer: 1 },
+                { id: 15, question: "Which statement about static local variables is correct?", options: ["They reset to their initial value on every function call, like ordinary locals", "They are visible to every function in the program", "They retain their value between calls but stay private to their own function", "They must always be declared outside any function"], answer: 2 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 4,
+              title: "Chapter 4: Arrays and Strings",
+              explanation: "content/c/chapter4.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the index of the first element of an array in C?", options: ["1", "0", "-1", "Depends on the type"], answer: 1 },
+                { id: 2, question: "What character marks the end of a C string?", options: ["A space", "\\n", "\\0", "The last letter"], answer: 2 },
+                { id: 3, question: "Which function returns the length of a string (excluding the null terminator)?", options: ["strcpy", "strlen", "strcmp", "strcat"], answer: 1 },
+                { id: 4, question: "How is a 2D array element accessed?", options: ["arr(row, col)", "arr[row][col]", "arr[row, col]", "arr{row}{col}"], answer: 1 },
+                { id: 5, question: "How are arrays passed to functions in C?", options: ["By value, as a full copy", "By reference, via the address of the first element", "They cannot be passed to functions", "Only as global variables"], answer: 1 },
+                { id: 6, question: "What is the output?\n\nint arr[5] = {10, 20, 30, 40, 50};\nprintf(\"%d\", arr[4]);", options: ["40", "50", "Error: index out of bounds", "0"], answer: 1 },
+                { id: 7, question: "What does strcmp(\"cat\", \"cat\") return?", options: ["1", "-1", "0", "\"cat\""], answer: 2 },
+                { id: 8, question: "Why is char word[5] = \"Hello\"; a problem?", options: ["\"Hello\" has 5 letters, but needs 6 bytes including the null terminator", "char arrays can't hold multiple letters", "strlen() will crash", "It won't compile"], answer: 0 },
+                { id: 9, question: "In a 2D array declared int m[3][4], how many total elements does it have?", options: ["7", "12", "3", "4"], answer: 1 },
+                { id: 10, question: "What is wrong with comparing two strings using if (str1 == str2)?", options: ["Nothing, it works correctly", "It compares addresses, not the actual text content", "Strings can't be compared at all in C", "It only works for single characters"], answer: 1 },
+                { id: 11, question: "What is the output?\n\nint arr[4] = {1, 2, 3, 4};\nfor (int i = 0; i <= 4; i++) {\n printf(\"%d \", arr[i]);\n}", options: ["1 2 3 4", "1 2 3 4 followed by an unpredictable/garbage value (out-of-bounds read)", "Compile error", "0 1 2 3 4"], answer: 1 },
+                { id: 12, question: "Tracing the reverse-string two-pointer algorithm on \"abcd\", what are start and end right before the loop condition (start < end) becomes false?", options: ["start=0, end=3", "start=1, end=2", "start=2, end=1", "start=4, end=0"], answer: 2 },
+                { id: 13, question: "Fill in the missing code to check a palindrome: while (start < end) { if (str[start] != str[end]) return 0; ____; ____; } return 1;", options: ["start--; end++;", "start++; end--;", "start++; end++;", "start = end;"], answer: 1 },
+                { id: 14, question: "What does this word-count condition check for each character?\n\nif (s[i] != ' ' && (i == 0 || s[i-1] == ' '))", options: ["The character is a vowel", "The character is the first character of a new word", "The character is a space", "The character is the last in the string"], answer: 1 },
+                { id: 15, question: "Why must an array's size typically be passed as a separate parameter alongside the array itself?", options: ["C requires all functions to have exactly two parameters", "The array decays to a pointer to its first element, so the function has no way to know how many elements follow", "Arrays are always exactly 10 elements in C", "size is only needed for 2D arrays"], answer: 1 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 5,
+              title: "Chapter 5: Pointers",
+              explanation: "content/c/chapter5.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What does the & operator do when placed before a variable name?", options: ["Multiplies the variable by itself", "Returns the memory address of the variable", "Declares a new pointer", "Dereferences the variable"], answer: 1 },
+                { id: 2, question: "Which declaration correctly creates a pointer to an int?", options: ["int p;", "int *p;", "pointer int p;", "int &p;"], answer: 1 },
+                { id: 3, question: "What is the value of *p if p correctly points to a variable x holding 15?", options: ["The address of x", "15", "The address of p", "0"], answer: 1 },
+                { id: 4, question: "What should an uninitialized pointer be set to before it is known to point at valid data?", options: ["0.0", "\"\" (empty string)", "NULL", "-1"], answer: 2 },
+                { id: 5, question: "What is the output?\n\nint x = 5;\nint *p = &x;\n*p = 20;\nprintf(\"%d\", x);", options: ["5", "20", "The address of x", "Compilation error"], answer: 1 },
+                { id: 6, question: "Given int arr[5]; int *p = arr;, what does p + 2 point to?", options: ["The address two bytes after arr[0]", "arr[2]", "A compile error, since arr is not a pointer variable", "arr[0] plus 2"], answer: 1 },
+                { id: 7, question: "Why must a function that receives an array parameter also receive its size as a separate argument?", options: ["It doesn't need to — sizeof(arr) works fine inside the function", "Because the array decays to a pointer, which carries no length information", "Because C arrays cannot be passed to functions at all", "Because size is only needed for char arrays"], answer: 1 },
+                { id: 8, question: "What is the output?\n\nvoid modify(int x) { x = 99; }\nint main() {\n int num = 1;\n modify(num);\n printf(\"%d\", num);\n}", options: ["99", "1", "0", "Compilation error"], answer: 1 },
+                { id: 9, question: "What is the bug in this code?\n\nint* getValue() {\n int local = 10;\n return &local;\n}", options: ["It returns a pointer to a local variable that no longer exists after the function returns", "It should return local instead of &local", "The function must be declared void", "There is no bug — this is safe C code"], answer: 0 },
+                { id: 10, question: "Which statement correctly describes a void pointer?", options: ["It can never be assigned an address", "It automatically knows what type it points to", "It can hold the address of any type but must be cast before being dereferenced", "It is only used for functions that return nothing"], answer: 2 },
+                { id: 11, question: "What is the output?\n\nint a = 10, b = 20;\nint *p = &a;\np = &b;\n*p = 99;\nprintf(\"%d %d\", a, b);", options: ["10 20", "99 99", "10 99", "99 20"], answer: 2 },
+                { id: 12, question: "What should replace the missing line so that main() prints 2?\n\nint* counter() {\n static int count = 0;\n count++;\n // MISSING LINE\n}\nint main() {\n int *p1 = counter();\n int *p2 = counter();\n printf(\"%d\", *p2);\n}", options: ["return count;", "return &count;", "return &local;", "return NULL;"], answer: 1 },
+                { id: 13, question: "What happens when this program runs?\n\nint *p = NULL;\nprintf(\"%d\", *p);", options: ["It prints 0", "It prints NULL", "It crashes with a segmentation fault, since NULL is never a valid address to dereference", "It prints a random garbage integer safely"], answer: 2 },
+                { id: 14, question: "What is the output?\n\nint arr[3] = {1, 2, 3};\nint *start = &arr[0];\nint *end = &arr[2];\nprintf(\"%ld\", end - start);", options: ["8 (the byte difference)", "2 (the element difference)", "1", "Undefined behavior in every case"], answer: 1 },
+                { id: 15, question: "Why does swap(&x, &y) succeed in swapping two variables while swapWrong(x, y) does not, given identical logic inside each function?", options: ["swap uses a temp variable and swapWrong does not", "swapWrong passes copies of x and y by value, so its changes never reach the caller; swap passes addresses, giving it access to the original memory", "C does not allow int parameters to be swapped, only pointers", "There is no real difference; both would behave identically"], answer: 1 }
+              ]),
+              challenges: "[]"
+            }
+          ];
         } else {
           // Standard Chapters for other courses (C, C++) starting at 1
           chaptersToCreate = [
             {
-              orderNumber: 1,
-              title: "Chapter 1: Language Syntax, Variables & Data Types",
+              orderNumber: 0,
+              title: "Chapter 0: Language Syntax, Variables & Data Types",
               explanation: `Welcome to Chapter 1! In this lesson, we will explore fundamental data types, variable declarations, memory representation, and syntax rules for ${courseData.title}. Variables store data values in computer memory. Pay close attention to data type constraints and memory allocation.`,
               quizData: JSON.stringify([
                 { id: 1, question: "What is the size of an integer in memory?", options: ["2 or 4 Bytes", "1 Byte", "8 Bytes", "Depends on OS"], answer: 0 },
