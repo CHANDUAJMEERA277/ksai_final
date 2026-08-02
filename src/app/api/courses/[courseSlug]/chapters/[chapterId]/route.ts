@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -11,20 +11,10 @@ export async function GET(
   try {
     const { courseSlug, chapterId } = await params;
     
-    // Resolve user via Better Auth or custom sessionToken cookie
-    const cookieStore = await cookies();
-    const sessionToken =
-      cookieStore.get("better-auth.session_token")?.value ||
-      cookieStore.get("sessionToken")?.value;
+    // Resolve user via Better Auth session API
+    const sessionData = await auth.api.getSession({ headers: req.headers });
 
-    let user = null;
-    if (sessionToken) {
-      const session = await db.session.findUnique({
-        where: { token: sessionToken },
-        include: { user: true },
-      });
-      user = session?.user;
-    }
+    let user = sessionData?.user ?? null;
 
     if (!user) {
       // Fallback for local development testing/mock support if no active user session

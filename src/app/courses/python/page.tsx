@@ -13,6 +13,7 @@ import {
   Compass,
   ArrowLeft,
 } from "lucide-react";
+import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 
 interface ChapterItem {
   id: string;
@@ -28,7 +29,8 @@ interface ProgressItem {
 
 export default function PythonOverviewPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -43,14 +45,14 @@ export default function PythonOverviewPage() {
 
   // User resolution
   useEffect(() => {
-    if (!isPending && session?.user) {
+    if (session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, isPending]);
+  }, [session]);
 
   // Fetch course metadata
   useEffect(() => {

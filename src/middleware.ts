@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -11,11 +12,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/settings");
 
   if (isProtectedRoute) {
-    const sessionToken =
-      request.cookies.get("better-auth.session_token")?.value ||
-      request.cookies.get("sessionToken")?.value;
+    const sessionData = await auth.api.getSession({ headers: request.headers });
 
-    if (!sessionToken) {
+    if (!sessionData?.user) {
       const loginUrl = new URL("/auth", request.url);
       return NextResponse.redirect(loginUrl);
     }

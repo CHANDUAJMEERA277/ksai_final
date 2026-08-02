@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -102,23 +102,6 @@ export async function POST(req: Request) {
       where: { identifier: `verified:${cleanEmail}` },
     });
 
-    // Delete any previous sessions for single active session per user
-    await db.session.deleteMany({
-      where: { userId: user.id },
-    });
-
-    // Create session token
-    const sessionToken = randomUUID();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    const session = await db.session.create({
-      data: {
-        userId: user.id,
-        token: sessionToken,
-        expiresAt,
-      },
-    });
-
     const response = NextResponse.json({
       success: true,
       user: {
@@ -134,22 +117,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // Set HTTP-Only Session Cookies
-    response.cookies.set("better-auth.session_token", session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      expires: session.expiresAt,
-      path: "/",
+    const sessionResponse = await auth.api.signInEmail({
+      body: {
+        email: user.email,
+        password,
+        rememberMe: true,
+      },
+      asResponse: true,
+      headers: new Headers(),
     });
 
-    response.cookies.set("sessionToken", session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    const setCookieHeader = sessionResponse.headers.get("set-cookie");
+    if (setCookieHeader) {
+      response.headers.set("set-cookie", setCookieHeader);
+    }
 
     return response;
   } catch (error) {

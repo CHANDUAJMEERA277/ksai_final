@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { RightAIPanel } from "@/components/dashboard/RightAIPanel";
@@ -13,6 +14,8 @@ import { Sparkles, Star, BookOpen, Layers } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const sessionData = useSession();
+  const sessionUser = (sessionData?.data as any)?.user ?? null;
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [activeSection, setActiveSection] = useState<"catalog" | "my-courses">("catalog");
@@ -41,27 +44,35 @@ export default function DashboardPage() {
         console.error(err);
         setLoading(false);
       });
+  }, []);
 
-    // Fetch logged-in user from /api/auth/me
-    fetch("/api/auth/me")
+  useEffect(() => {
+    if (!sessionUser?.email) {
+      setUser(null);
+      return;
+    }
+
+    const currentUser = {
+      id: sessionUser.id || "",
+      name: sessionUser.name || "",
+      email: sessionUser.email || "",
+      role: sessionUser.role || "Student",
+      country: sessionUser.country,
+    };
+
+    setUser(currentUser);
+
+    fetch(`/api/courses/my-courses?email=${encodeURIComponent(currentUser.email)}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (data.user) {
-          setUser(data.user);
-          fetch(`/api/courses/my-courses?email=${data.user.email}`)
-            .then((res) => res.json())
-            .then((enrollData) => {
-              if (enrollData.enrollments) {
-                setEnrollments(enrollData.enrollments);
-              }
-            })
-            .catch(console.error);
+      .then((enrollData) => {
+        if (enrollData.enrollments) {
+          setEnrollments(enrollData.enrollments);
         }
       })
       .catch((err) => {
-        console.error("Dashboard user fetch error:", err);
+        console.error("Dashboard enrollment fetch error:", err);
       });
-  }, []);
+  }, [sessionUser]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -101,9 +112,10 @@ export default function DashboardPage() {
     <div className="h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden">
       {/* Top Navbar */}
       <TopNavbar
-  userName={user?.name || "Loading..."}
-  userRole={user?.role || "Student"}
-/>
+        user={user}
+        userName={user?.name || "Loading..."}
+        userRole={user?.role || "Student"}
+      />
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex w-full overflow-hidden">

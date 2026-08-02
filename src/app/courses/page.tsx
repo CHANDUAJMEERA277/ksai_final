@@ -10,7 +10,9 @@ import { BookOpen, ArrowRight, Compass, Sparkles, Star } from "lucide-react";
 
 export default function MyCoursesPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const isPending = sessionData?.isPending ?? false;
 
   const [activeTab, setActiveTab] = useState("Courses");
   const [enrollments, setEnrollments] = useState<any[]>([]);

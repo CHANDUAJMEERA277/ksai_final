@@ -1,38 +1,18 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken =
-      cookieStore.get("better-auth.session_token")?.value ||
-      cookieStore.get("sessionToken")?.value;
+    const sessionData = await auth.api.getSession({ headers: req.headers });
 
-    if (!sessionToken) {
+    if (!sessionData?.user) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    const session = await db.session.findUnique({
-      where: {
-        token: sessionToken,
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!session || new Date() > session.expiresAt) {
-      return NextResponse.json(
-        { error: "Session expired or invalid" },
-        { status: 401 }
-      );
-    }
-
-    const u = session.user as any;
+    const u = sessionData.user as any;
 
     return NextResponse.json({
       user: {

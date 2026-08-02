@@ -27,7 +27,9 @@ interface ProgressItem {
 
 export default function PythonCurriculumPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const isPending = sessionData?.isPending ?? false;
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);

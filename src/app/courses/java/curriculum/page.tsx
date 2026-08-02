@@ -28,7 +28,9 @@ interface ProgressItem {
 
 export default function JavaCurriculumPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const status = sessionData?.status ?? "loading";
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [progresses, setProgresses] = useState<ProgressItem[]>([]);

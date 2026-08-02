@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -23,40 +24,26 @@ export async function POST(req: Request) {
 
     // If user exists and profile is fully set up with a password, log them in
     if (user && user.passwordHash) {
-      await db.session.deleteMany({ where: { userId: user.id } });
-
-      const sessionToken = randomUUID();
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-      const session = await db.session.create({
-        data: {
-          userId: user.id,
-          token: sessionToken,
-          expiresAt,
-        },
-      });
-
       const response = NextResponse.json({
         action: "login",
         message: "Google login successful.",
         user,
       });
 
-      response.cookies.set("better-auth.session_token", session.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        expires: session.expiresAt,
-        path: "/",
+      const sessionResponse = await auth.api.signInEmail({
+        body: {
+          email: user.email,
+          password: "",
+          rememberMe: true,
+        },
+        asResponse: true,
+        headers: new Headers(),
       });
 
-      response.cookies.set("sessionToken", session.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        expires: session.expiresAt,
-        path: "/",
-      });
+      const setCookieHeader = sessionResponse.headers.get("set-cookie");
+      if (setCookieHeader) {
+        response.headers.set("set-cookie", setCookieHeader);
+      }
 
       return response;
     }

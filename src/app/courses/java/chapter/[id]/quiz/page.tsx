@@ -24,7 +24,8 @@ interface QuizQuestion {
 export default function JavaQuizPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
 
   const chapterParam = (params?.id as string) || "1";
   const currentOrderNum = parseInt(chapterParam.replace(/[^0-9]/g, ""), 10) || 1;

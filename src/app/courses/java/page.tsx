@@ -31,7 +31,9 @@ interface ProgressItem {
 
 export default function JavaOverviewPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const status = sessionData?.status ?? "loading";
 
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [courseTitle, setCourseTitle] = useState("Java Enterprise & Object-Oriented Architecture");

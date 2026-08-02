@@ -86,7 +86,9 @@ export default function PythonQuizPage() {
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const isPending = sessionData?.isPending ?? false;
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);

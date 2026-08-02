@@ -1,28 +1,24 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userEmail, courseId, paidAmount, paymentId } = body;
+    const { courseId, paidAmount, paymentId } = body;
 
-    if (!userEmail || !courseId || !paymentId) {
+    const sessionData = await auth.api.getSession({ headers: req.headers });
+    const user = sessionData?.user ?? null;
+
+    if (!courseId || !paymentId) {
       return NextResponse.json(
-        { error: "User email, course ID, and payment ID are required." },
+        { error: "Course ID and payment ID are required." },
         { status: 400 }
       );
     }
 
-    // Find user by email or fallback to first user
-    let user = await db.user.findUnique({
-      where: { email: userEmail.toLowerCase() },
-    });
-
     if (!user) {
-      user = await db.user.findFirst();
-      if (!user) {
-        return NextResponse.json({ error: "User not found." }, { status: 404 });
-      }
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
     // Verify course exists

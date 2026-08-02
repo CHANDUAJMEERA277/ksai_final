@@ -36,7 +36,9 @@ interface ProgressItem {
 export default function JavaChapterReaderPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const status = sessionData?.status ?? "loading";
 
   const chapterParam = (params?.id as string) || "1";
   const currentOrderNum = parseInt(chapterParam.replace(/[^0-9]/g, ""), 10) || 1;

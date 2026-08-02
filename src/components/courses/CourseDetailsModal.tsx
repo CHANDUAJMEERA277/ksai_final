@@ -138,7 +138,7 @@ const LANGUAGE_SYLLABUS: Record<string, { modules: { title: string; topics: stri
 
 export function CourseDetailsModal({
   course,
-  userEmail = "chandu@gmail.com",
+  userEmail,
   onClose,
   onPaymentSuccess,
 }: CourseDetailsModalProps) {
@@ -176,7 +176,6 @@ export function CourseDetailsModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userEmail,
           courseId: course.id,
           paidAmount: course.price,
           paymentId,
