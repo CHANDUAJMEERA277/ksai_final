@@ -67,9 +67,7 @@ export async function POST(req: Request) {
         rememberMe: true,
       },
       asResponse: true,
-      headers: new Headers({
-        cookie: response.headers.get("set-cookie") || "",
-      }),
+      headers: req.headers,
     });
 
     const setCookieHeader = sessionResponse.headers.get("set-cookie");

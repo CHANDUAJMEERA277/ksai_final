@@ -176,6 +176,7 @@ export function CourseDetailsModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userEmail,
           courseId: course.id,
           paidAmount: course.price,
           paymentId,

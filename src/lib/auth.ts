@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -8,6 +9,14 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    password: {
+      hash: async (password: string) => {
+        return await bcrypt.hash(password, 10);
+      },
+      verify: async ({ hash, password }) => {
+        return await bcrypt.compare(password, hash);
+      },
+    },
   },
   socialProviders: {
     google: {
@@ -35,4 +44,11 @@ export const auth = betterAuth({
       maxAge: 7 * 24 * 60 * 60,
     },
   },
+  account: {
+    storeStateStrategy: "database",
+  },
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ],
 });

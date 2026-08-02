@@ -77,62 +77,62 @@ export async function POST(req: Request) {
           emailVerified: true,
         } as any,
       });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          country: user.country,
+          college: user.college,
+          department: user.department,
+          currentYear: user.currentYear,
+          createdAt: user.createdAt,
+        },
+      });
     } else {
-      // Create new user
-      user = await db.user.create({
-        data: {
-          name,
+      // Create new user via Better Auth signUpEmail API to handle hashing, user record, account, and session!
+      const sessionResponse = await auth.api.signUpEmail({
+        body: {
           email: cleanEmail,
-          passwordHash,
-          phone: phone || null,
-          college: targetCollege,
-          department: department || null,
-          currentYear: currentYear || null,
+          password,
+          name,
+          phone: phone || "",
+          college: targetCollege || "",
+          department: department || "",
+          currentYear: currentYear || "",
           role: role || "Student",
           country: country || "United States",
           provider: googleId ? "GOOGLE" : "CREDENTIALS",
-          googleId: googleId || null,
-          emailVerified: true,
-        } as any,
+          googleId: googleId || "",
+          passwordHash, // Store custom passwordHash field on the User table as well, to support legacy logins!
+        },
+        asResponse: true,
+        headers: req.headers,
       });
+
+      // Clean up email verification record after successful registration
+      await db.verification.deleteMany({
+        where: { identifier: `verified:${cleanEmail}` },
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        user: {
+          email: cleanEmail,
+          name,
+        },
+      });
+
+      const setCookieHeader = sessionResponse.headers.get("set-cookie");
+      if (setCookieHeader) {
+        response.headers.set("set-cookie", setCookieHeader);
+      }
+
+      return response;
     }
-
-    // Clean up email verification record after successful registration
-    await db.verification.deleteMany({
-      where: { identifier: `verified:${cleanEmail}` },
-    });
-
-    const response = NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        country: user.country,
-        college: user.college,
-        department: user.department,
-        currentYear: user.currentYear,
-        createdAt: user.createdAt,
-      },
-    });
-
-    const sessionResponse = await auth.api.signInEmail({
-      body: {
-        email: user.email,
-        password,
-        rememberMe: true,
-      },
-      asResponse: true,
-      headers: new Headers(),
-    });
-
-    const setCookieHeader = sessionResponse.headers.get("set-cookie");
-    if (setCookieHeader) {
-      response.headers.set("set-cookie", setCookieHeader);
-    }
-
-    return response;
   } catch (error) {
     console.error("SignUp API Error:", error);
     return NextResponse.json(
