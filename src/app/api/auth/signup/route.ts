@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     // Enforce email verification for non-Google signups
     if (!googleId) {
-      const verifiedRecord = await (db as any).verification.findFirst({
+      const verifiedRecord = await db.verification.findFirst({
         where: { identifier: `verified:${cleanEmail}` },
       });
 
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     }
 
     // Clean up email verification record after successful registration
-    await (db as any).verification.deleteMany({
+    await db.verification.deleteMany({
       where: { identifier: `verified:${cleanEmail}` },
     });
 

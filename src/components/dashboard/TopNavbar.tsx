@@ -160,9 +160,19 @@ export function TopNavbar({ userName = "Student", userRole = "Student", user }: 
               <a href="#settings" className="flex items-center gap-2 p-2 rounded-xl text-xs text-slate-300 hover:bg-white/10 hover:text-white">
                 <Settings size={14} /> Settings &amp; Preferences
               </a>
-              <a href="/auth" className="flex items-center gap-2 p-2 rounded-xl text-xs text-red-400 hover:bg-red-500/10">
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                  } catch (err) {
+                    console.error("Logout failed:", err);
+                  }
+                  window.location.href = "/auth";
+                }}
+                className="w-full flex items-center gap-2 p-2 rounded-xl text-xs text-red-400 hover:bg-red-500/10 text-left cursor-pointer"
+              >
                 <ShieldCheck size={14} /> Switch Account / Logout
-              </a>
+              </button>
             </div>
           )}
         </div>

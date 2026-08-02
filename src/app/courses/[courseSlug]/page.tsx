@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import {
   Clock,
   Award,
@@ -30,7 +30,7 @@ export default function CourseOverviewPage() {
   const router = useRouter();
   const params = useParams();
   const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
@@ -49,14 +49,14 @@ export default function CourseOverviewPage() {
 
   // User resolution
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, status]);
+  }, [session, isPending]);
 
   // Fetch course metadata
   useEffect(() => {

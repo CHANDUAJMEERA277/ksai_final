@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     const identifier = `otp:${cleanEmail}`;
 
-    const record = await (db as any).verification.findFirst({
+    const record = await db.verification.findFirst({
       where: { identifier },
     });
 
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     if (parsedValue.attempts >= 5) {
-      await (db as any).verification.deleteMany({ where: { identifier } });
+      await db.verification.deleteMany({ where: { identifier } });
       return NextResponse.json(
         { error: "Too many failed attempts. Please request a new OTP." },
         { status: 429 }
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
     if (!isValid) {
       const updatedAttempts = parsedValue.attempts + 1;
-      await (db as any).verification.update({
+      await db.verification.update({
         where: { id: record.id },
         data: {
           value: JSON.stringify({
@@ -72,11 +72,11 @@ export async function POST(req: Request) {
       );
     }
 
-    await (db as any).verification.deleteMany({ where: { identifier } });
+    await db.verification.deleteMany({ where: { identifier } });
 
     const verifiedIdentifier = `verified:${cleanEmail}`;
-    await (db as any).verification.deleteMany({ where: { identifier: verifiedIdentifier } });
-    await (db as any).verification.create({
+    await db.verification.deleteMany({ where: { identifier: verifiedIdentifier } });
+    await db.verification.create({
       data: {
         identifier: verifiedIdentifier,
         value: "verified",

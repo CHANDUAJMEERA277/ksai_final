@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     const identifier = `otp:${cleanEmail}`;
 
-    const existingVerification = await (db as any).verification.findFirst({
+    const existingVerification = await db.verification.findFirst({
       where: { identifier },
     });
 
@@ -57,11 +57,11 @@ export async function POST(req: Request) {
     const otpHash = await bcrypt.hash(otpCode, 10);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    await (db as any).verification.deleteMany({
+    await db.verification.deleteMany({
       where: { identifier },
     });
 
-    await (db as any).verification.create({
+    await db.verification.create({
       data: {
         identifier,
         value: JSON.stringify({ otpHash, attempts: 0 }),

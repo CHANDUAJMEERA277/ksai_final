@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
+import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
   Award,
@@ -13,7 +14,6 @@ import {
   Compass,
   ArrowLeft,
 } from "lucide-react";
-import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 
 interface ChapterItem {
   id: string;

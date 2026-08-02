@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { courseId, paidAmount, paymentId } = body;
+    const { userEmail: bodyEmail, courseId, paidAmount, paymentId } = body;
 
+    // 1. Resolve user session from Better Auth
     const sessionData = await auth.api.getSession({ headers: req.headers });
-    const user = sessionData?.user ?? null;
+    let user = sessionData?.user ?? null;
+
+    // 2. Fallback: If session not resolved, find user by email provided in body
+    const userEmail = user?.email || bodyEmail;
+    if (!user && userEmail) {
+      user = await db.user.findUnique({
+        where: { email: userEmail.toLowerCase().trim() },
+      });
+    }
 
     if (!courseId || !paymentId) {
       return NextResponse.json(

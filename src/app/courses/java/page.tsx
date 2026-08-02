@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
@@ -31,9 +31,7 @@ interface ProgressItem {
 
 export default function JavaOverviewPage() {
   const router = useRouter();
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
-  const status = sessionData?.status ?? "loading";
+  const { data: session, isPending } = useSession();
 
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [courseTitle, setCourseTitle] = useState("Java Enterprise & Object-Oriented Architecture");
@@ -46,14 +44,14 @@ export default function JavaOverviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, status]);
+  }, [session, isPending]);
 
   useEffect(() => {
     const fetchOverviewData = async () => {
