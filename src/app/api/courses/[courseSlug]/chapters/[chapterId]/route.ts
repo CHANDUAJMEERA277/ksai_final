@@ -5,6 +5,8 @@ import { auth } from "@/auth";
 import fs from "fs";
 import path from "path";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ courseSlug: string; chapterId: string }> }
@@ -42,9 +44,22 @@ export async function GET(
     }
 
     // Find course by slug
-    const course = await db.course.findFirst({
+    let course = await db.course.findFirst({
       where: { language: courseSlug.toLowerCase() },
     });
+
+    if (!course) {
+      // Trigger course re-seeding via internal API endpoint if missing
+      try {
+        const reqUrl = new URL(req.url);
+        await fetch(`${reqUrl.origin}/api/courses`, { cache: "no-store" });
+        course = await db.course.findFirst({
+          where: { language: courseSlug.toLowerCase() },
+        });
+      } catch (e) {
+        console.error("Auto-seed trigger error:", e);
+      }
+    }
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });

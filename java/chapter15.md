@@ -200,25 +200,7 @@ public class ParallelStreamDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Congratulations! You have reached the end of the Java Masterclass!**
+> Take the final Chapter 15 Quiz Exam below to complete your course certification!
 
-#### Multiple Choice Questions
-1. Which Streams API method is an intermediate operation?
-   - A) `collect()`
-   - B) `forEach()`
-   - C) `filter()`
-   - D) `count()`
-   *Correct Answer: C*
-
-2. Which package contains NIO.2 utilities like `Path`, `Paths`, and `Files`?
-   - A) `java.io`
-   - B) `java.util.stream`
-   - C) `java.nio.file`
-   - D) `java.lang.reflect`
-   *Correct Answer: C*
-
-#### Practice Exercise
-Build an enterprise log analytics pipeline `LogStreamProcessor.java`:
-1. Read a log file line by line.
-2. Group log messages by status level (`INFO`, `WARN`, `ERROR`) using `Collectors.groupingBy()`.
-3. Compute total count per status level and write a summary report to disk.

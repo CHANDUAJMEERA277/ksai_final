@@ -232,22 +232,7 @@ public class Laptop extends Device {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 5. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 6!
 
-#### Multiple Choice Questions
-1. What statement must appear on the first line inside a constructor when chaining to another constructor in the same class?
-   - A) `super.init();`
-   - B) `this(...);`
-   - C) `this.getClass();`
-   - D) `static.invoke();`
-   *Correct Answer: B*
-
-2. What happens if you declare a class as `final public class SecurityVault`?
-   - A) The class can only contain private variables.
-   - B) The class cannot be instantiated using `new`.
-   - C) Other classes cannot extend `SecurityVault`.
-   - D) All methods inside the class become static automatically.
-   *Correct Answer: C*
-
-#### Practice Exercise
-Write a class `ConfigurationManager` utilizing Singleton pattern with lazy double-checked locking that loads configuration parameters (`dbUrl`, `maxConnections`) from a map and exposes read-only getters.

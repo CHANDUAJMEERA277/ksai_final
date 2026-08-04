@@ -87,10 +87,12 @@ export default function DashboardPage() {
         setActiveSection("my-courses");
         
         // Immediately start learning
-        if (course.title.toLowerCase().includes("python")) {
+        if (course.title.toLowerCase().includes("python") || (course as any).language === "python") {
           router.push("/courses/python");
-        } else if (course.title.toLowerCase().includes("java")) {
+        } else if (course.title.toLowerCase().includes("java") || (course as any).language === "java") {
           router.push("/courses/java");
+        } else if (course.title.toLowerCase().includes("c++") || (course as any).language === "cpp") {
+          router.push("/courses/cpp");
         } else {
           setLearningCourse(course);
         }
@@ -101,82 +103,69 @@ export default function DashboardPage() {
     <div className="h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden">
       {/* Top Navbar */}
       <TopNavbar
-  userName={user?.name || "Loading..."}
-  userRole={user?.role || "Student"}
-/>
+        userName={user?.name || "Loading..."}
+        userRole={user?.role || "Student"}
+      />
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex w-full overflow-hidden">
         {/* Left Sidebar Menu */}
-        <LeftSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+        <LeftSidebar activeTab={activeSection} onTabChange={handleTabChange} />
 
         {/* Center Main Workspace Content Area */}
-        <main data-lenis-prevent className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full overflow-y-auto h-full custom-scrollbar">
-          {/* Welcome Greeting Header */}
-          <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-2 bg-gradient-to-r from-blue-950/30 via-[#0C0C16] to-purple-950/30">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-cyan-300 text-xs font-semibold border border-blue-500/20">
-              <Sparkles size={13} className="text-cyan-400" /> KnowledgeStream AI &bull; Student Portal
+        <main data-lenis-prevent className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full custom-scrollbar">
+          {/* Welcome Header */}
+          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 space-y-2 bg-gradient-to-r from-blue-950/40 via-purple-950/20 to-cyan-950/30 shadow-2xl relative overflow-hidden">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-semibold border border-cyan-500/20">
+              <Sparkles size={13} /> KnowledgeStream AI &bull; Student Portal
             </div>
             <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Welcome Back, {user?.name || "Loading..."} 👋
+              Welcome Back, {user?.name || "Student"} 👋
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm">
               Explore available programming courses with 90-day validity or start learning from your purchased courses.
             </p>
           </div>
 
-          {/* CORE COURSE MARKETPLACE & MY COURSES SECTION */}
-          <div className="space-y-4 pt-2">
-            {/* Section Switcher Tabs */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setActiveSection("catalog")}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    activeSection === "catalog"
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20"
-                      : "glass-panel text-slate-400 hover:text-white"
-                  }`}
-                >
-                  <BookOpen size={15} /> Available Courses (C, C++, Python, Java)
-                </button>
-                <button
-                  onClick={() => setActiveSection("my-courses")}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    activeSection === "my-courses"
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20"
-                      : "glass-panel text-slate-400 hover:text-white"
-                  }`}
-                >
-                  <Layers size={15} /> My Courses ({enrollments.length})
-                </button>
-              </div>
-
-              <span className="text-xs text-cyan-400 font-mono hidden sm:inline">
-                90 Days Access &bull; Razorpay Enabled
-              </span>
+          {/* Section Switcher Tabs */}
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center gap-2 p-1 rounded-2xl bg-white/5 border border-white/10">
+              <button
+                onClick={() => setActiveSection("catalog")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  activeSection === "catalog"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <BookOpen size={14} /> Available Courses (C, C++, Python, Java)
+              </button>
+              <button
+                onClick={() => setActiveSection("my-courses")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  activeSection === "my-courses"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Layers size={14} /> My Courses ({enrollments.length})
+              </button>
             </div>
 
-            {/* CATALOG VIEW */}
-            {activeSection === "catalog" && (
-              loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="glass-panel p-5 rounded-3xl border border-white/10 space-y-4 animate-pulse bg-white/5">
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-slate-400/20 rounded-full w-24" />
-                        <div className="h-4 bg-slate-400/20 rounded-full w-10" />
-                      </div>
-                      <div className="h-6 bg-slate-400/20 rounded w-3/4" />
-                      <div className="space-y-2">
-                        <div className="h-3 bg-slate-400/20 rounded w-full" />
-                        <div className="h-3 bg-slate-400/20 rounded w-5/6" />
-                      </div>
-                      <div className="h-10 bg-slate-400/20 rounded-xl w-32" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
+            <span className="text-xs text-slate-400 font-mono hidden sm:block">
+              90 Days Access &bull; Razorpay Enabled
+            </span>
+          </div>
+
+          {/* Dynamic Content Views */}
+          {loading ? (
+            <div className="py-12 text-center text-slate-500 animate-pulse text-sm">
+              Loading course catalog...
+            </div>
+          ) : (
+            <>
+              {/* AVAILABLE COURSES CATALOG */}
+              {activeSection === "catalog" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {courses.map((c) => {
                     const isPurchased = enrollments.some((e) => e.courseId === c.id);
@@ -184,14 +173,18 @@ export default function DashboardPage() {
                       <div
                         key={c.id}
                         onClick={() => {
-                          if (isPurchased) {
-                            if (c.title.toLowerCase().includes("python")) {
-                              window.location.href = "/courses/python";
-                            } else {
-                              setLearningCourse(c);
-                            }
+                          if (c.title.toLowerCase().includes("c++") || (c as any).language === "cpp") {
+                            window.location.href = "/courses/cpp";
+                          } else if (c.title.toLowerCase().includes("java") || (c as any).language === "java") {
+                            window.location.href = "/courses/java";
+                          } else if (c.title.toLowerCase().includes("python") || (c as any).language === "python") {
+                            window.location.href = "/courses/python";
                           } else {
-                            setSelectedCourse(c);
+                            if (isPurchased) {
+                              setLearningCourse(c);
+                            } else {
+                              setSelectedCourse(c);
+                            }
                           }
                         }}
                         className="glass-panel p-5 rounded-3xl border border-white/10 hover:border-blue-500/50 transition-all space-y-4 group cursor-pointer shadow-xl flex flex-col justify-between"
@@ -226,14 +219,18 @@ export default function DashboardPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (isPurchased) {
-                                if (c.title.toLowerCase().includes("python")) {
-                                  window.location.href = "/courses/python";
-                                } else {
-                                  setLearningCourse(c);
-                                }
+                              if (c.title.toLowerCase().includes("c++") || (c as any).language === "cpp") {
+                                window.location.href = "/courses/cpp";
+                              } else if (c.title.toLowerCase().includes("java") || (c as any).language === "java") {
+                                window.location.href = "/courses/java";
+                              } else if (c.title.toLowerCase().includes("python") || (c as any).language === "python") {
+                                window.location.href = "/courses/python";
                               } else {
-                                setSelectedCourse(c);
+                                if (isPurchased) {
+                                  setLearningCourse(c);
+                                } else {
+                                  setSelectedCourse(c);
+                                }
                               }
                             }}
                             className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn"
@@ -245,24 +242,28 @@ export default function DashboardPage() {
                     );
                   })}
                 </div>
-              )
-            )}
+              )}
 
-            {/* MY COURSES VIEW */}
-            {activeSection === "my-courses" && (
-              <MyCoursesWidget
-                enrollments={enrollments}
-                onStartLearning={(course) => {
-                  if (course.title.toLowerCase().includes("python")) {
-                    window.location.href = "/courses/python";
-                  } else {
-                    setLearningCourse(course);
-                  }
-                }}
-              />
-            )}
-          </div>
-
+              {/* MY COURSES VIEW */}
+              {activeSection === "my-courses" && (
+                <MyCoursesWidget
+                  enrollments={enrollments}
+                  onStartLearning={(course) => {
+                    if (course.title.toLowerCase().includes("c++") || (course as any).language === "cpp") {
+                      window.location.href = "/courses/cpp";
+                    } else if (course.title.toLowerCase().includes("java") || (course as any).language === "java") {
+                      window.location.href = "/courses/java";
+                    } else if (course.title.toLowerCase().includes("python") || (course as any).language === "python") {
+                      window.location.href = "/courses/python";
+                    } else {
+                      setLearningCourse(course);
+                    }
+                  }}
+                />
+              )}
+            </>
+          )}
+          
           {/* System Status Footer */}
           <DashboardFooter />
         </main>

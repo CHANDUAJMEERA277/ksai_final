@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ courseSlug: string; chapterId: string }> }
@@ -73,7 +75,14 @@ export async function POST(
     const breakdown = allQuestions.map((q: any) => {
       let userAnswer = -1;
       if (Array.isArray(answers)) {
-        userAnswer = answers[q.id - 1] ?? -1;
+        const found = answers.find(
+          (a: any) => a && (a.questionId === q.id || a.id === q.id)
+        );
+        if (found !== undefined) {
+          userAnswer = found.selectedOption ?? found.answer ?? found.selectedIdx ?? -1;
+        } else if (typeof answers[q.id - 1] === "number") {
+          userAnswer = answers[q.id - 1];
+        }
       } else if (answers && typeof answers === "object") {
         userAnswer = answers[String(q.id)] ?? answers[Number(q.id)] ?? -1;
       }
@@ -129,6 +138,13 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+      result: {
+        score: scorePercentage,
+        passed,
+        correctCount,
+        totalCount,
+        breakdown,
+      },
       score: scorePercentage,
       passed,
       correctCount,

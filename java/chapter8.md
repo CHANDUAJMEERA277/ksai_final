@@ -208,25 +208,7 @@ public class DateTest {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 8. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 9!
 
-#### Multiple Choice Questions
-1. Which access modifier allows a class member to be accessed by subclasses in a different package, but blocks access from non-subclasses in that same external package?
-   - A) `default`
-   - B) `private`
-   - C) `protected`
-   - D) `public`
-   *Correct Answer: C*
-
-2. What is the visibility level of a variable declared without any access modifier (e.g., `int count = 10;`)?
-   - A) Visible only inside the declaring method.
-   - B) Visible to all classes within the same package.
-   - C) Visible everywhere in the project.
-   - D) Visible only to subclasses.
-   *Correct Answer: B*
-
-#### Practice Exercise
-Design a secure `BankAccount` model in package `com.ksai.bank`:
-1. `private` fields: `accountNumber`, `balance`, `pin`.
-2. Public getters for `accountNumber` and `balance` (no getter for `pin`).
-3. Methods `boolean validatePin(int enteredPin)` and `void withdraw(double amount, int pin)` with proper security validation.

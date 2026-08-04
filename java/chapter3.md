@@ -219,22 +219,7 @@ public class JumpDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 3. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 4!
 
-#### Multiple Choice Questions
-1. Which primitive type requires 64 bits of storage memory and defaults to `0.0d`?
-   - A) `float`
-   - B) `long`
-   - C) `double`
-   - D) `int`
-   *Correct Answer: C*
-
-2. What is the default value assigned to an uninitialized `local` integer variable inside a method?
-   - A) `0`
-   - B) `null`
-   - C) Garbage Value
-   - D) None (It causes a compilation error if read)
-   *Correct Answer: D*
-
-#### Practice Exercise
-Write a Java program `GradeEvaluator.java` that takes a student score (0-100), evaluates it using `switch` expressions or `if-else if` ladders, and outputs letter grades (`A`, `B`, `C`, `D`, `F`) along with pass/fail status.

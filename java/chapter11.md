@@ -176,22 +176,7 @@ public class BankAccount {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 11. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 12!
 
-#### Multiple Choice Questions
-1. Which exception type is unchecked by the Java compiler?
-   - A) `java.io.IOException`
-   - B) `java.sql.SQLException`
-   - C) `java.lang.NullPointerException`
-   - D) `java.lang.ClassNotFoundException`
-   *Correct Answer: C*
-
-2. What occurs if an exception is thrown inside a `try` block and caught by a matching `catch` block?
-   - A) The program terminates instantly.
-   - B) The `catch` block executes, followed by the `finally` block, and the program continues.
-   - C) The JVM restarts the main method.
-   - D) The `finally` block is skipped.
-   *Correct Answer: B*
-
-#### Practice Exercise
-Write a file parser program `CSVDataParser.java` that reads numerical records from a file using Try-With-Resources, catches `FileNotFoundException`, `IOException`, and `NumberFormatException`, logs individual line errors, and computes the sum of valid records.

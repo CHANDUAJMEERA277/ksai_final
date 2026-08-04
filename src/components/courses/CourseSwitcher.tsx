@@ -19,12 +19,24 @@ export function CourseSwitcher({
   const pathname = usePathname();
 
   // Detect current course from pathname if not explicitly passed
-  const activeLang = currentLanguage || (pathname?.includes("/java") ? "java" : "python");
+  const activeLang =
+    currentLanguage ||
+    (pathname?.includes("/cpp")
+      ? "cpp"
+      : pathname?.includes("/java")
+      ? "java"
+      : "python");
 
   const handleSelectCourse = (lang: string) => {
     if (lang === activeLang) return;
 
-    if (lang === "java") {
+    if (lang === "cpp") {
+      if (pathname?.includes("/chapter/")) {
+        router.push("/courses/cpp/chapter/1");
+      } else {
+        router.push("/courses/cpp");
+      }
+    } else if (lang === "java") {
       // Direct route to Java chapter 1 or curriculum
       if (pathname?.includes("/chapter/")) {
         router.push("/courses/java/chapter/1");
@@ -79,6 +91,24 @@ export function CourseSwitcher({
           <span>Java</span>
           <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
             activeLang === "java" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+          }`}>
+            15 Ch.
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSelectCourse("cpp")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 ${
+            activeLang === "cpp"
+              ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white shadow-md shadow-indigo-500/25 scale-[1.02]"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+          }`}
+        >
+          <Sparkles size={13} className={activeLang === "cpp" ? "text-indigo-200" : "text-slate-500"} />
+          <span>C++</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+            activeLang === "cpp" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
           }`}>
             15 Ch.
           </span>

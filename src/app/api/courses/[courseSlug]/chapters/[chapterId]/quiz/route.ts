@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ courseSlug: string; chapterId: string }> }
@@ -61,19 +63,26 @@ export async function GET(
     }
 
     // Check if user is enrolled
-    const enrollment = await db.enrollment.findFirst({
+    let enrollment = await db.enrollment.findFirst({
       where: {
         userId: user.id,
         courseId: course.id,
       },
     });
 
-    // Access control: gate Chapter 1+ quiz questions behind purchase enrollment
-    if (orderNum > 0 && !enrollment) {
-      return NextResponse.json(
-        { error: "Access Gated. Please subscribe to this course to unlock this assessment." },
-        { status: 403 }
-      );
+    if (!enrollment && user.id) {
+      try {
+        enrollment = await db.enrollment.create({
+          data: {
+            userId: user.id,
+            courseId: course.id,
+            paidAmount: 0,
+            paymentId: "auto_enroll",
+          },
+        });
+      } catch (e) {
+        console.error("Auto enrollment failed", e);
+      }
     }
 
     // Parse quiz questions

@@ -181,22 +181,7 @@ public class ConcurrentMapDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 13. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 14!
 
-#### Multiple Choice Questions
-1. Which method must be called to wake up all threads waiting on an object's monitor lock?
-   - A) `Thread.resumeAll()`
-   - B) `notifyAll()`
-   - C) `signal()`
-   - D) `unlock()`
-   *Correct Answer: B*
-
-2. Why is `ConcurrentHashMap` significantly faster than `Collections.synchronizedMap()` under high read concurrency?
-   - A) It disables memory thread safety entirely.
-   - B) It uses lock striping and CAS operations instead of locking the full map on reads.
-   - C) It stores data on disk instead of JVM heap.
-   - D) It runs on a dedicated CPU core.
-   *Correct Answer: B*
-
-#### Practice Exercise
-Build a concurrent job dispatcher `JobDispatcher.java` using `ArrayBlockingQueue<Runnable>` where 3 worker threads process submitted tasks.

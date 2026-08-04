@@ -61,6 +61,8 @@ export default function MyCoursesPage() {
       router.push("/courses/python");
     } else if (course.title.toLowerCase().includes("java")) {
       router.push("/courses/java");
+    } else if (course.title.toLowerCase().includes("c++") || course.language === "cpp") {
+      router.push("/courses/cpp");
     } else {
       router.push("/dashboard");
     }

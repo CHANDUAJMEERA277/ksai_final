@@ -179,22 +179,7 @@ public strictfp class FinancialCalculator {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 9. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 10!
 
-#### Multiple Choice Questions
-1. What exception is thrown if you call `clone()` on an object whose class does NOT implement `Cloneable`?
-   - A) `NullPointerException`
-   - B) `CloneNotSupportedException`
-   - C) `IllegalStateException`
-   - D) `ClassCastException`
-   *Correct Answer: B*
-
-2. Which process automatically converts an `Integer` object into a primitive `int`?
-   - A) Widening
-   - B) Autoboxing
-   - C) Unboxing
-   - D) Downcasting
-   *Correct Answer: C*
-
-#### Practice Exercise
-Create a program `ArrayAnalytics.java` that initializes an array of 100 random integers, calculates min, max, average, and standard deviation using `Math` utilities, and displays the results.

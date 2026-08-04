@@ -216,25 +216,7 @@ public class TypecastingDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 6. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 7!
 
-#### Multiple Choice Questions
-1. Which combination of method signatures inside the same class is a valid example of Method Overloading?
-   - A) `void execute(int x)` and `int execute(int x)`
-   - B) `void execute(int x)` and `void execute(double x)`
-   - C) `public void execute(int x)` and `private void execute(int x)`
-   - D) `static void execute(int x)` and `void execute(int x)`
-   *Correct Answer: B*
-
-2. What runtime exception is thrown if you downcast `Animal a = new Cat()` using `Dog d = (Dog) a`?
-   - A) `NullPointerException`
-   - B) `IllegalArgumentException`
-   - C) `ClassCastException`
-   - D) `IllegalStateException`
-   *Correct Answer: C*
-
-#### Practice Exercise
-Create a shape renderer framework:
-1. Base class `Shape` with method `void draw()`.
-2. Subclasses `Circle`, `Rectangle`, `Triangle` overriding `draw()`.
-3. Demonstrate polymorphic upcasting by iterating through `List<Shape>` and rendering each shape.

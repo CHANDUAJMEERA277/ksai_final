@@ -180,22 +180,7 @@ public class RegexSplitDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 10. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 11!
 
-#### Multiple Choice Questions
-1. Where are string literals stored in JVM memory when declared like `String s = "Hello";`?
-   - A) Stack Frame
-   - B) String Constant Pool (SCP)
-   - C) Native Method Stack
-   - D) Code Segment
-   *Correct Answer: B*
-
-2. Which class should be preferred for concatenating strings inside a single-threaded loop?
-   - A) `java.lang.String`
-   - B) `java.lang.StringBuffer`
-   - C) `java.lang.StringBuilder`
-   - D) `java.util.StringTokenizer`
-   *Correct Answer: C*
-
-#### Practice Exercise
-Create a utility `LogSanitizer.java` that receives raw user comments, uses `StringBuilder` to strip out HTML tags (`<script>`, `<div>`), replaces profane words with `***`, and formats clean output.

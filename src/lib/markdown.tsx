@@ -1,15 +1,11 @@
 import React from "react";
-import { Info, Lightbulb, CheckCircle2, ChevronRight, HelpCircle } from "lucide-react";
+import { Info, Lightbulb, ChevronRight } from "lucide-react";
 
 // Inline helper to parse bold, italic, and inline code
 function parseInline(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let currentText = text;
-  let keyIdx = 0;
-
   // Regex to match bold (**text**) or inline code (`code`)
   const regex = /(\*\*.*?\*\*|`.*?`)/g;
-  const matches = currentText.split(regex);
+  const matches = text.split(regex);
 
   return matches.map((match, idx) => {
     if (match.startsWith("**") && match.endsWith("**")) {
@@ -121,61 +117,60 @@ export function renderMarkdown(markdown: string): React.ReactNode {
 
       // Custom Mermaid flow rendering for premium aesthetics
       if (lang === "mermaid") {
-        if (codeText.includes("graph LR")) {
-          // Horizontal flow of AI, Web, Auto, DS, Cyber
-          elements.push(
-            <div
-              key={`mermaid-lr-${i}`}
-              className="my-6 p-6 rounded-3xl glass-panel border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-blue-950/20 via-[#0A0A10] to-purple-950/20"
-            >
-              {[
-                { name: "AI / ML", color: "from-purple-600 to-indigo-600" },
-                { name: "Web Dev", color: "from-blue-600 to-cyan-600" },
-                { name: "Automation", color: "from-emerald-600 to-teal-600" },
-                { name: "Data Science", color: "from-amber-600 to-orange-600" },
-                { name: "Cybersecurity", color: "from-red-600 to-pink-600" },
-              ].map((step, idx) => (
-                <React.Fragment key={idx}>
-                  <div
-                    className={`px-4 py-3 rounded-2xl bg-gradient-to-tr ${step.color} border border-white/15 text-xs font-bold text-white shadow-xl shadow-black/30 flex items-center justify-center min-w-[110px] text-center`}
-                  >
-                    {step.name}
-                  </div>
-                  {idx < 4 && (
-                    <ChevronRight className="text-slate-500 animate-pulse hidden sm:block" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          );
-        } else if (codeText.includes("graph TD")) {
-          // Vertical flow of execution steps
-          elements.push(
-            <div
-              key={`mermaid-td-${i}`}
-              className="my-6 p-6 rounded-3xl glass-panel border border-white/10 flex flex-col items-center gap-3 bg-gradient-to-b from-blue-950/20 via-[#0A0A10] to-[#0D0D18]"
-            >
-              {[
-                "Source Code (.py)",
-                "Compiled to Bytecode (.pyc)",
-                "Python Virtual Machine (PVM)",
-                "Execution Output",
-              ].map((step, idx) => (
-                <React.Fragment key={idx}>
-                  <div className="w-full max-w-sm px-5 py-3.5 rounded-2xl glass-panel border border-white/10 text-xs font-extrabold text-cyan-300 flex items-center justify-center gap-3 shadow-lg shadow-black/25 relative overflow-hidden bg-white/5">
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 border border-cyan-400 text-[10px] flex items-center justify-center text-cyan-400 font-mono">
-                      {idx + 1}
-                    </span>
-                    <span>{step}</span>
-                  </div>
-                  {idx < 3 && (
-                    <div className="w-0.5 h-6 bg-gradient-to-b from-cyan-500/50 to-blue-500/50" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          );
+        // Extract node labels dynamically from the markdown source code
+        const extractedNodes: string[] = [];
+        const codeLinesList = codeText.split("\n");
+
+        for (const l of codeLinesList) {
+          const trimmed = l.trim();
+          if (!trimmed || trimmed.startsWith("graph") || trimmed.startsWith("timeline") || trimmed.startsWith("title")) {
+            continue;
+          }
+
+          // Match patterns: Node["Label"] or Node[Label] or Node("Label") or Node(Label)
+          const bracketMatches = [...trimmed.matchAll(/(?:\["([^"]+)"\]|\[([^\]]+)\]|\("([^"]+)"\)|\(([^)]+)\))/g)];
+          for (const m of bracketMatches) {
+            const label = (m[1] || m[2] || m[3] || m[4] || "").trim();
+            if (label && !extractedNodes.includes(label)) {
+              extractedNodes.push(label);
+            }
+          }
         }
+
+        const nodesToDisplay = extractedNodes.length > 0
+          ? extractedNodes
+          : codeLinesList.map(l => l.trim()).filter(l => l && !l.startsWith("graph"));
+
+        elements.push(
+          <div
+            key={`mermaid-${i}`}
+            className="my-6 p-6 rounded-3xl glass-panel border border-white/10 flex flex-col items-center gap-3 bg-gradient-to-b from-slate-900/90 via-[#0A0A10] to-indigo-950/30 shadow-2xl"
+          >
+            <div className="w-full text-center pb-2 border-b border-white/10 flex items-center justify-center gap-2 text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest">
+              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+              Architecture & System Flowchart
+            </div>
+
+            <div className="w-full flex flex-col items-center gap-2.5 pt-2">
+              {nodesToDisplay.map((stepLabel, idx) => (
+                <React.Fragment key={idx}>
+                  <div className="w-full max-w-lg px-5 py-3.5 rounded-2xl glass-panel border border-indigo-500/20 text-xs font-extrabold text-indigo-200 flex items-center justify-between gap-3 shadow-lg shadow-black/25 bg-white/5 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[10px] flex items-center justify-center text-indigo-300 font-mono font-bold shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="truncate">{stepLabel}</span>
+                    </div>
+                    <ChevronRight size={14} className="text-slate-500 shrink-0" />
+                  </div>
+                  {idx < nodesToDisplay.length - 1 && (
+                    <div className="w-0.5 h-4 bg-gradient-to-b from-indigo-500/50 to-purple-500/50" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        );
         continue;
       }
 

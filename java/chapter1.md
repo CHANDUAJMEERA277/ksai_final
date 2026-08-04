@@ -134,22 +134,7 @@ Available CPU Cores: 8
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 1. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 2!
 
-#### Multiple Choice Questions
-1. What component is responsible for translating Java Bytecode into native machine code?
-   - A) `javac`
-   - B) JVM (Java Virtual Machine)
-   - C) JDK Source Compiler
-   - D) Operating System Kernel
-   *Correct Answer: B*
-
-2. Which feature guarantees that primitive integer sizes remain identical across 32-bit and 64-bit CPU architectures?
-   - A) Dynamic Typing
-   - B) Architecture-Neutrality
-   - C) Multiple Inheritance
-   - D) Direct Pointer Manipulation
-   *Correct Answer: B*
-
-#### Practice Exercise
-Write a basic Java program named `SystemCheck.java` that retrieves and prints the operating system name (`System.getProperty("os.name")`) and Java runtime version (`System.getProperty("java.version")`).

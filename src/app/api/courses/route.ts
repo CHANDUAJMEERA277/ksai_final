@@ -111,13 +111,31 @@ const needsJavaReseed =
       ch.explanation !== `java/chapter${ch.orderNumber}.md`
   );
 
+const cppCourse = courses.find(
+  (c: { language: string }) => c.language === "cpp"
+);
+
+const needsCppReseed =
+  !cppCourse ||
+  cppCourse.chapters.length < 15 ||
+  cppCourse.chapters.some(
+    (ch: { orderNumber: number; explanation: string; quizData?: string | null }) =>
+      ch.explanation !== `cpp/chapter${ch.orderNumber}.md` ||
+      !ch.quizData ||
+      JSON.parse(ch.quizData).length < 10
+  );
+
 if (
   courses.length === 0 ||
   !courses.some((c: { language: string }) => c.language === "c") ||
   courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0) ||
   needsPythonReseed ||
-  needsJavaReseed
+  needsJavaReseed ||
+  needsCppReseed
 ) {
+      await db.chapterProgress.deleteMany({});
+      await db.enrollment.deleteMany({});
+      await db.chapter.deleteMany({});
       await db.course.deleteMany({});
       
       for (const courseData of LANGUAGE_COURSES) {
@@ -399,6 +417,203 @@ if (
             { orderNumber: 13, title: "Chapter 13: Synchronization & Concurrent Collections", explanation: "java/chapter13.md", quizData: JSON.stringify([{ id: 1, question: "Which concurrent collection uses lock striping?", options: ["ConcurrentHashMap", "Vector", "Hashtable", "ArrayList"], answer: 0 }]), challenges: "[]" },
             { orderNumber: 14, title: "Chapter 14: Collections Framework & Generics", explanation: "java/chapter14.md", quizData: JSON.stringify([{ id: 1, question: "According to PECS, which wildcard is used for producers?", options: ["? extends T", "? super T", "?", "T"], answer: 0 }]), challenges: "[]" },
             { orderNumber: 15, title: "Chapter 15: File I/O, NIO & Streams API", explanation: "java/chapter15.md", quizData: JSON.stringify([{ id: 1, question: "Which stream operation is intermediate?", options: ["filter()", "collect()", "forEach()", "count()"], answer: 0 }]), challenges: "[]" },
+          ];
+        } else if (courseData.language === "cpp") {
+          chaptersToCreate = [
+            { orderNumber: 1, title: "Chapter 1: C++ Foundations and the Development Environment", explanation: "cpp/chapter1.md", quizData: JSON.stringify([
+              { id: 1, question: "Which build phase expands #include directives?", options: ["The linker", "The preprocessor", "The assembler", "The loader"], answer: 1 },
+              { id: 2, question: "An undefined reference to a function you declared but never defined is reported by:", options: ["The preprocessor", "The compiler front end", "The linker", "The operating system"], answer: 2 },
+              { id: 3, question: "What does the value returned from main() communicate?", options: ["The number of lines executed", "The process exit status to the OS", "The amount of memory used", "Nothing at all"], answer: 1 },
+              { id: 4, question: "The principal reason C++ outperforms interpreted languages is that it:", options: ["Uses shorter keywords", "Compiles directly to native machine instructions", "Avoids using functions", "Runs inside a virtual machine"], answer: 1 },
+              { id: 5, question: "std is best described as:", options: ["A reserved keyword", "A namespace containing the standard library", "A compiler flag", "A type of pointer"], answer: 1 },
+              { id: 6, question: "Object files produced by the assembler typically end in:", options: [".cpp", ".hpp", ".o or .obj", ".exe"], answer: 2 },
+              { id: 7, question: "CMake's primary role is to:", options: ["Compile C++ directly to binary", "Generate build files for a platform's native build tool", "Replace the linker", "Format source code"], answer: 1 },
+              { id: 8, question: "Which C++ standard introduced move semantics and smart pointers?", options: ["C++98", "C++11", "C++17", "C++23"], answer: 1 },
+              { id: 9, question: "The insertion operator used with std::cout is:", options: ["<<", ">>", "->", "::"], answer: 0 },
+              { id: 10, question: "Zero-overhead abstraction means:", options: ["Abstractions are forbidden", "You pay no runtime cost for features you do not use", "All code runs at the same speed", "Memory is always freed automatically"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 2, title: "Chapter 2: Types, Variables, Scope, and Immutability", explanation: "cpp/chapter2.md", quizData: JSON.stringify([
+              { id: 1, question: "Which initialisation form rejects a narrowing conversion at compile time?", options: ["int x = 3.9;", "int x(3.9);", "int x{3.9};", "All of them"], answer: 2 },
+              { id: 2, question: "Reading an uninitialised local int is:", options: ["Guaranteed to yield 0", "Undefined behaviour", "A compiler error always", "Guaranteed to yield -1"], answer: 1 },
+              { id: 3, question: "The C++ standard guarantees that int is:", options: ["Exactly 4 bytes", "Exactly 2 bytes", "At least a specified minimum width", "The same size as double"], answer: 2 },
+              { id: 4, question: "constexpr differs from const in that constexpr:", options: ["Allows later modification", "Requires compile-time evaluation", "Only works on pointers", "Is a runtime check"], answer: 1 },
+              { id: 5, question: "Which is the safer default for general real-number arithmetic?", options: ["float", "double", "short", "char"], answer: 1 },
+              { id: 6, question: "sizeof is evaluated:", options: ["At link time", "At compile time", "At load time", "On every loop iteration"], answer: 1 },
+              { id: 7, question: "Scope refers to:", options: ["How long storage lives", "The region where a name is visible", "The number of bytes used", "The CPU register assigned"], answer: 1 },
+              { id: 8, question: "Comparing two double values with == is dangerous because:", options: ["== is not defined for double", "Binary approximation makes exact equality unreliable", "It always returns true", "It is a compiler error"], answer: 1 },
+              { id: 9, question: "Const-correctness primarily improves:", options: ["Compilation speed only", "Readability and compiler-enforced safety", "Binary size only", "Nothing measurable"], answer: 1 },
+              { id: 10, question: "Unsigned integer overflow in C++ is defined to:", options: ["Crash the program", "Wrap around modulo 2^N", "Produce a negative number", "Be undefined behaviour"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 3, title: "Chapter 3: Operators, Conversions, and Input/Output", explanation: "cpp/chapter3.md", quizData: JSON.stringify([
+              { id: 1, question: "What is the value of 7 / 2 when both operands are int?", options: ["3.5", "3", "4", "Undefined"], answer: 1 },
+              { id: 2, question: "Which cast is checked at runtime for polymorphic types?", options: ["static_cast", "dynamic_cast", "const_cast", "reinterpret_cast"], answer: 1 },
+              { id: 3, question: "The modulus operator % may be applied to:", options: ["Only floating-point types", "Only integral types", "Any type", "Only unsigned types"], answer: 1 },
+              { id: 4, question: "auto determines a variable's type:", options: ["At run time", "At compile time from the initialiser", "From the variable's name", "From the first assignment after declaration"], answer: 1 },
+              { id: 5, question: "Short-circuit evaluation means that in a && b:", options: ["b is always evaluated", "b is skipped if a is false", "a is skipped if b is true", "Both are evaluated in parallel"], answer: 1 },
+              { id: 6, question: "To read a line of text containing spaces you should use:", options: ["std::cin >>", "std::getline", "std::cout <<", "std::setw"], answer: 1 },
+              { id: 7, question: "std::setprecision combined with std::fixed controls:", options: ["Digits after the decimal point", "Total field width", "Integer base", "Buffer size"], answer: 0 },
+              { id: 8, question: "Assignment operators associate:", options: ["Left to right", "Right to left", "They do not associate", "Depends on the compiler"], answer: 1 },
+              { id: 9, question: "Which expression is grouped as ((a) + (b * c))?", options: ["a + b * c", "(a + b) * c", "a * b + c", "a + b + c"], answer: 0 },
+              { id: 10, question: "Converting double to int via static_cast:", options: ["Rounds to nearest", "Truncates toward zero", "Always rounds up", "Is a compile error"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 4, title: "Chapter 4: Control Flow, Functions, Arrays, and Strings", explanation: "cpp/chapter4.md", quizData: JSON.stringify([
+              { id: 1, question: "Which loop is guaranteed to execute its body at least once?", options: ["for", "while", "do-while", "range-for"], answer: 2 },
+              { id: 2, question: "Omitting break in a switch case results in:", options: ["A compiler error", "Fall-through to the next case", "The program terminating", "The case repeating"], answer: 1 },
+              { id: 3, question: "Passing a large object by const reference rather than by value primarily avoids:", options: ["A compiler warning", "An expensive copy", "Undefined behaviour", "Name mangling"], answer: 1 },
+              { id: 4, question: "A recursive function without a reachable base case will typically cause:", options: ["A compile error", "A stack overflow", "A memory leak", "A linker error"], answer: 1 },
+              { id: 5, question: "The first valid index of an array of size n is:", options: ["1", "0", "-1", "n"], answer: 1 },
+              { id: 6, question: "When a raw array is passed to a function it:", options: ["Is copied element by element", "Decays to a pointer, losing size information", "Becomes a std::vector", "Cannot be passed at all"], answer: 1 },
+              { id: 7, question: "std::array differs from a raw array chiefly because it:", options: ["Lives on the heap", "Carries its size and offers member functions", "Can change size", "Is slower by design"], answer: 1 },
+              { id: 8, question: "Which reads a whole line including spaces into a std::string?", options: ["cin >> s", "std::getline(std::cin, s)", "cin.get(s)", "scanf"], answer: 1 },
+              { id: 9, question: "Function overloading distinguishes functions by:", options: ["Return type alone", "Parameter list", "Their comments", "Order of definition"], answer: 1 },
+              { id: 10, question: "continue inside a loop causes:", options: ["The loop to end", "The next iteration to begin immediately", "The function to return", "The program to exit"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 5, title: "Chapter 5: Pointers, References, and Memory Management", explanation: "cpp/chapter5.md", quizData: JSON.stringify([
+              { id: 1, question: "Which operator retrieves the address of a variable?", options: ["*", "&", "->", "::"], answer: 1 },
+              { id: 2, question: "A reference in C++ can:", options: ["Be null", "Be reseated to another object", "Neither be null nor reseated", "Only refer to pointers"], answer: 2 },
+              { id: 3, question: "Memory allocated with new[] must be released with:", options: ["delete", "free", "delete[]", "It is released automatically"], answer: 2 },
+              { id: 4, question: "Accessing memory through a pointer after delete is called:", options: ["A memory leak", "A dangling pointer dereference", "Stack overflow", "Aliasing"], answer: 1 },
+              { id: 5, question: "std::unique_ptr is:", options: ["Copyable and movable", "Move-only", "Copy-only", "Neither copyable nor movable"], answer: 1 },
+              { id: 6, question: "Two shared_ptr objects referring to each other cause:", options: ["Immediate crash", "A reference cycle and a leak", "A compiler error", "Automatic cleanup"], answer: 1 },
+              { id: 7, question: "The preferred way to create a unique_ptr is:", options: ["new T()", "std::make_unique<T>()", "malloc", "std::shared_ptr<T>()"], answer: 1 },
+              { id: 8, question: "RAII ties resource release to:", options: ["Program exit", "The destructor of a scope-bound object", "A manual cleanup function", "The garbage collector"], answer: 1 },
+              { id: 9, question: "Which is the modern, type-safe null pointer literal?", options: ["NULL", "0", "nullptr", "void*"], answer: 2 },
+              { id: 10, question: "weak_ptr differs from shared_ptr in that it:", options: ["Owns the object exclusively", "Does not contribute to the strong reference count", "Cannot be created from a shared_ptr", "Deletes the object immediately"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 6, title: "Chapter 6: Object-Oriented Programming", explanation: "cpp/chapter6.md", quizData: JSON.stringify([
+              { id: 1, question: "The default access level for members of a class (not a struct) is:", options: ["public", "private", "protected", "internal"], answer: 1 },
+              { id: 2, question: "A pure virtual function is declared by:", options: ["virtual void f();", "virtual void f() = 0;", "void f() override;", "static void f();"], answer: 1 },
+              { id: 3, question: "A class containing at least one pure virtual function is:", options: ["Concrete", "Abstract and cannot be instantiated", "Final", "A template"], answer: 1 },
+              { id: 4, question: "Deleting a derived object through a base pointer without a virtual destructor causes:", options: ["A compiler error", "Undefined behaviour and typically a partial destruction", "Automatic correct cleanup", "A linker error"], answer: 1 },
+              { id: 5, question: "Runtime polymorphism in C++ is implemented via:", options: ["Macros", "A vtable and a vptr", "Preprocessor conditionals", "Templates only"], answer: 1 },
+              { id: 6, question: "The member initialiser list is preferred over assignment in the constructor body because it:", options: ["Is shorter to type", "Initialises directly instead of default-constructing then assigning", "Is required by the standard", "Disables copying"], answer: 1 },
+              { id: 7, question: "The override keyword primarily:", options: ["Makes a function virtual", "Asks the compiler to verify the signature really overrides a base virtual", "Prevents inheritance", "Improves speed"], answer: 1 },
+              { id: 8, question: "Encapsulation chiefly provides:", options: ["Faster execution", "Control over invariants and a smaller breakable surface", "Smaller binaries", "Automatic threading"], answer: 1 },
+              { id: 9, question: "Members declared protected are accessible to:", options: ["Everyone", "Only the class itself", "The class and its derived classes", "Only free functions"], answer: 2 },
+              { id: 10, question: "Destructors of members run:", options: ["In declaration order", "In reverse declaration order, after the destructor body", "In random order", "Only if explicitly called"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 7, title: "Chapter 7: Modern Data Structures: Vectors and Iterators", explanation: "cpp/chapter7.md", quizData: JSON.stringify([
+              { id: 1, question: "The difference between size() and capacity() is that capacity() is:", options: ["Always equal to size()", "The number of elements storable before reallocation", "The number of bytes used", "Always zero"], answer: 1 },
+              { id: 2, question: "push_back on a full vector triggers:", options: ["An exception", "Reallocation and element migration", "Silent data loss", "A compile error"], answer: 1 },
+              { id: 3, question: "Which access method performs bounds checking?", options: ["operator[]", "at()", "front()", "data()"], answer: 1 },
+              { id: 4, question: "v.end() refers to:", options: ["The last element", "One position past the last element", "The first element", "A null pointer"], answer: 1 },
+              { id: 5, question: "Reallocation invalidates:", options: ["Nothing", "Existing iterators, pointers and references", "Only const iterators", "Only the vector's size"], answer: 1 },
+              { id: 6, question: "reserve(1000) changes:", options: ["size only", "capacity only", "both size and capacity", "neither"], answer: 1 },
+              { id: 7, question: "std::vector guarantees its elements are:", options: ["Scattered on the heap", "Contiguous in memory", "Sorted", "Unique"], answer: 1 },
+              { id: 8, question: "Erasing from the middle of a vector costs:", options: ["O(1)", "O(log n)", "O(n)", "O(n^2)"], answer: 2 },
+              { id: 9, question: "A random-access iterator supports:", options: ["Only ++", "++ and --", "it + n in constant time", "No arithmetic"], answer: 2 },
+              { id: 10, question: "clear() on a vector:", options: ["Frees the capacity", "Removes elements but typically retains capacity", "Does nothing", "Invalidates the vector object"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 8, title: "Chapter 8: Advanced Templates and the Standard Template Library (STL)", explanation: "cpp/chapter8.md", quizData: JSON.stringify([
+              { id: 1, question: "Template instantiation happens:", options: ["At run time", "At compile time", "At link time only", "During preprocessing"], answer: 1 },
+              { id: 2, question: "std::map provides lookup in:", options: ["O(1) guaranteed", "O(log n)", "O(n)", "O(n log n)"], answer: 1 },
+              { id: 3, question: "std::unordered_map requires which two things for its key type?", options: ["operator< and operator>", "std::hash and operator==", "A constructor only", "Nothing"], answer: 1 },
+              { id: 4, question: "Which container silently rejects duplicate keys?", options: ["std::multiset", "std::set", "std::vector", "std::multimap"], answer: 1 },
+              { id: 5, question: "Iterating a std::unordered_map yields elements:", options: ["In sorted key order", "In unspecified order", "In insertion order", "In reverse order"], answer: 1 },
+              { id: 6, question: "STL algorithms are written against:", options: ["Specific container types", "Iterator ranges", "Raw pointers only", "Macros"], answer: 1 },
+              { id: 7, question: "A lambda's capture clause [ ] controls:", options: ["Its return type", "Which enclosing variables it can use and how", "Its parameter list", "Its calling convention"], answer: 1 },
+              { id: 8, question: "Template error messages are notoriously long because:", options: ["Compilers are poorly written", "The error is reported through the full instantiation chain", "Templates are interpreted", "They include the whole standard"], answer: 1 },
+              { id: 9, question: "std::sort requires which iterator category?", options: ["Input", "Forward", "Bidirectional", "Random access"], answer: 3 },
+              { id: 10, question: "A class template Stack is instantiated for int by writing:", options: ["Stack s;", "Stack<int> s;", "Stack(int) s;", "template Stack s;"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 9, title: "Chapter 9: Exception Handling and Robust Error Management", explanation: "cpp/chapter9.md", quizData: JSON.stringify([
+              { id: 1, question: "Exceptions should be caught by:", options: ["Value", "const reference", "Pointer", "Raw address"], answer: 1 },
+              { id: 2, question: "Catching a derived exception by value causes:", options: ["Nothing unusual", "Object slicing", "A compile error", "Immediate termination"], answer: 1 },
+              { id: 3, question: "During stack unwinding the compiler guarantees:", options: ["Memory from new is freed automatically", "Destructors of local objects run", "All threads pause", "Files are flushed"], answer: 1 },
+              { id: 4, question: "If no matching handler exists anywhere, the program:", options: ["Continues silently", "Calls std::terminate()", "Returns 0", "Retries the throw"], answer: 1 },
+              { id: 5, question: "std::out_of_range derives from:", options: ["std::runtime_error", "std::logic_error", "std::bad_alloc", "std::string"], answer: 1 },
+              { id: 6, question: "A function marked noexcept that throws will:", options: ["Propagate normally", "Terminate the program", "Return an error code", "Retry"], answer: 1 },
+              { id: 7, question: "Catch blocks should be ordered:", options: ["Base class first", "Most derived first", "Alphabetically", "Order is irrelevant"], answer: 1 },
+              { id: 8, question: "The member function every standard exception provides is:", options: ["message()", "what()", "error()", "text()"], answer: 1 },
+              { id: 9, question: "Allowing an exception to escape a destructor:", options: ["Is good practice", "Can terminate the program during unwinding", "Is required by RAII", "Is silently ignored"], answer: 1 },
+              { id: 10, question: "The strong exception guarantee means an operation:", options: ["Never throws", "Either completes fully or leaves state unchanged", "Leaves state valid but unspecified", "Always throws"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 10, title: "Chapter 10: File I/O and Streams", explanation: "cpp/chapter10.md", quizData: JSON.stringify([
+              { id: 1, question: "Which class is used for reading from a file?", options: ["ofstream", "ifstream", "ostringstream", "ostream"], answer: 1 },
+              { id: 2, question: "Which mode appends to an existing file rather than truncating it?", options: ["ios::trunc", "ios::app", "ios::in", "ios::binary"], answer: 1 },
+              { id: 3, question: "After a failed extraction, subsequent reads:", options: ["Work normally", "Do nothing until clear() is called", "Throw an exception", "Reopen the file"], answer: 1 },
+              { id: 4, question: "eofbit indicates:", options: ["Stream corruption", "End of file was reached", "A formatting error", "The file is locked"], answer: 1 },
+              { id: 5, question: "To read a whole line including spaces from a file stream, use:", options: [">>", "getline()", "read()", "seekg()"], answer: 1 },
+              { id: 6, question: "seekg positions the:", options: ["Write pointer", "Read pointer", "File size", "Buffer size"], answer: 1 },
+              { id: 7, question: "Binary mode is required when:", options: ["Writing plain text", "Writing non-text data whose bytes must not be translated", "Appending", "Reading integers"], answer: 1 },
+              { id: 8, question: "An fstream object closes its file:", options: ["Only if close() is called", "Automatically in its destructor", "At program exit only", "Never"], answer: 1 },
+              { id: 9, question: "tellp() returns:", "options": ["The file size", "The current write position", "The last error", "The open mode"], answer: 1 },
+              { id: 10, question: "With fixed-size records, the offset of record n is:", "options": ["n", "n * sizeof(Record)", "sizeof(Record)", "Unknowable"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 11, title: "Chapter 11: Multithreading and Concurrency", explanation: "cpp/chapter11.md", quizData: JSON.stringify([
+              { id: 1, question: "A data race requires that:", options: ["Two threads read the same variable", "Two threads access the same memory concurrently with at least one write, unsynchronised", "Two threads run on the same core", "A mutex is used"], answer: 1 },
+              { id: 2, question: "std::lock_guard releases its mutex:", options: ["When unlock() is called manually", "At the end of its scope, including during exception unwinding", "At program exit", "Never"], answer: 1 },
+              { id: 3, question: "A joinable std::thread destroyed without join() or detach() causes:", options: ["A memory leak only", "std::terminate to be called", "Silent success", "A compile error"], answer: 1 },
+              { id: 4, question: "Condition variables should be waited on with a predicate because:", options: ["It is stylistic", "Spurious wakeups can occur", "Predicates are faster", "The standard forbids the alternative"], answer: 1 },
+              { id: 5, question: "std::async returns:", options: ["A thread", "A future", "A mutex", "A promise"], answer: 1 },
+              { id: 6, question: "Deadlock is most simply prevented by:", options: ["Using more threads", "Acquiring locks in a globally consistent order", "Removing all locks", "Calling detach()"], answer: 1 },
+              { id: 7, question: "Calling future.get() twice on the same std::future:", options: ["Returns the value twice", "Is undefined behaviour", "Blocks forever always", "Creates a new future"], answer: 1 },
+              { id: 8, question: "std::atomic is used for:", options: ["File I/O", "Lock-free access to a single shared value", "Thread creation", "Exception handling"], answer: 1 },
+              { id: 9, question: "Holding a mutex while performing blocking network I/O:", options: ["Improves throughput", "Serialises all other threads behind slow I/O", "Is required", "Prevents deadlock"], answer: 1 },
+              { id: 10, question: "hardware_concurrency() returns:", options: ["A guarantee of thread count", "A hint at the number of concurrent threads supported", "The number of running threads", "The CPU frequency"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 12, title: "Chapter 12: Move Semantics and Rvalue References", explanation: "cpp/chapter12.md", quizData: JSON.stringify([
+              { id: 1, question: "std::move does what at run time?", options: ["Moves the object", "Nothing — it is a compile-time cast to an rvalue", "Frees memory", "Copies the object"], answer: 1 },
+              { id: 2, question: "After being moved from, an object is:", options: ["Destroyed", "Valid but unspecified", "Undefined and unusable", "Unchanged"], answer: 1 },
+              { id: 3, question: "A move constructor for a heap-owning class costs:", options: ["O(n)", "O(1)", "O(log n)", "O(n log n)"], answer: 1 },
+              { id: 4, question: "Move operations should be marked noexcept because:", options: ["It is required syntax", "Containers fall back to copying if moves may throw", "It makes them faster to compile", "It disables copying"], answer: 1 },
+              { id: 5, question: "In template<class T> void f(T&& x), T&& is:", options: ["Always an rvalue reference", "A forwarding reference", "An lvalue reference", "Invalid"], answer: 1 },
+              { id: 6, question: "Inside a function, a parameter named x of type T&& is:", options: ["An rvalue", "An lvalue, because it is named", "Neither", "Both"], answer: 1 },
+              { id: 7, question: "std::forward differs from std::move in that it:", options: ["Always casts to rvalue", "Conditionally preserves the original value category", "Copies", "Deletes"], answer: 1 },
+              { id: 8, question: "The Rule of Five concerns:", options: ["Five loop types", "Destructor, copy ctor, copy assign, move ctor, move assign", "Five containers", "Five standards"], answer: 1 },
+              { id: 9, question: "std::unique_ptr is move-only because:", options: ["Of a compiler limitation", "Copying would duplicate exclusive ownership", "It is a template", "Moves are always faster"], answer: 1 },
+              { id: 10, question: "Which of these is an rvalue?", options: ["A named local variable", "std::string(\"temp\")", "A reference parameter", "A global variable"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 13, title: "Chapter 13: C++20 Concepts and Ranges", explanation: "cpp/chapter13.md", quizData: JSON.stringify([
+              { id: 1, question: "An arena allocator frees all of its objects by:", options: ["Calling delete on each", "Resetting an offset pointer", "Running a garbage collector", "Calling free() per object"], answer: 1 },
+              { id: 2, question: "Fragmentation means:", options: ["Memory is corrupted", "Free memory exists but not as one usable contiguous block", "The heap is full", "Pointers are invalid"], answer: 1 },
+              { id: 3, question: "Placement new:", options: ["Allocates and constructs", "Constructs in memory you already own", "Frees memory", "Is deprecated"], answer: 1 },
+              { id: 4, question: "After placement new, the object must be destroyed by:", options: ["delete p", "Explicitly calling p->~T()", "free(p)", "Nothing"], answer: 1 },
+              { id: 5, question: "A pool allocator is best suited to:", options: ["Objects of wildly varying size", "Many objects of the same fixed size", "A single large object", "Stack variables"], answer: 1 },
+              { id: 6, question: "A typical cache line size is:", options: ["8 bytes", "64 bytes", "4096 bytes", "1 byte"], answer: 1 },
+              { id: 7, question: "Struct of Arrays can outperform Array of Structs because it:", options: ["Uses less total memory", "Wastes less of each fetched cache line", "Avoids all allocation", "Is required by the standard"], answer: 1 },
+              { id: 8, question: "The main drawback of an arena is:", options: ["It is slow", "Individual objects cannot be freed independently", "It fragments badly", "It cannot be reset"], answer: 1 },
+              { id: 9, question: "Accessing main memory versus L1 cache is roughly:", options: ["The same speed", "About 50 times slower", "Twice as slow", "Faster"], answer: 1 },
+              { id: 10, question: "The correct first step before any low-level optimisation is to:", options: ["Rewrite in assembly", "Profile and measure", "Add more threads", "Increase cache size"], answer: 1 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 14, title: "Chapter 14: C++20 Coroutines and Modules", explanation: "cpp/chapter14.md", quizData: JSON.stringify([
+              { id: 1, question: "A lambda expression compiles to:", options: ["A macro", "A class with an operator()", "A function pointer only", "Inline assembly"], answer: 1 },
+              { id: 2, question: "Capturing by reference is dangerous when:", options: ["The lambda is called immediately", "The lambda outlives the captured variable", "The variable is const", "The capture list is empty"], answer: 1 },
+              { id: 3, question: "A closure is:", options: ["A lambda's parameter list", "Code together with its captured environment", "A type of container", "A destructor"], answer: 1 },
+              { id: 4, question: "std::views::filter performs its work:", options: ["Immediately when written", "Lazily, when the range is iterated", "At compile time", "Never"], answer: 1 },
+              { id: 5, question: "Range views are:", options: ["Owning copies of the data", "Non-owning lightweight adaptors", "Always sorted", "Thread-safe by default"], answer: 1 },
+              { id: 6, question: "The mutable keyword on a lambda allows:", options: ["Reference captures", "Modification of by-value captures", "Recursion", "Multiple returns"], answer: 1 },
+              { id: 7, question: "std::function's main runtime cost is:", options: ["Nothing", "Possible heap allocation and an indirect call", "Extra compilation only", "Memory leaks"], answer: 1 },
+              { id: 8, question: "Init capture [p = std::move(ptr)] exists chiefly to:", options: ["Rename variables", "Capture move-only types into a lambda", "Improve readability only", "Force by-reference capture"], answer: 1 },
+              { id: 9, question: "Composing filter | transform | take over a million elements to get 5 results processes:", options: ["All million through every stage", "Only as many elements as needed to yield 5", "Exactly 5 elements total", "None"], answer: 1 },
+              { id: 10, question: "A projection in ranges::sort lets you:", options: ["Sort by a member without writing a comparator", "Sort in parallel", "Sort in place only", "Avoid comparisons"], answer: 0 }
+            ]), challenges: "[]" },
+
+            { orderNumber: 15, title: "Chapter 15: C++23 Features and High-Performance Best Practices", explanation: "cpp/chapter15.md", quizData: JSON.stringify([
+              { id: 1, question: "The Factory pattern primarily decouples client code from:", options: ["The interface", "The concrete class being constructed", "The compiler", "The destructor"], answer: 1 },
+              { id: 2, question: "Observer describes a relationship that is:", options: ["One-to-one", "One-to-many notification", "Many-to-one only", "Static and compile-time"], answer: 1 },
+              { id: 3, question: "Strategy allows you to:", options: ["Create one instance only", "Swap algorithms behind a common interface", "Adapt incompatible interfaces", "Add behaviour by wrapping"], answer: 1 },
+              { id: 4, question: "The 'O' in SOLID stands for:", "options": ["Object oriented", "Open/Closed", "Overloading", "Ownership"], answer: 1 },
+              { id: 5, question: "Dependency Inversion says high-level modules should depend on:", options: ["Concrete implementations", "Abstractions", "Global variables", "The database"], answer: 1 },
+              { id: 6, question: "Liskov Substitution is violated when a derived class:", options: ["Adds new members", "Breaks a behavioural guarantee the base promised", "Is larger in memory", "Uses templates"], answer: 1 },
+              { id: 7, question: "Singleton is criticised mainly because it:", options: ["Is slow", "Introduces global state and hinders testing", "Cannot compile", "Requires templates"], answer: 1 },
+              { id: 8, question: "The Rule of Zero advises you to:", options: ["Define all five special members", "Design classes that need none of them", "Avoid classes entirely", "Never use destructors"], answer: 1 },
+              { id: 9, question: "Interface Segregation prefers:", options: ["One large interface", "Several small focused interfaces", "No interfaces", "Only concrete classes"], answer: 1 },
+              { id: 10, question: "The Core Guidelines recommend which default for resource management?", options: ["Manual new/delete", "RAII", "Global allocation", "Garbage collection"], answer: 1 }
+            ]), challenges: "[]" },
           ];
         } else {
           // Standard Chapters for other courses (C, C++) starting at 1

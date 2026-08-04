@@ -229,25 +229,6 @@ class Human {
 
 ---
 
-### Chapter Quiz & Exercises
-
-#### Multiple Choice Questions
-1. Which Object-Oriented principle is demonstrated by hiding internal implementation details behind interfaces?
-   - A) Aggregation
-   - B) Abstraction
-   - C) Dynamic Binding
-   - D) Tight Coupling
-   *Correct Answer: B*
-
-2. What type of relationship exists between a `House` and its `Roof`, where deleting the house destroys the roof?
-   - A) Aggregation
-   - B) Loose Coupling
-   - C) Composition
-   - D) Method Overloading
-   *Correct Answer: C*
-
-#### Practice Exercise
-Design an e-commerce model in Java:
-1. Create an interface `DiscountStrategy` with method `double applyDiscount(double price)`.
-2. Implement two classes: `SeasonalDiscount` (15% off) and `VIPDiscount` (30% off).
-3. Create a `ShoppingCart` class that aggregates item prices and applies a configurable `DiscountStrategy`.
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 4. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 5!

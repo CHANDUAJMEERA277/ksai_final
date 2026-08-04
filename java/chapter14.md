@@ -159,22 +159,7 @@ public class SortingDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 14. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 15!
 
-#### Multiple Choice Questions
-1. Which Collection implementation maintains elements in sorted order with $O(\log n)$ operations?
-   - A) `ArrayList`
-   - B) `HashSet`
-   - C) `TreeSet`
-   - D) `LinkedList`
-   *Correct Answer: C*
-
-2. According to the PECS principle, which wildcard signature should be used for a method that writes integer data into a collection parameter?
-   - A) `List<Integer>`
-   - B) `List<? extends Integer>`
-   - C) `List<? super Integer>`
-   - D) `List<?>`
-   *Correct Answer: C*
-
-#### Practice Exercise
-Write a program `WordFrequencyCounter.java` that reads a string paragraph, normalizes punctuation, tokenizes words, stores word frequencies in a `HashMap`, and prints top words sorted by frequency using `TreeMap` or `Stream`.

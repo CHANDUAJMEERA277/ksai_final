@@ -176,22 +176,7 @@ public class ShutdownHookDemo {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 12. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 13!
 
-#### Multiple Choice Questions
-1. What happens if you directly invoke `thread.run()` instead of `thread.start()`?
-   - A) A high-priority thread is spawned immediately.
-   - B) The method runs synchronously inside the calling thread without spawning a new thread.
-   - C) The JVM throws `IllegalThreadStateException`.
-   - D) The thread enters the Blocked state.
-   *Correct Answer: B*
-
-2. Which executor method shuts down an `ExecutorService` after allowing already submitted tasks to complete?
-   - A) `pool.stop()`
-   - B) `pool.closeNow()`
-   - C) `pool.shutdown()`
-   - D) `pool.terminateAll()`
-   *Correct Answer: C*
-
-#### Practice Exercise
-Write a concurrent downloader simulation `MultiThreadedDownloader.java` using `ExecutorService` to download 5 mock files in parallel, logging start times, progress percentages, and completion times per thread.

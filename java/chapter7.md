@@ -207,25 +207,7 @@ public class CustomerProfile implements Serializable {
 
 ---
 
-### Chapter Quiz & Exercises
+> [!TIP]
+> **Prepare for your Chapter Exam!**
+> You have completed reading Chapter 7. Head to the **Take Chapter Quiz** assessment below to test your knowledge and unlock Chapter 8!
 
-#### Multiple Choice Questions
-1. What keyword is required when adding a method with a concrete body inside a Java 8 Interface?
-   - A) `abstract`
-   - B) `default`
-   - C) `native`
-   - D) `synchronized`
-   *Correct Answer: B*
-
-2. Which of the following statements about Marker Interfaces is TRUE?
-   - A) They must contain at least one static method.
-   - B) They contain zero methods or fields and serve as a tag for the JVM.
-   - C) They can only be extended by abstract classes.
-   - D) They require classes to implement a `clone()` method.
-   *Correct Answer: B*
-
-#### Practice Exercise
-Create a pluggable storage plugin architecture:
-1. Interface `StoragePlugin` with default method `void initialize()`, abstract method `void save(String key, String data)`.
-2. Implementing classes `CloudStoragePlugin` and `LocalStoragePlugin`.
-3. Demonstrate interface polymorphism by saving data across multiple plugin instances.
