@@ -45,7 +45,7 @@ interface QuizQuestion {
   options: string[];
 }
 
-const CHAPTER_SECTIONS: Record<number, string[]> = {
+const PYTHON_CHAPTER_SECTIONS: Record<number, string[]> = {
   0: [
     "0.1 What is Programming?",
     "0.2 What is Python?",
@@ -171,6 +171,49 @@ const CHAPTER_SECTIONS: Record<number, string[]> = {
   ]
 };
 
+const C_CHAPTER_SECTIONS: Record<number, string[]> = {
+  0: [
+    "1. What is C, and Where is it Used?",
+    "2. Installing a Compiler and Editor/IDE",
+    "3. Writing, Compiling, and Running a Program",
+    "4. Understanding Errors and Warnings",
+    "5. Your First Program: \"Hello, World!\"",
+    "Quiz Assessment"
+  ],
+  1: [
+    "1.1 Structure of a C Program",
+    "1.2 Variables, Data Types, and Constants",
+    "1.3 Input and Output",
+    "1.4 Operators and Expressions",
+    "Quiz Assessment"
+  ],
+  2: [
+    "2.1 Conditional Statements",
+    "2.2 Loops",
+    "2.3 Basic Problem Solving",
+    "2.4 Real-World Applications & Interview Corner",
+    "Quiz Assessment"
+  ],
+  3: [
+    "3.1 Function Basics",
+    "3.2 Scope",
+    "3.3 Recursion",
+    "Quiz Assessment"
+  ],
+  4: [
+    "4.1 One-Dimensional Arrays",
+    "4.2 Two-Dimensional Arrays",
+    "4.3 Strings",
+    "Quiz Assessment"
+  ],
+  5: [
+    "5.1 Pointer Fundamentals",
+    "5.2 Pointers and Arrays",
+    "5.3 Pointers and Functions",
+    "Quiz Assessment"
+  ]
+};
+
 function stripMarkdown(md: string): string {
   if (!md) return "";
   return md
@@ -188,21 +231,24 @@ function stripMarkdown(md: string): string {
     .trim();
 }
 
-export default function PythonChapterPage() {
+export default function ChapterPage() {
   const router = useRouter();
   const params = useParams();
+  const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
-  const isPending = sessionData?.isPending ?? false;
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState("Python AI & Data Structures Architecture");
+  const [courseTitle, setCourseTitle] = useState(
+    courseSlug === "c"
+      ? "C Language Mastery & System Programming"
+      : "Python AI & Data Structures Architecture"
+  );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(2499);
+  const [coursePrice, setCoursePrice] = useState(courseSlug === "c" ? 1499 : 2499);
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [buying, setBuying] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -249,8 +295,8 @@ export default function PythonChapterPage() {
     }
     
     summary += "\n### Condensed Summary:\n";
-    if (notes.toLowerCase().includes("compiled")) {
-      summary += "This chapter contrasts compiled and interpreted languages, introduces Python's execution model (via Bytecode and PVM), walks through installing python and setting up an IDE, and shows how to write a simple print statement.\n";
+    if (notes.toLowerCase().includes("compiled") || notes.toLowerCase().includes("dennis ritchie")) {
+      summary += "This chapter contrasts compiled and interpreted languages, introduces C's compilation process (preprocessing, compiling, assembling, and linking), and explores basic formatted I/O and variable scopes.\n";
     } else {
       summary += "A condensed outline of the chapter lessons, focusing on syntax conventions, execution paths, scope rules, and coding practices to help you pass the assessment quiz.\n";
     }
@@ -267,29 +313,50 @@ export default function PythonChapterPage() {
       return headings.map(h => `Key concept: ${h}`);
     }
     return [
-      "Python syntax conventions and execution options",
-      "Translating code into bytecode vs compilation to machine instructions",
-      "Configuring local virtual environments, paths, and workspace tools",
-      "Writing print statements and executing your first simple scripts"
+      "Syntax conventions and execution options",
+      "Translating code into machine instructions via compiler stages",
+      "Configuring variables, types, and formatted input/output options",
+      "Writing simple statements and running your first programming scripts"
     ];
   };
 
   const generateGroundedResponse = (question: string, notes: string): string => {
     const q = question.toLowerCase();
-    if (q.includes("python") && q.includes("what")) {
-      return "Based on Chapter notes, Python is a high-level, interpreted programming language known for its clear syntax and readability. It was created by Guido van Rossum and released in 1991.";
+    const isC = courseSlug === "c";
+
+    if (isC) {
+      if (q.includes("c ") && q.includes("what")) {
+        return "Based on Chapter notes, C is a powerful, fast, and structured programming language created in 1972 by Dennis Ritchie at Bell Labs. It runs close to the hardware and is widely used for systems programming.";
+      }
+      if (q.includes("pointer")) {
+        return "Based on Chapter notes, a pointer is a special variable that stores the memory address of another variable. Modifying a dereferenced pointer (*p) directly changes the value at that address.";
+      }
+      if (q.includes("data type")) {
+        return "According to the notes, C's basic data types are int (whole numbers, typically 4 bytes), float (single precision decimal numbers, 4 bytes), double (double precision decimal numbers, 8 bytes), and char (single characters, 1 byte).";
+      }
+    } else {
+      if (q.includes("python") && q.includes("what")) {
+        return "Based on Chapter notes, Python is a high-level, interpreted programming language known for its clear syntax and readability. It was created by Guido van Rossum and released in 1991.";
+      }
     }
+
     if (q.includes("compiled") || q.includes("interpreted")) {
-      return "According to the notes, compiled languages (like C) translate code into machine instructions before execution, while interpreted languages (like Python) execute code line-by-line using an interpreter, which makes development faster but execution slightly slower.";
+      return isC 
+        ? "According to the notes, C is a compiled language where a compiler translates the human-readable source code into machine code/object files (through preprocessing, compiling, assembling, and linking) before the program can run."
+        : "According to the notes, compiled languages translate code into machine instructions before execution, while interpreted languages (like Python) execute code line-by-line using an interpreter, which makes development faster but execution slightly slower.";
     }
     if (q.includes("applications") || q.includes("used for")) {
-      return "The notes state that Python is used in Machine Learning/AI, Web Development, Automation, Data Science, and Cybersecurity.";
+      return isC
+        ? "The notes state C is used to build operating systems (Windows, Linux, Android), embedded systems, and compilers/interpreters for other languages."
+        : "The notes state that Python is used in Machine Learning/AI, Web Development, Automation, Data Science, and Cybersecurity.";
     }
     if (q.includes("install") || q.includes("ide")) {
-      return "The notes recommend installing Python from python.org and using an IDE/editor like VS Code or PyCharm to write and test your programs.";
+      return "The notes recommend setting up a local compiler or code editor/IDE to write and run your programming code.";
     }
     if (q.includes("first program") || q.includes("hello world")) {
-      return "Your first Python program is written as: print('Hello, World!'). The print() function displays the text argument inside single or double quotes.";
+      return isC
+        ? "Your first C program is written using stdio.h library, main() function, curly braces, and printf('Hello, World!')."
+        : "Your first Python program is written as: print('Hello, World!'). The print() function displays the text argument inside single or double quotes.";
     }
 
     const lines = notes.split("\n");
@@ -353,7 +420,7 @@ export default function PythonChapterPage() {
     setError(null);
     try {
       // 1. Fetch Notes & Metadata
-      const chapterRes = await fetch(`/api/courses/python/chapters/${chapterOrder}`);
+      const chapterRes = await fetch(`/api/courses/${courseSlug}/chapters/${chapterOrder}`);
       const chapterData = await chapterRes.json();
 
       if (!chapterRes.ok || !chapterData.success) {
@@ -362,10 +429,11 @@ export default function PythonChapterPage() {
         return;
       }
 
-      // Check if user is trying to access locked chapters (>0) without enrollment
-      if (chapterOrder > 0 && !chapterData.isEnrolled) {
+      // Check if user is trying to access locked chapters without enrollment
+      const firstChapterOrder = 0;
+      if (chapterOrder > firstChapterOrder && !chapterData.isEnrolled) {
         alert("🔒 This chapter is locked. Please subscribe to the course to unlock access.");
-        router.push("/courses/python/chapter/0");
+        router.push(`/courses/${courseSlug}/chapter/${firstChapterOrder}`);
         setLoading(false);
         return;
       }
@@ -380,7 +448,7 @@ export default function PythonChapterPage() {
       setProgresses(chapterData.progresses);
 
       // 2. Fetch Quiz Questions to check if a quiz exists
-      const quizRes = await fetch(`/api/courses/python/chapters/${chapterOrder}/quiz`);
+      const quizRes = await fetch(`/api/courses/${courseSlug}/chapters/${chapterOrder}/quiz`);
       const quizData = await quizRes.json();
 
       if (quizRes.ok && quizData.success) {
@@ -396,7 +464,7 @@ export default function PythonChapterPage() {
 
   useEffect(() => {
     loadPageData();
-  }, [chapterOrder]);
+  }, [chapterOrder, courseSlug]);
 
   const handleBuyCourse = async () => {
     if (!courseId) return;
@@ -495,7 +563,7 @@ export default function PythonChapterPage() {
   const handleMarkChapterComplete = async () => {
     setCompleting(true);
     try {
-      const res = await fetch(`/api/courses/python/chapters/${chapterOrder}/complete`, {
+      const res = await fetch(`/api/courses/${courseSlug}/chapters/${chapterOrder}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -503,7 +571,7 @@ export default function PythonChapterPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         alert(`🎉 Chapter ${chapterOrder} completed!`);
-        router.push("/courses/python/curriculum");
+        router.push(`/courses/${courseSlug}/curriculum`);
       } else {
         alert(data.error || "Failed to mark chapter as complete.");
       }
@@ -518,15 +586,18 @@ export default function PythonChapterPage() {
   const isCompleted = !!progresses.find((p) => p.chapterId === currentChapter?.id)?.isCompleted;
 
   const isChapterUnlockedLocal = (order: number) => {
-    if (order === 0) return true;
+    const firstChapterOrder = 0;
+    if (order === firstChapterOrder) return true;
     const prevChapter = chapters.find((c) => c.orderNumber === order - 1);
     if (!prevChapter) return false;
     const prevProgress = progresses.find((p) => p.chapterId === prevChapter.id);
     
-    if (order > 0 && !isEnrolled) return false;
+    if (order > firstChapterOrder && !isEnrolled) return false;
 
     return !!prevProgress?.isCompleted;
   };
+
+  const CHAPTER_SECTIONS = courseSlug === "c" ? C_CHAPTER_SECTIONS : PYTHON_CHAPTER_SECTIONS;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden h-screen">
@@ -538,7 +609,7 @@ export default function PythonChapterPage() {
           </div>
           <div>
             <span className="text-[10px] text-blue-600 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; Python Course</span>
+            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {courseSlug === "c" ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -551,7 +622,7 @@ export default function PythonChapterPage() {
           
           <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              {user?.name?.charAt(0) || "N"}
+              {session?.user?.name?.charAt(0) || "N"}
             </div>
             <ChevronDown size={14} className="text-slate-500" />
           </div>
@@ -595,7 +666,7 @@ export default function PythonChapterPage() {
                   <button
                     key={ch.id}
                     onClick={() => {
-                      router.push(`/courses/python/chapter/${ch.orderNumber}`);
+                      router.push(`/courses/${courseSlug}/chapter/${ch.orderNumber}`);
                     }}
                     title={`Chapter ${ch.orderNumber}: ${ch.title}`}
                     className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
@@ -614,7 +685,7 @@ export default function PythonChapterPage() {
                   <button
                     onClick={() => {
                       toggleChapterExpand(ch.orderNumber);
-                      router.push(`/courses/python/chapter/${ch.orderNumber}`);
+                      router.push(`/courses/${courseSlug}/chapter/${ch.orderNumber}`);
                     }}
                     className={`w-full p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
                       active
@@ -643,13 +714,13 @@ export default function PythonChapterPage() {
                   {isExpanded && (
                     <div className="pl-9 pr-2 py-1 space-y-2 border-l border-slate-200 ml-5">
                       {(CHAPTER_SECTIONS[ch.orderNumber] || []).map((sec, secIdx) => {
-                        const isQuiz = sec === "Quiz Assessment";
+                        const isQuiz = sec === "Quiz Assessment" || sec === "Chapter Quiz";
                         return (
                           <button
                             key={secIdx}
                             onClick={() => {
                               if (isQuiz) {
-                                router.push(`/courses/python/chapter/${ch.orderNumber}/quiz`);
+                                router.push(`/courses/${courseSlug}/chapter/${ch.orderNumber}/quiz`);
                               }
                             }}
                             className={`w-full text-left text-[11px] leading-relaxed flex items-center gap-1.5 py-0.5 transition-all ${
@@ -684,14 +755,14 @@ export default function PythonChapterPage() {
             </button>
             <ChevronRight size={10} className="text-slate-400 animate-none" />
             <button
-              onClick={() => router.push("/courses/python")}
+              onClick={() => router.push(`/courses/${courseSlug}`)}
               className="hover:text-slate-800 transition-colors"
             >
               Course
             </button>
             <ChevronRight size={10} className="text-slate-400 animate-none" />
             <button
-              onClick={() => router.push("/courses/python/curriculum")}
+              onClick={() => router.push(`/courses/${courseSlug}/curriculum`)}
               className="hover:text-slate-800 transition-colors"
             >
               Curriculum
@@ -742,10 +813,10 @@ export default function PythonChapterPage() {
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div>
                       <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                        {currentChapter.difficulty || "Beginner"} &bull; Chapter {chapterOrder} Notes
+                        {currentChapter.difficulty || "Beginner"} &bull; {currentChapter.title.split(":")[0]} Notes
                       </span>
                       <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
-                        {currentChapter.title}
+                        {currentChapter.title.replace(/^Chapter \d+:/, `Chapter ${currentChapter.orderNumber}:`)}
                       </h2>
                     </div>
 
@@ -774,7 +845,7 @@ export default function PythonChapterPage() {
 
                     {quizQuestions.length > 0 ? (
                       <button
-                        onClick={() => router.push(`/courses/python/chapter/${chapterOrder}/quiz`)}
+                        onClick={() => router.push(`/courses/${courseSlug}/chapter/${chapterOrder}/quiz`)}
                         className="px-6 py-3.5 rounded-xl font-extrabold text-xs text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
                       >
                         <HelpCircle size={14} /> Take Chapter Assessment Quiz
@@ -796,7 +867,7 @@ export default function PythonChapterPage() {
           )}
         </main>
 
-        {/* Right Collapsible AI Side Panel (Reserved Space) */}
+        {/* Right Collapsible AI Side Panel */}
         <aside className={`h-full border-l border-slate-200 flex flex-col shrink-0 transition-all duration-300 select-none overflow-hidden bg-slate-50 ${
           rightPanelExpanded ? "w-80" : "w-14"
         }`}>

@@ -138,7 +138,7 @@ const LANGUAGE_SYLLABUS: Record<string, { modules: { title: string; topics: stri
 
 export function CourseDetailsModal({
   course,
-  userEmail = "chandu@gmail.com",
+  userEmail,
   onClose,
   onPaymentSuccess,
 }: CourseDetailsModalProps) {
@@ -385,16 +385,17 @@ export function CourseDetailsModal({
           </div>
 
           <div className="flex items-center gap-3">
-            {course.category.toLowerCase().includes("python") && (
+            {(course.language === "python" || course.language === "java" || course.language === "c") && (
               <button
                 type="button"
                 onClick={() => {
                   onClose();
-                  window.location.href = "/courses/python/chapter/0";
+                  const firstChapter = (course.language === "python" || course.language === "c") ? "0" : "1";
+                  window.location.href = `/courses/${course.language}/chapter/${firstChapter}`;
                 }}
                 className="px-5 py-3.5 rounded-full text-xs font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all flex items-center gap-1.5 shadow-sm"
               >
-                <BookOpen size={14} className="text-slate-500" /> Try Free Preview (Chapter 0)
+                <BookOpen size={14} className="text-slate-500" /> Try Free Preview (Chapter {(course.language === "python" || course.language === "c") ? "0" : "1"})
               </button>
             )}
 

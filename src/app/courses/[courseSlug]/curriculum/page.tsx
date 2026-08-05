@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import {
   Lock,
@@ -25,17 +25,21 @@ interface ProgressItem {
   quizScore: number;
 }
 
-export default function PythonCurriculumPage() {
+export default function CourseCurriculumPage() {
   const router = useRouter();
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
-  const isPending = sessionData?.isPending ?? false;
+  const params = useParams();
+  const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState("Python AI & Data Structures Architecture");
+  const [courseTitle, setCourseTitle] = useState(
+    courseSlug === "c"
+      ? "C Language Mastery & System Programming"
+      : "Python AI & Data Structures Architecture"
+  );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(2499);
+  const [coursePrice, setCoursePrice] = useState(courseSlug === "c" ? 1499 : 2499);
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [buying, setBuying] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -59,7 +63,8 @@ export default function PythonCurriculumPage() {
   const loadCurriculumData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/courses/python/chapters/0");
+      const firstChapterOrder = 0;
+      const res = await fetch(`/api/courses/${courseSlug}/chapters/${firstChapterOrder}`);
       const data = await res.json();
 
       if (res.ok && data.success) {
@@ -83,7 +88,7 @@ export default function PythonCurriculumPage() {
 
   useEffect(() => {
     loadCurriculumData();
-  }, []);
+  }, [courseSlug]);
 
   // Purchase enrollment fallback
   const handleBuyCourse = async () => {
@@ -182,7 +187,8 @@ export default function PythonCurriculumPage() {
 
   // Lock State Logic
   const isChapterUnlocked = (order: number) => {
-    if (order === 0) return true; // Chapter 0 is always unlocked
+    const firstChapterOrder = 0;
+    if (order === firstChapterOrder) return true; // first chapter is always unlocked
     
     // Check previous chapter completion state
     const prevChapter = chapters.find((c) => c.orderNumber === order - 1);
@@ -191,16 +197,18 @@ export default function PythonCurriculumPage() {
     const prevProgress = progresses.find((p) => p.chapterId === prevChapter.id);
     const prevCompleted = !!prevProgress?.isCompleted;
 
-    // Check if enrolled for chapters > 0
-    if (order > 0 && !isEnrolled) return false;
+    // Check if enrolled for chapters > firstChapterOrder
+    if (order > firstChapterOrder && !isEnrolled) return false;
 
     return prevCompleted;
   };
 
   // Progress summary
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 11;
+  const totalChaptersCount = chapters.length || (courseSlug === "c" ? 6 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
+
+  const isC = courseSlug === "c";
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
@@ -212,12 +220,12 @@ export default function PythonCurriculumPage() {
           </div>
           <div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; Python Course</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button
-             onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/dashboard")}
             className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <ArrowLeft size={14} /> Back to Dashboard
@@ -238,7 +246,7 @@ export default function PythonCurriculumPage() {
             </button>
             <span>&bull;</span>
             <button
-              onClick={() => router.push("/courses/python")}
+              onClick={() => router.push(`/courses/${courseSlug}`)}
               className="hover:text-white transition-colors"
             >
               Course
@@ -248,7 +256,7 @@ export default function PythonCurriculumPage() {
           </div>
 
           <button
-            onClick={() => router.push("/courses/python")}
+            onClick={() => router.push(`/courses/${courseSlug}`)}
             className="px-4 py-2 rounded-xl glass-panel text-slate-300 hover:text-white text-[11px] font-bold flex items-center gap-1.5 hover:border-cyan-400/50 transition-all"
           >
             <ArrowLeft size={13} /> Back to Course Overview
@@ -281,11 +289,11 @@ export default function PythonCurriculumPage() {
                   Curriculum Syllabus
                 </h1>
                 <p className="text-xs text-slate-400 mt-1">
-                  Python AI Course &bull; {completedChaptersCount} of {totalChaptersCount} Chapters Passed ({progressPercentage}%)
+                  {isC ? "C Course" : "Python AI Course"} &bull; {completedChaptersCount} of {totalChaptersCount} Chapters Passed ({progressPercentage}%)
                 </p>
               </div>
 
-              {/* Circular Mini Progress Ring / Buy banner */}
+              {/* Purchase banner */}
               {!isEnrolled && (
                 <button
                   onClick={handleBuyCourse}
@@ -303,7 +311,7 @@ export default function PythonCurriculumPage() {
               {chapters.map((chapter) => {
                 const unlocked = isChapterUnlocked(chapter.orderNumber);
                 const isCompleted = !!progresses.find((p) => p.chapterId === chapter.id)?.isCompleted;
-                const active = chapter.orderNumber === completedChaptersCount;
+                const active = chapter.orderNumber === (isC ? completedChaptersCount + 1 : completedChaptersCount);
 
                 let cardStyle = "glass-panel border-white/10 bg-[#09090D] hover:border-cyan-500/50 hover:bg-white/5";
                 let lockIcon = <Unlock size={16} className="text-cyan-400" />;
@@ -317,7 +325,7 @@ export default function PythonCurriculumPage() {
                   cardStyle = "bg-white/5 border-white/5 opacity-60 cursor-not-allowed";
                   lockIcon = <Lock size={16} className="text-slate-500" />;
                   
-                  if (!isEnrolled && chapter.orderNumber > 0) {
+                  if (!isEnrolled && chapter.orderNumber > (isC ? 1 : 0)) {
                     statusLabel = "Locked: Subscribe to unlock all remaining chapters";
                   } else {
                     statusLabel = `Locked: Complete Chapter ${chapter.orderNumber - 1} to unlock`;
@@ -327,17 +335,21 @@ export default function PythonCurriculumPage() {
                 // Determine metadata
                 const lessonCount = "1 Lesson Notes";
                 let assesmentLabel = "No Assessment";
-                if (chapter.orderNumber === 0) assesmentLabel = "12 Quiz Questions";
-                else if (chapter.orderNumber === 1) assesmentLabel = "14 Quiz Questions";
-                else if (chapter.orderNumber >= 2) assesmentLabel = "15 Quiz Questions";
+                if (isC) {
+                  assesmentLabel = "10 Quiz Questions";
+                } else {
+                  if (chapter.orderNumber === 0) assesmentLabel = "12 Quiz Questions";
+                  else if (chapter.orderNumber === 1) assesmentLabel = "14 Quiz Questions";
+                  else if (chapter.orderNumber >= 2) assesmentLabel = "15 Quiz Questions";
+                }
 
                 return (
                   <div
                     key={chapter.id}
                     onClick={() => {
                       if (unlocked) {
-                        router.push(`/courses/python/chapter/${chapter.orderNumber}`);
-                      } else if (!isEnrolled && chapter.orderNumber > 0) {
+                        router.push(`/courses/${courseSlug}/chapter/${chapter.orderNumber}`);
+                      } else if (!isEnrolled && chapter.orderNumber > (isC ? 1 : 0)) {
                         alert("🔒 This chapter is locked. Please subscribe to unlock access.");
                       } else {
                         alert(`🔒 This chapter is locked. Complete Chapter ${chapter.orderNumber - 1} quiz to unlock.`);

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession } from "@/lib/auth-client";
 import {
   Sparkles,
   Search,
@@ -19,9 +20,22 @@ import {
 interface TopNavbarProps {
   userName?: string;
   userRole?: string;
+  user?: {
+    name?: string;
+    email?: string;
+    role?: string;
+    [key: string]: any;
+  } | null;
 }
 
-export function TopNavbar({ userName = "Chandu", userRole = "Student" }: TopNavbarProps) {
+export function TopNavbar({ userName = "Student", userRole = "Student", user }: TopNavbarProps) {
+  const sessionData = useSession();
+  const sessionUser = (sessionData?.data as any)?.user ?? null;
+  const authUser = user ?? sessionUser;
+  const displayName = authUser?.name || userName || "Student";
+  const displayRole = authUser?.role || userRole || "Student";
+  const displayEmail = authUser?.email || "";
+
   const [darkMode, setDarkMode] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
@@ -124,11 +138,11 @@ export function TopNavbar({ userName = "Chandu", userRole = "Student" }: TopNavb
             className="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl glass-panel border border-white/10 hover:border-blue-500/40 transition-all"
           >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
-              {userName.charAt(0)}
+              {displayName.charAt(0)}
             </div>
             <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-bold text-white leading-tight">{userName}</span>
-              <span className="text-[10px] text-cyan-400 font-mono leading-tight">{userRole}</span>
+              <span className="text-xs font-bold text-white leading-tight">{displayName}</span>
+              <span className="text-[10px] text-cyan-400 font-mono leading-tight">{displayRole}</span>
             </div>
             <ChevronDown size={14} className="text-slate-400" />
           </button>
@@ -137,8 +151,8 @@ export function TopNavbar({ userName = "Chandu", userRole = "Student" }: TopNavb
           {profileOpen && (
             <div className="absolute right-0 top-12 w-56 p-2 rounded-2xl glass-panel border border-white/15 bg-[#0C0C14]/95 shadow-2xl space-y-1 z-50">
               <div className="p-2.5 border-b border-white/10 mb-1">
-                <div className="text-xs font-bold text-white">{userName}</div>
-                <div className="text-[10px] text-slate-400">chandu@gmail.com</div>
+                <div className="text-xs font-bold text-white">{displayName}</div>
+                <div className="text-[10px] text-slate-400">{displayEmail || "No email available"}</div>
               </div>
               <a href="#profile" className="flex items-center gap-2 p-2 rounded-xl text-xs text-slate-300 hover:bg-white/10 hover:text-white">
                 <User size={14} /> My Profile
@@ -146,9 +160,19 @@ export function TopNavbar({ userName = "Chandu", userRole = "Student" }: TopNavb
               <a href="#settings" className="flex items-center gap-2 p-2 rounded-xl text-xs text-slate-300 hover:bg-white/10 hover:text-white">
                 <Settings size={14} /> Settings &amp; Preferences
               </a>
-              <a href="/auth" className="flex items-center gap-2 p-2 rounded-xl text-xs text-red-400 hover:bg-red-500/10">
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                  } catch (err) {
+                    console.error("Logout failed:", err);
+                  }
+                  window.location.href = "/auth";
+                }}
+                className="w-full flex items-center gap-2 p-2 rounded-xl text-xs text-red-400 hover:bg-red-500/10 text-left cursor-pointer"
+              >
                 <ShieldCheck size={14} /> Switch Account / Logout
-              </a>
+              </button>
             </div>
           )}
         </div>

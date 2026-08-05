@@ -139,13 +139,20 @@ export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
 
       {/* Footer Controls & Collapse Toggle */}
       <div className="p-3 border-t border-white/10 space-y-2 bg-[#060609]">
-        <a
-          href="/auth"
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-all"
+        <button
+          onClick={async () => {
+            try {
+              await fetch("/api/auth/logout", { method: "POST" });
+            } catch (err) {
+              console.error("Logout failed:", err);
+            }
+            window.location.href = "/auth";
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-all text-left cursor-pointer"
         >
           <LogOut size={18} className="shrink-0" />
           {!collapsed && <span>Logout</span>}
-        </a>
+        </button>
 
         <button
           onClick={() => setCollapsed(!collapsed)}

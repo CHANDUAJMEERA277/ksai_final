@@ -80,19 +80,22 @@ function shuffleQuiz(questions: QuizQuestion[]): ShuffledQuizQuestion[] {
   return shuffledQuestions;
 }
 
-export default function PythonQuizPage() {
+export default function CourseQuizPage() {
   const router = useRouter();
   const params = useParams();
+  const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
-  const isPending = sessionData?.isPending ?? false;
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState("Python AI & Data Structures Architecture");
+  const [courseTitle, setCourseTitle] = useState(
+    courseSlug === "c"
+      ? "C Language Mastery & System Programming"
+      : "Python AI & Data Structures Architecture"
+  );
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [shuffledQuestions, setShuffledQuestions] = useState<ShuffledQuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -122,7 +125,7 @@ export default function PythonQuizPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/courses/python/chapters/${chapterOrder}/quiz`);
+        const res = await fetch(`/api/courses/${courseSlug}/chapters/${chapterOrder}/quiz`);
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -145,7 +148,7 @@ export default function PythonQuizPage() {
     };
 
     loadQuizData();
-  }, [chapterOrder]);
+  }, [chapterOrder, courseSlug]);
 
   const handleSelectOption = (optionIndex: number) => {
     if (quizResult) return;
@@ -196,7 +199,7 @@ export default function PythonQuizPage() {
     const timeTakenStr = formatDuration(durationMs);
 
     try {
-      const res = await fetch(`/api/courses/python/chapters/${chapterOrder}/quiz/submit`, {
+      const res = await fetch(`/api/courses/${courseSlug}/chapters/${chapterOrder}/quiz/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: selectedAnswers }),
@@ -239,6 +242,8 @@ export default function PythonQuizPage() {
     ? Math.round(((currentQuestionIndex + 1) / shuffledQuestions.length) * 100)
     : 0;
 
+  const isC = courseSlug === "c";
+
   return (
     <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden">
       {/* Custom Top Bar */}
@@ -249,7 +254,7 @@ export default function PythonQuizPage() {
           </div>
           <div>
             <span className="text-[10px] text-blue-600 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; Python Course</span>
+            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -267,7 +272,7 @@ export default function PythonQuizPage() {
         
         {/* Breadcrumb Navigation & Back link */}
         <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs text-slate-505">
             <button
               onClick={() => router.push("/dashboard")}
               className="hover:text-slate-800 transition-colors"
@@ -276,21 +281,21 @@ export default function PythonQuizPage() {
             </button>
             <span>&bull;</span>
             <button
-              onClick={() => router.push("/courses/python")}
+              onClick={() => router.push(`/courses/${courseSlug}`)}
               className="hover:text-slate-800 transition-colors"
             >
               Course
             </button>
             <span>&bull;</span>
             <button
-              onClick={() => router.push("/courses/python/curriculum")}
+              onClick={() => router.push(`/courses/${courseSlug}/curriculum`)}
               className="hover:text-slate-800 transition-colors"
             >
               Curriculum
             </button>
             <span>&bull;</span>
             <button
-              onClick={() => router.push(`/courses/python/chapter/${chapterOrder}`)}
+              onClick={() => router.push(`/courses/${courseSlug}/chapter/${chapterOrder}`)}
               className="hover:text-slate-800 transition-colors"
             >
               Lesson {chapterOrder}
@@ -302,7 +307,7 @@ export default function PythonQuizPage() {
           </div>
 
           <button
-            onClick={() => router.push(`/courses/python/chapter/${chapterOrder}`)}
+            onClick={() => router.push(`/courses/${courseSlug}/chapter/${chapterOrder}`)}
             className="px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 text-[11px] font-bold flex items-center gap-1.5 transition-all"
           >
             <ArrowLeft size={13} /> Back to Lesson Notes
@@ -319,7 +324,7 @@ export default function PythonQuizPage() {
             <h3 className="text-base font-bold text-slate-800">Notice</h3>
             <p className="text-xs text-slate-500">{error}</p>
             <button
-              onClick={() => router.push(`/courses/python/chapter/${chapterOrder}`)}
+              onClick={() => router.push(`/courses/${courseSlug}/chapter/${chapterOrder}`)}
               className="px-4 py-2 rounded-xl text-xs font-bold text-slate-750 bg-slate-100 hover:bg-slate-200 border border-slate-200"
             >
               Back to Lesson
@@ -406,7 +411,7 @@ export default function PythonQuizPage() {
                 <button
                   onClick={handleQuizSubmit}
                   disabled={submittingQuiz || Object.keys(selectedAnswers).length < quizQuestions.length}
-                  className="px-6 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 disabled:opacity-50 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
+                  className="px-6 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 disabled:opacity-55 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
                 >
                   {submittingQuiz ? "Submitting..." : "Submit Assessment"}
                 </button>
@@ -414,7 +419,7 @@ export default function PythonQuizPage() {
             </div>
           </div>
         ) : (
-          /* Quiz Result Dashboard (Completion State) */
+          /* Quiz Result Dashboard */
           <div className="space-y-8 animate-fade-in max-w-3xl mx-auto w-full pb-10">
             
             {/* Score Header Card */}
@@ -437,7 +442,7 @@ export default function PythonQuizPage() {
                 <h3 className="text-2xl font-black text-slate-800 tracking-tight">
                   {quizResult.passed ? "🎉 Chapter Assessment Passed!" : "❌ Quiz Attempt Failed"}
                 </h3>
-                <p className="text-xs text-slate-650 max-w-md mx-auto leading-relaxed">
+                <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
                   {quizResult.passed
                     ? `Congratulations! You scored ${quizResult.score}% and passed the Chapter ${chapterOrder} quiz. The next chapter is now unlocked.`
                     : `You did not achieve the required passing score of 70% (your score: ${quizResult.score}%). Review the lesson notes and try again.`}
@@ -466,7 +471,7 @@ export default function PythonQuizPage() {
 
               <div className="pt-4 flex flex-wrap justify-center gap-3 border-t border-slate-200">
                 <button
-                  onClick={() => router.push("/courses/python/curriculum")}
+                  onClick={() => router.push(`/courses/${courseSlug}/curriculum`)}
                   className="px-6 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
                 >
                   Go to Curriculum Syllabus
@@ -485,7 +490,7 @@ export default function PythonQuizPage() {
 
             {/* Detailed Breakdown Review */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold text-slate-850 uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <HelpCircle size={16} className="text-blue-600" />
                 Assessment Question Review
               </h3>
@@ -505,14 +510,14 @@ export default function PythonQuizPage() {
                         <span className="font-mono text-slate-400 font-bold">
                           Q{idx + 1}.
                         </span>
-                        <h4 className="font-bold text-slate-850 text-sm sm:text-base leading-relaxed">
+                        <h4 className="font-bold text-slate-800 text-sm sm:text-base leading-relaxed">
                           {item.question}
                         </h4>
                       </div>
                       <span
                         className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0 ${
                           item.correct
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-250"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : "bg-red-50 text-red-700 border border-red-250"
                         }`}
                       >
@@ -525,7 +530,7 @@ export default function PythonQuizPage() {
                         const isUserChoice = item.userAnswer === optIdx;
                         const isCorrectChoice = item.correctAnswer === optIdx;
 
-                        let optionStyle = "bg-slate-50 border-slate-200 text-slate-600";
+                        let optionStyle = "bg-slate-50 border-slate-200 text-slate-650";
                         if (isCorrectChoice) {
                           optionStyle = "bg-emerald-50 border-emerald-300 text-emerald-800 font-bold";
                         } else if (isUserChoice && !item.correct) {

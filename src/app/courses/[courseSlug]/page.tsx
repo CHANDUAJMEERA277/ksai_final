@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
-import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
   Award,
@@ -27,16 +26,21 @@ interface ProgressItem {
   quizScore: number;
 }
 
-export default function PythonOverviewPage() {
+export default function CourseOverviewPage() {
   const router = useRouter();
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
+  const params = useParams();
+  const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState("Python AI & Data Structures Architecture");
+  const [courseTitle, setCourseTitle] = useState(
+    courseSlug === "c"
+      ? "C Language Mastery & System Programming"
+      : "Python AI & Data Structures Architecture"
+  );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(2499);
+  const [coursePrice, setCoursePrice] = useState(courseSlug === "c" ? 1499 : 2499);
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [progresses, setProgresses] = useState<ProgressItem[]>([]);
@@ -45,21 +49,22 @@ export default function PythonOverviewPage() {
 
   // User resolution
   useEffect(() => {
-    if (session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session]);
+  }, [session, isPending]);
 
   // Fetch course metadata
   useEffect(() => {
     const fetchOverviewData = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/courses/python/chapters/0");
+        const firstChapter = "0";
+        const res = await fetch(`/api/courses/${courseSlug}/chapters/${firstChapter}`);
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -81,11 +86,11 @@ export default function PythonOverviewPage() {
     };
 
     fetchOverviewData();
-  }, []);
+  }, [courseSlug]);
 
   // Calculate Progress Stats
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 11;
+  const totalChaptersCount = chapters.length || (courseSlug === "c" ? 6 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   // Continue Learning Logic
@@ -97,11 +102,13 @@ export default function PythonOverviewPage() {
     });
 
     if (nextChapter) {
-      router.push(`/courses/python/chapter/${nextChapter.orderNumber}`);
+      router.push(`/courses/${courseSlug}/chapter/${nextChapter.orderNumber}`);
     } else {
-      router.push(`/courses/python/chapter/0`);
+      router.push(`/courses/${courseSlug}/chapter/0`);
     }
   };
+
+  const isC = courseSlug === "c";
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
@@ -113,11 +120,10 @@ export default function PythonOverviewPage() {
           </div>
           <div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; Python Course</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <CourseSwitcher currentLanguage="python" />
           <button
             onClick={() => router.push("/dashboard")}
             className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
@@ -138,7 +144,7 @@ export default function PythonOverviewPage() {
             My Courses
           </button>
           <span>&bull;</span>
-          <span className="text-cyan-400 font-mono">Python Course Overview</span>
+          <span className="text-cyan-400 font-mono">{isC ? "C" : "Python"} Course Overview</span>
         </div>
 
         {loading ? (
@@ -165,13 +171,15 @@ export default function PythonOverviewPage() {
               
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-cyan-300 text-[10px] font-semibold border border-blue-500/20">
-                  <Sparkles size={11} className="text-cyan-400" /> Premium Path &bull; Python AI
+                  <Sparkles size={11} className="text-cyan-400" /> Premium Path &bull; {isC ? "C Mastery" : "Python AI"}
                 </div>
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   {courseTitle}
                 </h1>
                 <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
-                  Master modern Python programming from syntax fundamentals to advanced object-oriented design and AI model integrations. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations.
+                  {isC
+                    ? "Master C programming from scratch: pointers, memory allocation (malloc/free), structs, file I/O, and low-level system design. Includes comprehensive hands-on practice and AI Voice explanations."
+                    : "Master modern Python programming from syntax fundamentals to advanced object-oriented design and AI model integrations. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations."}
                 </p>
               </div>
 
@@ -179,13 +187,13 @@ export default function PythonOverviewPage() {
                 <div className="space-y-0.5">
                   <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Difficulty</div>
                   <div className="text-xs font-bold text-cyan-300 flex items-center gap-1">
-                    <BarChart3 size={12} /> Beginner to Advanced
+                    <BarChart3 size={12} /> {isC ? "Beginner" : "Beginner to Advanced"}
                   </div>
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Estimated Time</div>
                   <div className="text-xs font-bold text-purple-300 flex items-center gap-1">
-                    <Clock size={12} /> 30 Hours Access
+                    <Clock size={12} /> {isC ? "20 Hours Access" : "30 Hours Access"}
                   </div>
                 </div>
                 <div className="space-y-0.5">
@@ -254,7 +262,7 @@ export default function PythonOverviewPage() {
                     Continue Learning <ArrowRight size={14} />
                   </button>
                   <button
-                    onClick={() => router.push("/courses/python/curriculum")}
+                    onClick={() => router.push(`/courses/${courseSlug}/curriculum`)}
                     className="py-3 px-5 rounded-xl font-extrabold text-xs text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-2"
                   >
                     Go to Curriculum <BookOpen size={14} />

@@ -1,28 +1,34 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userEmail, courseId, paidAmount, paymentId } = body;
+    const { userEmail: bodyEmail, courseId, paidAmount, paymentId } = body;
 
-    if (!userEmail || !courseId || !paymentId) {
+    // 1. Resolve user session from Better Auth
+    const sessionData = await auth.api.getSession({ headers: req.headers });
+    let user = sessionData?.user ?? null;
+
+    // 2. Fallback: If session not resolved, find user by email provided in body
+    const userEmail = user?.email || bodyEmail;
+    if (!user && userEmail) {
+      user = await db.user.findUnique({
+        where: { email: userEmail.toLowerCase().trim() },
+      });
+    }
+
+    if (!courseId || !paymentId) {
       return NextResponse.json(
-        { error: "User email, course ID, and payment ID are required." },
+        { error: "Course ID and payment ID are required." },
         { status: 400 }
       );
     }
 
-    // Find user by email or fallback to first user
-    let user = await db.user.findUnique({
-      where: { email: userEmail.toLowerCase() },
-    });
-
     if (!user) {
-      user = await db.user.findFirst();
-      if (!user) {
-        return NextResponse.json({ error: "User not found." }, { status: 404 });
-      }
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
     // Verify course exists

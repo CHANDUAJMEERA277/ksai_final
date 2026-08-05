@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+
 import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   ArrowLeft,
@@ -28,7 +28,7 @@ interface ProgressItem {
 
 export default function JavaCurriculumPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [progresses, setProgresses] = useState<ProgressItem[]>([]);

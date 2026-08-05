@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
+import { parseSessionToken } from "@/lib/auth-cookie";
 
 export async function POST(
   req: Request,
@@ -10,24 +11,24 @@ export async function POST(
   try {
     const { courseSlug, chapterId } = await params;
 
-    // Resolve user via NextAuth or custom sessionToken
-    const nextAuthSession = await auth();
-    let user = null;
-    if (nextAuthSession?.user?.email) {
-      user = await db.user.findUnique({
-        where: { email: nextAuthSession.user.email.toLowerCase() },
-      });
-    }
+    // 1. Primary check: Resolve user via Better Auth session API
+    const sessionData = await auth.api.getSession({ headers: req.headers });
+    let user = sessionData?.user ?? null;
 
+    // 2. Fallback check: Resolve user via cookie session token lookup in DB
     if (!user) {
       const cookieStore = await cookies();
-      const sessionToken = cookieStore.get("sessionToken")?.value;
+      const sessionToken =
+        cookieStore.get("better-auth.session_token")?.value ||
+        cookieStore.get("sessionToken")?.value;
+
       if (sessionToken) {
+        const rawToken = parseSessionToken(sessionToken);
         const session = await db.session.findUnique({
-          where: { token: sessionToken },
+          where: { token: rawToken },
           include: { user: true },
         });
-        user = session?.user;
+        user = session?.user ?? null;
       }
     }
 
