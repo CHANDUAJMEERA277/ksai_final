@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
@@ -31,7 +31,8 @@ interface ProgressItem {
 
 export default function CppOverviewPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
+  const status = isPending ? "loading" : session ? "authenticated" : "unauthenticated";
 
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [courseTitle, setCourseTitle] = useState("Modern C++ Architecture & Performance Masterclass");

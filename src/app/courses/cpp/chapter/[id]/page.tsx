@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { renderMarkdown } from "@/lib/markdown";
 import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
@@ -36,7 +36,8 @@ interface ProgressItem {
 export default function CppChapterReaderPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
+  const status = isPending ? "loading" : session ? "authenticated" : "unauthenticated";
 
   const chapterParam = (params?.id as string) || "1";
   const currentOrderNum = parseInt(chapterParam.replace(/[^0-9]/g, ""), 10) || 1;
