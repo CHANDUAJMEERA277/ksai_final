@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
     // 1. Resolve user session from Better Auth
     const sessionData = await auth.api.getSession({ headers: req.headers });
-    let user: any = sessionData?.user ?? null;
+    let user = sessionData?.user ?? null;
 
     // 2. Fallback: If session not resolved, find user by email provided in body
     const userEmail = user?.email || bodyEmail;

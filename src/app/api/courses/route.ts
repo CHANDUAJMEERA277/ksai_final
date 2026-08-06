@@ -111,18 +111,37 @@ const needsJavaReseed =
       ch.explanation !== `java/chapter${ch.orderNumber}.md`
   );
 
-const cppCourse = courses.find(
-  (c: { language: string }) => c.language === "cpp"
+const cCourse = courses.find(
+  (c: { language: string }) => c.language === "c"
 );
 
-const needsCppReseed =
-  !cppCourse ||
-  cppCourse.chapters.length < 15 ||
-  cppCourse.chapters.some(
-    (ch: { orderNumber: number; explanation: string; quizData?: string | null }) =>
-      ch.explanation !== `cpp/chapter${ch.orderNumber}.md` ||
-      !ch.quizData ||
-      JSON.parse(ch.quizData).length < 10
+const needsCReseed =
+  !cCourse ||
+  cCourse.chapters.length < 11 ||
+  cCourse.chapters.some(
+    (ch: { orderNumber: number; explanation: string }) =>
+      (ch.orderNumber === 0 &&
+        ch.explanation !== "content/c/chapter0.md") ||
+      (ch.orderNumber === 1 &&
+        ch.explanation !== "content/c/chapter1.md") ||
+      (ch.orderNumber === 2 &&
+        ch.explanation !== "content/c/chapter2.md") ||
+      (ch.orderNumber === 3 &&
+        ch.explanation !== "content/c/chapter3.md") ||
+      (ch.orderNumber === 4 &&
+        ch.explanation !== "content/c/chapter4.md") ||
+      (ch.orderNumber === 5 &&
+        ch.explanation !== "content/c/chapter5.md") ||
+      (ch.orderNumber === 6 &&
+        ch.explanation !== "content/c/chapter6.md") ||
+      (ch.orderNumber === 7 &&
+        ch.explanation !== "content/c/chapter7.md") ||
+      (ch.orderNumber === 8 &&
+        ch.explanation !== "content/c/chapter8.md") ||
+      (ch.orderNumber === 9 &&
+        ch.explanation !== "content/c/chapter9.md") ||
+      (ch.orderNumber === 10 &&
+        ch.explanation !== "content/c/chapter10.md")
   );
 
 if (
@@ -131,11 +150,8 @@ if (
   courses.some((c: { chapters?: any[] | null }) => !c.chapters || c.chapters.length === 0) ||
   needsPythonReseed ||
   needsJavaReseed ||
-  needsCppReseed
+  needsCReseed
 ) {
-      await db.chapterProgress.deleteMany({});
-      await db.enrollment.deleteMany({});
-      await db.chapter.deleteMany({});
       await db.course.deleteMany({});
       
       for (const courseData of LANGUAGE_COURSES) {
@@ -418,209 +434,256 @@ if (
             { orderNumber: 14, title: "Chapter 14: Collections Framework & Generics", explanation: "java/chapter14.md", quizData: JSON.stringify([{ id: 1, question: "According to PECS, which wildcard is used for producers?", options: ["? extends T", "? super T", "?", "T"], answer: 0 }]), challenges: "[]" },
             { orderNumber: 15, title: "Chapter 15: File I/O, NIO & Streams API", explanation: "java/chapter15.md", quizData: JSON.stringify([{ id: 1, question: "Which stream operation is intermediate?", options: ["filter()", "collect()", "forEach()", "count()"], answer: 0 }]), challenges: "[]" },
           ];
-        } else if (courseData.language === "cpp") {
+        } else if (courseData.language === "c") {
           chaptersToCreate = [
-            { orderNumber: 1, title: "Chapter 1: C++ Foundations and the Development Environment", explanation: "cpp/chapter1.md", quizData: JSON.stringify([
-              { id: 1, question: "Which build phase expands #include directives?", options: ["The linker", "The preprocessor", "The assembler", "The loader"], answer: 1 },
-              { id: 2, question: "An undefined reference to a function you declared but never defined is reported by:", options: ["The preprocessor", "The compiler front end", "The linker", "The operating system"], answer: 2 },
-              { id: 3, question: "What does the value returned from main() communicate?", options: ["The number of lines executed", "The process exit status to the OS", "The amount of memory used", "Nothing at all"], answer: 1 },
-              { id: 4, question: "The principal reason C++ outperforms interpreted languages is that it:", options: ["Uses shorter keywords", "Compiles directly to native machine instructions", "Avoids using functions", "Runs inside a virtual machine"], answer: 1 },
-              { id: 5, question: "std is best described as:", options: ["A reserved keyword", "A namespace containing the standard library", "A compiler flag", "A type of pointer"], answer: 1 },
-              { id: 6, question: "Object files produced by the assembler typically end in:", options: [".cpp", ".hpp", ".o or .obj", ".exe"], answer: 2 },
-              { id: 7, question: "CMake's primary role is to:", options: ["Compile C++ directly to binary", "Generate build files for a platform's native build tool", "Replace the linker", "Format source code"], answer: 1 },
-              { id: 8, question: "Which C++ standard introduced move semantics and smart pointers?", options: ["C++98", "C++11", "C++17", "C++23"], answer: 1 },
-              { id: 9, question: "The insertion operator used with std::cout is:", options: ["<<", ">>", "->", "::"], answer: 0 },
-              { id: 10, question: "Zero-overhead abstraction means:", options: ["Abstractions are forbidden", "You pay no runtime cost for features you do not use", "All code runs at the same speed", "Memory is always freed automatically"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 2, title: "Chapter 2: Types, Variables, Scope, and Immutability", explanation: "cpp/chapter2.md", quizData: JSON.stringify([
-              { id: 1, question: "Which initialisation form rejects a narrowing conversion at compile time?", options: ["int x = 3.9;", "int x(3.9);", "int x{3.9};", "All of them"], answer: 2 },
-              { id: 2, question: "Reading an uninitialised local int is:", options: ["Guaranteed to yield 0", "Undefined behaviour", "A compiler error always", "Guaranteed to yield -1"], answer: 1 },
-              { id: 3, question: "The C++ standard guarantees that int is:", options: ["Exactly 4 bytes", "Exactly 2 bytes", "At least a specified minimum width", "The same size as double"], answer: 2 },
-              { id: 4, question: "constexpr differs from const in that constexpr:", options: ["Allows later modification", "Requires compile-time evaluation", "Only works on pointers", "Is a runtime check"], answer: 1 },
-              { id: 5, question: "Which is the safer default for general real-number arithmetic?", options: ["float", "double", "short", "char"], answer: 1 },
-              { id: 6, question: "sizeof is evaluated:", options: ["At link time", "At compile time", "At load time", "On every loop iteration"], answer: 1 },
-              { id: 7, question: "Scope refers to:", options: ["How long storage lives", "The region where a name is visible", "The number of bytes used", "The CPU register assigned"], answer: 1 },
-              { id: 8, question: "Comparing two double values with == is dangerous because:", options: ["== is not defined for double", "Binary approximation makes exact equality unreliable", "It always returns true", "It is a compiler error"], answer: 1 },
-              { id: 9, question: "Const-correctness primarily improves:", options: ["Compilation speed only", "Readability and compiler-enforced safety", "Binary size only", "Nothing measurable"], answer: 1 },
-              { id: 10, question: "Unsigned integer overflow in C++ is defined to:", options: ["Crash the program", "Wrap around modulo 2^N", "Produce a negative number", "Be undefined behaviour"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 3, title: "Chapter 3: Operators, Conversions, and Input/Output", explanation: "cpp/chapter3.md", quizData: JSON.stringify([
-              { id: 1, question: "What is the value of 7 / 2 when both operands are int?", options: ["3.5", "3", "4", "Undefined"], answer: 1 },
-              { id: 2, question: "Which cast is checked at runtime for polymorphic types?", options: ["static_cast", "dynamic_cast", "const_cast", "reinterpret_cast"], answer: 1 },
-              { id: 3, question: "The modulus operator % may be applied to:", options: ["Only floating-point types", "Only integral types", "Any type", "Only unsigned types"], answer: 1 },
-              { id: 4, question: "auto determines a variable's type:", options: ["At run time", "At compile time from the initialiser", "From the variable's name", "From the first assignment after declaration"], answer: 1 },
-              { id: 5, question: "Short-circuit evaluation means that in a && b:", options: ["b is always evaluated", "b is skipped if a is false", "a is skipped if b is true", "Both are evaluated in parallel"], answer: 1 },
-              { id: 6, question: "To read a line of text containing spaces you should use:", options: ["std::cin >>", "std::getline", "std::cout <<", "std::setw"], answer: 1 },
-              { id: 7, question: "std::setprecision combined with std::fixed controls:", options: ["Digits after the decimal point", "Total field width", "Integer base", "Buffer size"], answer: 0 },
-              { id: 8, question: "Assignment operators associate:", options: ["Left to right", "Right to left", "They do not associate", "Depends on the compiler"], answer: 1 },
-              { id: 9, question: "Which expression is grouped as ((a) + (b * c))?", options: ["a + b * c", "(a + b) * c", "a * b + c", "a + b + c"], answer: 0 },
-              { id: 10, question: "Converting double to int via static_cast:", options: ["Rounds to nearest", "Truncates toward zero", "Always rounds up", "Is a compile error"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 4, title: "Chapter 4: Control Flow, Functions, Arrays, and Strings", explanation: "cpp/chapter4.md", quizData: JSON.stringify([
-              { id: 1, question: "Which loop is guaranteed to execute its body at least once?", options: ["for", "while", "do-while", "range-for"], answer: 2 },
-              { id: 2, question: "Omitting break in a switch case results in:", options: ["A compiler error", "Fall-through to the next case", "The program terminating", "The case repeating"], answer: 1 },
-              { id: 3, question: "Passing a large object by const reference rather than by value primarily avoids:", options: ["A compiler warning", "An expensive copy", "Undefined behaviour", "Name mangling"], answer: 1 },
-              { id: 4, question: "A recursive function without a reachable base case will typically cause:", options: ["A compile error", "A stack overflow", "A memory leak", "A linker error"], answer: 1 },
-              { id: 5, question: "The first valid index of an array of size n is:", options: ["1", "0", "-1", "n"], answer: 1 },
-              { id: 6, question: "When a raw array is passed to a function it:", options: ["Is copied element by element", "Decays to a pointer, losing size information", "Becomes a std::vector", "Cannot be passed at all"], answer: 1 },
-              { id: 7, question: "std::array differs from a raw array chiefly because it:", options: ["Lives on the heap", "Carries its size and offers member functions", "Can change size", "Is slower by design"], answer: 1 },
-              { id: 8, question: "Which reads a whole line including spaces into a std::string?", options: ["cin >> s", "std::getline(std::cin, s)", "cin.get(s)", "scanf"], answer: 1 },
-              { id: 9, question: "Function overloading distinguishes functions by:", options: ["Return type alone", "Parameter list", "Their comments", "Order of definition"], answer: 1 },
-              { id: 10, question: "continue inside a loop causes:", options: ["The loop to end", "The next iteration to begin immediately", "The function to return", "The program to exit"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 5, title: "Chapter 5: Pointers, References, and Memory Management", explanation: "cpp/chapter5.md", quizData: JSON.stringify([
-              { id: 1, question: "Which operator retrieves the address of a variable?", options: ["*", "&", "->", "::"], answer: 1 },
-              { id: 2, question: "A reference in C++ can:", options: ["Be null", "Be reseated to another object", "Neither be null nor reseated", "Only refer to pointers"], answer: 2 },
-              { id: 3, question: "Memory allocated with new[] must be released with:", options: ["delete", "free", "delete[]", "It is released automatically"], answer: 2 },
-              { id: 4, question: "Accessing memory through a pointer after delete is called:", options: ["A memory leak", "A dangling pointer dereference", "Stack overflow", "Aliasing"], answer: 1 },
-              { id: 5, question: "std::unique_ptr is:", options: ["Copyable and movable", "Move-only", "Copy-only", "Neither copyable nor movable"], answer: 1 },
-              { id: 6, question: "Two shared_ptr objects referring to each other cause:", options: ["Immediate crash", "A reference cycle and a leak", "A compiler error", "Automatic cleanup"], answer: 1 },
-              { id: 7, question: "The preferred way to create a unique_ptr is:", options: ["new T()", "std::make_unique<T>()", "malloc", "std::shared_ptr<T>()"], answer: 1 },
-              { id: 8, question: "RAII ties resource release to:", options: ["Program exit", "The destructor of a scope-bound object", "A manual cleanup function", "The garbage collector"], answer: 1 },
-              { id: 9, question: "Which is the modern, type-safe null pointer literal?", options: ["NULL", "0", "nullptr", "void*"], answer: 2 },
-              { id: 10, question: "weak_ptr differs from shared_ptr in that it:", options: ["Owns the object exclusively", "Does not contribute to the strong reference count", "Cannot be created from a shared_ptr", "Deletes the object immediately"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 6, title: "Chapter 6: Object-Oriented Programming", explanation: "cpp/chapter6.md", quizData: JSON.stringify([
-              { id: 1, question: "The default access level for members of a class (not a struct) is:", options: ["public", "private", "protected", "internal"], answer: 1 },
-              { id: 2, question: "A pure virtual function is declared by:", options: ["virtual void f();", "virtual void f() = 0;", "void f() override;", "static void f();"], answer: 1 },
-              { id: 3, question: "A class containing at least one pure virtual function is:", options: ["Concrete", "Abstract and cannot be instantiated", "Final", "A template"], answer: 1 },
-              { id: 4, question: "Deleting a derived object through a base pointer without a virtual destructor causes:", options: ["A compiler error", "Undefined behaviour and typically a partial destruction", "Automatic correct cleanup", "A linker error"], answer: 1 },
-              { id: 5, question: "Runtime polymorphism in C++ is implemented via:", options: ["Macros", "A vtable and a vptr", "Preprocessor conditionals", "Templates only"], answer: 1 },
-              { id: 6, question: "The member initialiser list is preferred over assignment in the constructor body because it:", options: ["Is shorter to type", "Initialises directly instead of default-constructing then assigning", "Is required by the standard", "Disables copying"], answer: 1 },
-              { id: 7, question: "The override keyword primarily:", options: ["Makes a function virtual", "Asks the compiler to verify the signature really overrides a base virtual", "Prevents inheritance", "Improves speed"], answer: 1 },
-              { id: 8, question: "Encapsulation chiefly provides:", options: ["Faster execution", "Control over invariants and a smaller breakable surface", "Smaller binaries", "Automatic threading"], answer: 1 },
-              { id: 9, question: "Members declared protected are accessible to:", options: ["Everyone", "Only the class itself", "The class and its derived classes", "Only free functions"], answer: 2 },
-              { id: 10, question: "Destructors of members run:", options: ["In declaration order", "In reverse declaration order, after the destructor body", "In random order", "Only if explicitly called"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 7, title: "Chapter 7: Modern Data Structures: Vectors and Iterators", explanation: "cpp/chapter7.md", quizData: JSON.stringify([
-              { id: 1, question: "The difference between size() and capacity() is that capacity() is:", options: ["Always equal to size()", "The number of elements storable before reallocation", "The number of bytes used", "Always zero"], answer: 1 },
-              { id: 2, question: "push_back on a full vector triggers:", options: ["An exception", "Reallocation and element migration", "Silent data loss", "A compile error"], answer: 1 },
-              { id: 3, question: "Which access method performs bounds checking?", options: ["operator[]", "at()", "front()", "data()"], answer: 1 },
-              { id: 4, question: "v.end() refers to:", options: ["The last element", "One position past the last element", "The first element", "A null pointer"], answer: 1 },
-              { id: 5, question: "Reallocation invalidates:", options: ["Nothing", "Existing iterators, pointers and references", "Only const iterators", "Only the vector's size"], answer: 1 },
-              { id: 6, question: "reserve(1000) changes:", options: ["size only", "capacity only", "both size and capacity", "neither"], answer: 1 },
-              { id: 7, question: "std::vector guarantees its elements are:", options: ["Scattered on the heap", "Contiguous in memory", "Sorted", "Unique"], answer: 1 },
-              { id: 8, question: "Erasing from the middle of a vector costs:", options: ["O(1)", "O(log n)", "O(n)", "O(n^2)"], answer: 2 },
-              { id: 9, question: "A random-access iterator supports:", options: ["Only ++", "++ and --", "it + n in constant time", "No arithmetic"], answer: 2 },
-              { id: 10, question: "clear() on a vector:", options: ["Frees the capacity", "Removes elements but typically retains capacity", "Does nothing", "Invalidates the vector object"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 8, title: "Chapter 8: Advanced Templates and the Standard Template Library (STL)", explanation: "cpp/chapter8.md", quizData: JSON.stringify([
-              { id: 1, question: "Template instantiation happens:", options: ["At run time", "At compile time", "At link time only", "During preprocessing"], answer: 1 },
-              { id: 2, question: "std::map provides lookup in:", options: ["O(1) guaranteed", "O(log n)", "O(n)", "O(n log n)"], answer: 1 },
-              { id: 3, question: "std::unordered_map requires which two things for its key type?", options: ["operator< and operator>", "std::hash and operator==", "A constructor only", "Nothing"], answer: 1 },
-              { id: 4, question: "Which container silently rejects duplicate keys?", options: ["std::multiset", "std::set", "std::vector", "std::multimap"], answer: 1 },
-              { id: 5, question: "Iterating a std::unordered_map yields elements:", options: ["In sorted key order", "In unspecified order", "In insertion order", "In reverse order"], answer: 1 },
-              { id: 6, question: "STL algorithms are written against:", options: ["Specific container types", "Iterator ranges", "Raw pointers only", "Macros"], answer: 1 },
-              { id: 7, question: "A lambda's capture clause [ ] controls:", options: ["Its return type", "Which enclosing variables it can use and how", "Its parameter list", "Its calling convention"], answer: 1 },
-              { id: 8, question: "Template error messages are notoriously long because:", options: ["Compilers are poorly written", "The error is reported through the full instantiation chain", "Templates are interpreted", "They include the whole standard"], answer: 1 },
-              { id: 9, question: "std::sort requires which iterator category?", options: ["Input", "Forward", "Bidirectional", "Random access"], answer: 3 },
-              { id: 10, question: "A class template Stack is instantiated for int by writing:", options: ["Stack s;", "Stack<int> s;", "Stack(int) s;", "template Stack s;"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 9, title: "Chapter 9: Exception Handling and Robust Error Management", explanation: "cpp/chapter9.md", quizData: JSON.stringify([
-              { id: 1, question: "Exceptions should be caught by:", options: ["Value", "const reference", "Pointer", "Raw address"], answer: 1 },
-              { id: 2, question: "Catching a derived exception by value causes:", options: ["Nothing unusual", "Object slicing", "A compile error", "Immediate termination"], answer: 1 },
-              { id: 3, question: "During stack unwinding the compiler guarantees:", options: ["Memory from new is freed automatically", "Destructors of local objects run", "All threads pause", "Files are flushed"], answer: 1 },
-              { id: 4, question: "If no matching handler exists anywhere, the program:", options: ["Continues silently", "Calls std::terminate()", "Returns 0", "Retries the throw"], answer: 1 },
-              { id: 5, question: "std::out_of_range derives from:", options: ["std::runtime_error", "std::logic_error", "std::bad_alloc", "std::string"], answer: 1 },
-              { id: 6, question: "A function marked noexcept that throws will:", options: ["Propagate normally", "Terminate the program", "Return an error code", "Retry"], answer: 1 },
-              { id: 7, question: "Catch blocks should be ordered:", options: ["Base class first", "Most derived first", "Alphabetically", "Order is irrelevant"], answer: 1 },
-              { id: 8, question: "The member function every standard exception provides is:", options: ["message()", "what()", "error()", "text()"], answer: 1 },
-              { id: 9, question: "Allowing an exception to escape a destructor:", options: ["Is good practice", "Can terminate the program during unwinding", "Is required by RAII", "Is silently ignored"], answer: 1 },
-              { id: 10, question: "The strong exception guarantee means an operation:", options: ["Never throws", "Either completes fully or leaves state unchanged", "Leaves state valid but unspecified", "Always throws"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 10, title: "Chapter 10: File I/O and Streams", explanation: "cpp/chapter10.md", quizData: JSON.stringify([
-              { id: 1, question: "Which class is used for reading from a file?", options: ["ofstream", "ifstream", "ostringstream", "ostream"], answer: 1 },
-              { id: 2, question: "Which mode appends to an existing file rather than truncating it?", options: ["ios::trunc", "ios::app", "ios::in", "ios::binary"], answer: 1 },
-              { id: 3, question: "After a failed extraction, subsequent reads:", options: ["Work normally", "Do nothing until clear() is called", "Throw an exception", "Reopen the file"], answer: 1 },
-              { id: 4, question: "eofbit indicates:", options: ["Stream corruption", "End of file was reached", "A formatting error", "The file is locked"], answer: 1 },
-              { id: 5, question: "To read a whole line including spaces from a file stream, use:", options: [">>", "getline()", "read()", "seekg()"], answer: 1 },
-              { id: 6, question: "seekg positions the:", options: ["Write pointer", "Read pointer", "File size", "Buffer size"], answer: 1 },
-              { id: 7, question: "Binary mode is required when:", options: ["Writing plain text", "Writing non-text data whose bytes must not be translated", "Appending", "Reading integers"], answer: 1 },
-              { id: 8, question: "An fstream object closes its file:", options: ["Only if close() is called", "Automatically in its destructor", "At program exit only", "Never"], answer: 1 },
-              { id: 9, question: "tellp() returns:", "options": ["The file size", "The current write position", "The last error", "The open mode"], answer: 1 },
-              { id: 10, question: "With fixed-size records, the offset of record n is:", "options": ["n", "n * sizeof(Record)", "sizeof(Record)", "Unknowable"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 11, title: "Chapter 11: Multithreading and Concurrency", explanation: "cpp/chapter11.md", quizData: JSON.stringify([
-              { id: 1, question: "A data race requires that:", options: ["Two threads read the same variable", "Two threads access the same memory concurrently with at least one write, unsynchronised", "Two threads run on the same core", "A mutex is used"], answer: 1 },
-              { id: 2, question: "std::lock_guard releases its mutex:", options: ["When unlock() is called manually", "At the end of its scope, including during exception unwinding", "At program exit", "Never"], answer: 1 },
-              { id: 3, question: "A joinable std::thread destroyed without join() or detach() causes:", options: ["A memory leak only", "std::terminate to be called", "Silent success", "A compile error"], answer: 1 },
-              { id: 4, question: "Condition variables should be waited on with a predicate because:", options: ["It is stylistic", "Spurious wakeups can occur", "Predicates are faster", "The standard forbids the alternative"], answer: 1 },
-              { id: 5, question: "std::async returns:", options: ["A thread", "A future", "A mutex", "A promise"], answer: 1 },
-              { id: 6, question: "Deadlock is most simply prevented by:", options: ["Using more threads", "Acquiring locks in a globally consistent order", "Removing all locks", "Calling detach()"], answer: 1 },
-              { id: 7, question: "Calling future.get() twice on the same std::future:", options: ["Returns the value twice", "Is undefined behaviour", "Blocks forever always", "Creates a new future"], answer: 1 },
-              { id: 8, question: "std::atomic is used for:", options: ["File I/O", "Lock-free access to a single shared value", "Thread creation", "Exception handling"], answer: 1 },
-              { id: 9, question: "Holding a mutex while performing blocking network I/O:", options: ["Improves throughput", "Serialises all other threads behind slow I/O", "Is required", "Prevents deadlock"], answer: 1 },
-              { id: 10, question: "hardware_concurrency() returns:", options: ["A guarantee of thread count", "A hint at the number of concurrent threads supported", "The number of running threads", "The CPU frequency"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 12, title: "Chapter 12: Move Semantics and Rvalue References", explanation: "cpp/chapter12.md", quizData: JSON.stringify([
-              { id: 1, question: "std::move does what at run time?", options: ["Moves the object", "Nothing — it is a compile-time cast to an rvalue", "Frees memory", "Copies the object"], answer: 1 },
-              { id: 2, question: "After being moved from, an object is:", options: ["Destroyed", "Valid but unspecified", "Undefined and unusable", "Unchanged"], answer: 1 },
-              { id: 3, question: "A move constructor for a heap-owning class costs:", options: ["O(n)", "O(1)", "O(log n)", "O(n log n)"], answer: 1 },
-              { id: 4, question: "Move operations should be marked noexcept because:", options: ["It is required syntax", "Containers fall back to copying if moves may throw", "It makes them faster to compile", "It disables copying"], answer: 1 },
-              { id: 5, question: "In template<class T> void f(T&& x), T&& is:", options: ["Always an rvalue reference", "A forwarding reference", "An lvalue reference", "Invalid"], answer: 1 },
-              { id: 6, question: "Inside a function, a parameter named x of type T&& is:", options: ["An rvalue", "An lvalue, because it is named", "Neither", "Both"], answer: 1 },
-              { id: 7, question: "std::forward differs from std::move in that it:", options: ["Always casts to rvalue", "Conditionally preserves the original value category", "Copies", "Deletes"], answer: 1 },
-              { id: 8, question: "The Rule of Five concerns:", options: ["Five loop types", "Destructor, copy ctor, copy assign, move ctor, move assign", "Five containers", "Five standards"], answer: 1 },
-              { id: 9, question: "std::unique_ptr is move-only because:", options: ["Of a compiler limitation", "Copying would duplicate exclusive ownership", "It is a template", "Moves are always faster"], answer: 1 },
-              { id: 10, question: "Which of these is an rvalue?", options: ["A named local variable", "std::string(\"temp\")", "A reference parameter", "A global variable"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 13, title: "Chapter 13: C++20 Concepts and Ranges", explanation: "cpp/chapter13.md", quizData: JSON.stringify([
-              { id: 1, question: "An arena allocator frees all of its objects by:", options: ["Calling delete on each", "Resetting an offset pointer", "Running a garbage collector", "Calling free() per object"], answer: 1 },
-              { id: 2, question: "Fragmentation means:", options: ["Memory is corrupted", "Free memory exists but not as one usable contiguous block", "The heap is full", "Pointers are invalid"], answer: 1 },
-              { id: 3, question: "Placement new:", options: ["Allocates and constructs", "Constructs in memory you already own", "Frees memory", "Is deprecated"], answer: 1 },
-              { id: 4, question: "After placement new, the object must be destroyed by:", options: ["delete p", "Explicitly calling p->~T()", "free(p)", "Nothing"], answer: 1 },
-              { id: 5, question: "A pool allocator is best suited to:", options: ["Objects of wildly varying size", "Many objects of the same fixed size", "A single large object", "Stack variables"], answer: 1 },
-              { id: 6, question: "A typical cache line size is:", options: ["8 bytes", "64 bytes", "4096 bytes", "1 byte"], answer: 1 },
-              { id: 7, question: "Struct of Arrays can outperform Array of Structs because it:", options: ["Uses less total memory", "Wastes less of each fetched cache line", "Avoids all allocation", "Is required by the standard"], answer: 1 },
-              { id: 8, question: "The main drawback of an arena is:", options: ["It is slow", "Individual objects cannot be freed independently", "It fragments badly", "It cannot be reset"], answer: 1 },
-              { id: 9, question: "Accessing main memory versus L1 cache is roughly:", options: ["The same speed", "About 50 times slower", "Twice as slow", "Faster"], answer: 1 },
-              { id: 10, question: "The correct first step before any low-level optimisation is to:", options: ["Rewrite in assembly", "Profile and measure", "Add more threads", "Increase cache size"], answer: 1 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 14, title: "Chapter 14: C++20 Coroutines and Modules", explanation: "cpp/chapter14.md", quizData: JSON.stringify([
-              { id: 1, question: "A lambda expression compiles to:", options: ["A macro", "A class with an operator()", "A function pointer only", "Inline assembly"], answer: 1 },
-              { id: 2, question: "Capturing by reference is dangerous when:", options: ["The lambda is called immediately", "The lambda outlives the captured variable", "The variable is const", "The capture list is empty"], answer: 1 },
-              { id: 3, question: "A closure is:", options: ["A lambda's parameter list", "Code together with its captured environment", "A type of container", "A destructor"], answer: 1 },
-              { id: 4, question: "std::views::filter performs its work:", options: ["Immediately when written", "Lazily, when the range is iterated", "At compile time", "Never"], answer: 1 },
-              { id: 5, question: "Range views are:", options: ["Owning copies of the data", "Non-owning lightweight adaptors", "Always sorted", "Thread-safe by default"], answer: 1 },
-              { id: 6, question: "The mutable keyword on a lambda allows:", options: ["Reference captures", "Modification of by-value captures", "Recursion", "Multiple returns"], answer: 1 },
-              { id: 7, question: "std::function's main runtime cost is:", options: ["Nothing", "Possible heap allocation and an indirect call", "Extra compilation only", "Memory leaks"], answer: 1 },
-              { id: 8, question: "Init capture [p = std::move(ptr)] exists chiefly to:", options: ["Rename variables", "Capture move-only types into a lambda", "Improve readability only", "Force by-reference capture"], answer: 1 },
-              { id: 9, question: "Composing filter | transform | take over a million elements to get 5 results processes:", options: ["All million through every stage", "Only as many elements as needed to yield 5", "Exactly 5 elements total", "None"], answer: 1 },
-              { id: 10, question: "A projection in ranges::sort lets you:", options: ["Sort by a member without writing a comparator", "Sort in parallel", "Sort in place only", "Avoid comparisons"], answer: 0 }
-            ]), challenges: "[]" },
-
-            { orderNumber: 15, title: "Chapter 15: C++23 Features and High-Performance Best Practices", explanation: "cpp/chapter15.md", quizData: JSON.stringify([
-              { id: 1, question: "The Factory pattern primarily decouples client code from:", options: ["The interface", "The concrete class being constructed", "The compiler", "The destructor"], answer: 1 },
-              { id: 2, question: "Observer describes a relationship that is:", options: ["One-to-one", "One-to-many notification", "Many-to-one only", "Static and compile-time"], answer: 1 },
-              { id: 3, question: "Strategy allows you to:", options: ["Create one instance only", "Swap algorithms behind a common interface", "Adapt incompatible interfaces", "Add behaviour by wrapping"], answer: 1 },
-              { id: 4, question: "The 'O' in SOLID stands for:", "options": ["Object oriented", "Open/Closed", "Overloading", "Ownership"], answer: 1 },
-              { id: 5, question: "Dependency Inversion says high-level modules should depend on:", options: ["Concrete implementations", "Abstractions", "Global variables", "The database"], answer: 1 },
-              { id: 6, question: "Liskov Substitution is violated when a derived class:", options: ["Adds new members", "Breaks a behavioural guarantee the base promised", "Is larger in memory", "Uses templates"], answer: 1 },
-              { id: 7, question: "Singleton is criticised mainly because it:", options: ["Is slow", "Introduces global state and hinders testing", "Cannot compile", "Requires templates"], answer: 1 },
-              { id: 8, question: "The Rule of Zero advises you to:", options: ["Define all five special members", "Design classes that need none of them", "Avoid classes entirely", "Never use destructors"], answer: 1 },
-              { id: 9, question: "Interface Segregation prefers:", options: ["One large interface", "Several small focused interfaces", "No interfaces", "Only concrete classes"], answer: 1 },
-              { id: 10, question: "The Core Guidelines recommend which default for resource management?", options: ["Manual new/delete", "RAII", "Global allocation", "Garbage collection"], answer: 1 }
-            ]), challenges: "[]" },
+            {
+              orderNumber: 0,
+              title: "Chapter 0: Setup & First Program",
+              explanation: "content/c/chapter0.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Who created the C programming language, and where?", options: ["James Gosling at Sun Microsystems", "Dennis Ritchie at Bell Labs", "Guido van Rossum at CWI", "Bjarne Stroustrup at AT&T"], answer: 1 },
+                { id: 2, question: "C is often described as a:", options: ["Purely high-level scripting language", "Mid-level language balancing control and readability", "Markup language", "Query language"], answer: 1 },
+                { id: 3, question: "Which of the following is NOT a real-world use of C mentioned in this chapter?", options: ["Operating system kernels", "Embedded systems", "Designing website layouts with CSS", "Writing compilers and interpreters"], answer: 2 },
+                { id: 4, question: "What must happen before a C program can run, unlike a Python script?", options: ["Nothing extra — it runs directly", "It must be compiled into an executable first", "It must be uploaded to a server", "It must be converted to bytecode by a virtual machine only"], answer: 1 },
+                { id: 5, question: "Which command compiles hello.c into an executable named hello using GCC?", options: ["gcc run hello.c", "gcc hello.c -o hello", "python hello.c", "compile hello.c"], answer: 1 },
+                { id: 6, question: "What will happen when this program is compiled?\n\n#include <stdio.h>\nint main() {\n printf(\"Hello\")\n return 0;\n}", options: ["It compiles and runs with no issues", "It fails with an error because of the missing semicolon", "It only produces a warning", "It runs but prints nothing"], answer: 1 },
+                { id: 7, question: "What is the key difference between a compiler error and a warning?", options: ["Warnings stop compilation; errors do not", "Errors prevent an executable from being produced; warnings do not", "There is no real difference", "Warnings only appear in Python, not C"], answer: 1 },
+                { id: 8, question: "In the line #include <stdio.h>, what does this do?", options: ["Declares the main function", "Includes the Standard Input/Output library needed for functions like printf()", "Compiles the program", "Prints text to the screen"], answer: 1 },
+                { id: 9, question: "What does return 0; at the end of main() conventionally indicate?", options: ["The program crashed", "The program ran with errors", "The program finished successfully", "The program is still running"], answer: 2 },
+                { id: 10, question: "What will this program print?\n\n#include <stdio.h>\nint main() {\n printf(\"Hello\\nWorld!\");\n return 0;\n}", options: ["Hello World! (with quotes)", "Hello then World! on two lines (because of \\n mid-string)", "An error", "Nothing"], answer: 1 },
+                { id: 11, question: "If you edit and save your .c file after compiling, what must you do before your changes take effect when running the program?", options: ["Nothing, the executable updates automatically", "Re-compile the file to produce a new executable", "Restart your computer", "Rename the file"], answer: 1 },
+                { id: 12, question: "Why should compiler warnings never be ignored, even if the program still runs?", options: ["Warnings always mean the program will crash immediately", "Some warnings point to real bugs (like uninitialized variables) that may cause problems later", "Warnings are just stylistic suggestions with no real risk", "The compiler will refuse to produce an executable if warnings are ignored"], answer: 1 }
+              ]),
+              challenges: JSON.stringify([
+                { id: "easy", title: "Print Hello World & User Age", difficulty: "Easy", initialCode: "// Write your code below\n" },
+                { id: "medium", title: "Calculate Circle Area & Perimeter", difficulty: "Medium", initialCode: "// Calculate area = PI * r * r\n" },
+                { id: "hard", title: "Swap Two Variables Without Temp Variable", difficulty: "Hard", initialCode: "// Swap a and b without third variable\n" }
+              ])
+            },
+            {
+              orderNumber: 1,
+              title: "Chapter 1: C Basics",
+              explanation: "content/c/chapter1.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the entry point of every C program?", options: ["start()", "main()", "begin()", "init()"], answer: 1 },
+                { id: 2, question: "What does #include <stdio.h> do?", options: ["Declares the main function", "Pulls in the Standard Input/Output library before compilation", "Compiles the program", "Runs the program"], answer: 1 },
+                { id: 3, question: "What must end every statement in C?", options: ["A colon", "A period", "A semicolon", "Nothing is required"], answer: 2 },
+                { id: 4, question: "Which data type would you use to store a value like 3.14159265 with high precision?", options: ["int", "char", "float", "double"], answer: 3 },
+                { id: 5, question: "What is true about variables in C, unlike Python?", options: ["Their type must be declared explicitly and cannot change later", "They never need a type", "They can hold any type interchangeably at runtime", "They are always global"], answer: 0 },
+                { id: 6, question: "What does the const keyword do to a variable?", options: ["Makes it print automatically", "Prevents it from being modified after initialization", "Converts it to a string", "Deletes it after use"], answer: 1 },
+                { id: 7, question: "In scanf(\"%d\", &age);, why is & used before age?", options: ["It's a typo and has no effect", "It passes the memory address of age so scanf can store a value there", "It converts age to a string", "It multiplies age by itself"], answer: 1 },
+                { id: 8, question: "What is the result of 2 + 3 * 4 in C?", options: ["20", "14", "24", "9"], answer: 1 },
+                { id: 9, question: "What does the %d format specifier represent?", options: ["A character", "A string", "An integer", "A float"], answer: 2 },
+                { id: 10, question: "What is the difference between implicit and explicit type conversion?", options: ["There is no difference", "Implicit happens automatically; explicit (casting) is done manually by the programmer", "Explicit only happens with strings", "Implicit only works with char types"], answer: 1 }
+              ]),
+              challenges: JSON.stringify([
+                { id: "easy", title: "Check Even or Odd Number", difficulty: "Easy", initialCode: "// Write code to check if n is even or odd\n" }
+              ])
+            },
+            {
+              orderNumber: 2,
+              title: "Chapter 2: Control Flow",
+              explanation: "content/c/chapter2.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Which keyword is used to test a condition in C?", options: ["loop", "if", "check", "test"], answer: 1 },
+                { id: 2, question: "Which loop always executes its body at least once?", options: ["for", "while", "do-while", "switch"], answer: 2 },
+                { id: 3, question: "What does the break statement do inside a loop?", options: ["Skips to the next iteration", "Ends the loop immediately", "Restarts the loop", "Pauses the program"], answer: 1 },
+                { id: 4, question: "Which statement is required to prevent fall-through in a switch case?", options: ["return", "continue", "break", "exit"], answer: 2 },
+                { id: 5, question: "What is the output of: for (int i = 0; i < 3; i++) printf(\"%d\", i);", options: ["123", "012", "0123", "321"], answer: 1 },
+                { id: 6, question: "What is wrong with: if (x = 5) { printf(\"yes\"); }", options: ["Missing semicolon", "It assigns 5 to x instead of comparing, and is always true", "It won't compile", "Nothing, it's correct"], answer: 1 },
+                { id: 7, question: "What does continue do inside a for loop?", options: ["Ends the loop", "Skips the rest of the current iteration and moves to the update step", "Restarts the program", "Skips the next two iterations"], answer: 1 },
+                { id: 8, question: "What is the output of this code? for (int i = 1; i <= 3; i++) { if (i == 2) continue; printf(\"%d \", i); }", options: ["1 2 3", "1 3", "2 3", "1 2"], answer: 1 },
+                { id: 9, question: "In a nested loop with an outer loop running 4 times and an inner loop running 3 times each, how many total times does the inner body execute?", options: ["4", "3", "7", "12"], answer: 3 },
+                { id: 10, question: "Which of these correctly avoids an infinite loop?", options: ["while (1) { }", "for (int i = 0; i < 5;) { printf(\"%d\", i); }", "for (int i = 0; i < 5; i++) { printf(\"%d\", i); }", "while (i <= 5) { printf(\"%d\", i); }"], answer: 2 },
+                { id: 11, question: "What does this switch print for day = 6? switch (day) { case 6: case 7: printf(\"Weekend\"); break; default: printf(\"Weekday\"); }", options: ["Weekday", "Weekend", "Nothing", "Compile error"], answer: 1 },
+                { id: 12, question: "What is the output? int i = 5; do { printf(\"%d \", i); i++; } while (i < 5);", options: ["Nothing is printed", "5", "5 6 7 ...", "Infinite loop"], answer: 1 },
+                { id: 13, question: "Find the bug: for (int i = 0; i < 5; i++); { printf(\"%d\", i); }", options: ["The condition should be i <= 5", "The semicolon after the header makes the loop body empty; the block runs once afterward", "printf needs a format specifier", "i must start at 1"], answer: 1 },
+                { id: 14, question: "What values can a standard C switch statement compare against?", options: ["Any type, including floats and strings", "Only integer (or char/enum) constant expressions", "Only strings", "Only boolean expressions"], answer: 1 },
+                { id: 15, question: "What is the output of this nested loop? for (int i = 1; i <= 2; i++) { for (int j = 1; j <= 2; j++) { printf(\"%d%d \", i, j); } }", options: ["11 12 21 22", "11 21 12 22", "12 21", "1 2 1 2"], answer: 0 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 3,
+              title: "Chapter 3: Functions",
+              explanation: "content/c/chapter3.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What keyword is used for a function that returns nothing?", options: ["null", "void", "empty", "none"], answer: 1 },
+                { id: 2, question: "What is the term for the values passed into a function when it's called?", options: ["Parameters", "Arguments", "Returns", "Declarations"], answer: 1 },
+                { id: 3, question: "How does C pass arguments to functions by default?", options: ["By reference", "By value", "By pointer only", "By global copy"], answer: 1 },
+                { id: 4, question: "What must every correct recursive function have to avoid infinite recursion?", options: ["A loop", "A base case", "A global variable", "A static variable"], answer: 1 },
+                { id: 5, question: "Where is a local variable's memory freed?", options: ["When the program ends", "When the function that declared it returns", "Never", "When main() starts"], answer: 1 },
+                { id: 6, question: "What does this print?\n\nvoid f(int x) { x = x + 10; }\nint main() {\n int a = 5;\n f(a);\n printf(\"%d\", a);\n}", options: ["15", "5", "10", "0"], answer: 1 },
+                { id: 7, question: "What is the output?\n\nvoid counter() {\n static int c = 0;\n c++;\n printf(\"%d \", c);\n}\nint main() {\n counter();\n counter();\n counter();\n}", options: ["1 1 1", "1 2 3", "0 1 2", "3 3 3"], answer: 1 },
+                { id: 8, question: "What does factorial(0) return in the standard recursive definition?", options: ["0", "1", "-1", "Undefined"], answer: 1 },
+                { id: 9, question: "Which keyword tells the compiler a global variable is defined in a different file?", options: ["static", "global", "extern", "const"], answer: 2 },
+                { id: 10, question: "In fibonacci(n) = fibonacci(n-1) + fibonacci(n-2), what are the two base cases typically used?", options: ["n == 1 and n == 2", "n == 0 and n == 1", "n == 0 only", "There are no base cases"], answer: 1 },
+                { id: 11, question: "Find the bug:\n\nint square(int n) {\n int result = n * n;\n}\nint main() {\n printf(\"%d\", square(4));\n}", options: ["Missing semicolon", "square() never returns result, so its return value is undefined", "n should be a float", "printf format is wrong"], answer: 1 },
+                { id: 12, question: "What is the output?\n\nint x = 100;\nvoid change() {\n x = x + 1;\n}\nint main() {\n change();\n change();\n printf(\"%d\", x);\n}", options: ["100", "101", "102", "Compile error"], answer: 2 },
+                { id: 13, question: "Tracing factorial(3) using factorial(n) = n * factorial(n-1) with factorial(0) = 1, what is the very first call to actually return a value (not wait on another call)?", options: ["factorial(3)", "factorial(2)", "factorial(1)", "factorial(0)"], answer: 3 },
+                { id: 14, question: "Why is naive recursive fibonacci(n) considered inefficient for large n?", options: ["It uses too much global memory", "It recomputes the same smaller fibonacci values many times", "It cannot return a value", "It requires static variables"], answer: 1 },
+                { id: 15, question: "Which statement about static local variables is correct?", options: ["They reset to their initial value on every function call, like ordinary locals", "They are visible to every function in the program", "They retain their value between calls but stay private to their own function", "They must always be declared outside any function"], answer: 2 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 4,
+              title: "Chapter 4: Arrays and Strings",
+              explanation: "content/c/chapter4.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the index of the first element of an array in C?", options: ["1", "0", "-1", "Depends on the type"], answer: 1 },
+                { id: 2, question: "What character marks the end of a C string?", options: ["A space", "\\n", "\\0", "The last letter"], answer: 2 },
+                { id: 3, question: "Which function returns the length of a string (excluding the null terminator)?", options: ["strcpy", "strlen", "strcmp", "strcat"], answer: 1 },
+                { id: 4, question: "How is a 2D array element accessed?", options: ["arr(row, col)", "arr[row][col]", "arr[row, col]", "arr{row}{col}"], answer: 1 },
+                { id: 5, question: "How are arrays passed to functions in C?", options: ["By value, as a full copy", "By reference, via the address of the first element", "They cannot be passed to functions", "Only as global variables"], answer: 1 },
+                { id: 6, question: "What is the output?\n\nint arr[5] = {10, 20, 30, 40, 50};\nprintf(\"%d\", arr[4]);", options: ["40", "50", "Error: index out of bounds", "0"], answer: 1 },
+                { id: 7, question: "What does strcmp(\"cat\", \"cat\") return?", options: ["1", "-1", "0", "\"cat\""], answer: 2 },
+                { id: 8, question: "Why is char word[5] = \"Hello\"; a problem?", options: ["\"Hello\" has 5 letters, but needs 6 bytes including the null terminator", "char arrays can't hold multiple letters", "strlen() will crash", "It won't compile"], answer: 0 },
+                { id: 9, question: "In a 2D array declared int m[3][4], how many total elements does it have?", options: ["7", "12", "3", "4"], answer: 1 },
+                { id: 10, question: "What is wrong with comparing two strings using if (str1 == str2)?", options: ["Nothing, it works correctly", "It compares addresses, not the actual text content", "Strings can't be compared at all in C", "It only works for single characters"], answer: 1 },
+                { id: 11, question: "What is the output?\n\nint arr[4] = {1, 2, 3, 4};\nfor (int i = 0; i <= 4; i++) {\n printf(\"%d \", arr[i]);\n}", options: ["1 2 3 4", "1 2 3 4 followed by an unpredictable/garbage value (out-of-bounds read)", "Compile error", "0 1 2 3 4"], answer: 1 },
+                { id: 12, question: "Tracing the reverse-string two-pointer algorithm on \"abcd\", what are start and end right before the loop condition (start < end) becomes false?", options: ["start=0, end=3", "start=1, end=2", "start=2, end=1", "start=4, end=0"], answer: 2 },
+                { id: 13, question: "Fill in the missing code to check a palindrome: while (start < end) { if (str[start] != str[end]) return 0; ____; ____; } return 1;", options: ["start--; end++;", "start++; end--;", "start++; end++;", "start = end;"], answer: 1 },
+                { id: 14, question: "What does this word-count condition check for each character?\n\nif (s[i] != ' ' && (i == 0 || s[i-1] == ' '))", options: ["The character is a vowel", "The character is the first character of a new word", "The character is a space", "The character is the last in the string"], answer: 1 },
+                { id: 15, question: "Why must an array's size typically be passed as a separate parameter alongside the array itself?", options: ["C requires all functions to have exactly two parameters", "The array decays to a pointer to its first element, so the function has no way to know how many elements follow", "Arrays are always exactly 10 elements in C", "size is only needed for 2D arrays"], answer: 1 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 5,
+              title: "Chapter 5: Pointers",
+              explanation: "content/c/chapter5.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What does the & operator do when placed before a variable name?", options: ["Multiplies the variable by itself", "Returns the memory address of the variable", "Declares a new pointer", "Dereferences the variable"], answer: 1 },
+                { id: 2, question: "Which declaration correctly creates a pointer to an int?", options: ["int p;", "int *p;", "pointer int p;", "int &p;"], answer: 1 },
+                { id: 3, question: "What is the value of *p if p correctly points to a variable x holding 15?", options: ["The address of x", "15", "The address of p", "0"], answer: 1 },
+                { id: 4, question: "What should an uninitialized pointer be set to before it is known to point at valid data?", options: ["0.0", "\"\" (empty string)", "NULL", "-1"], answer: 2 },
+                { id: 5, question: "What is the output?\n\nint x = 5;\nint *p = &x;\n*p = 20;\nprintf(\"%d\", x);", options: ["5", "20", "The address of x", "Compilation error"], answer: 1 },
+                { id: 6, question: "Given int arr[5]; int *p = arr;, what does p + 2 point to?", options: ["The address two bytes after arr[0]", "arr[2]", "A compile error, since arr is not a pointer variable", "arr[0] plus 2"], answer: 1 },
+                { id: 7, question: "Why must a function that receives an array parameter also receive its size as a separate argument?", options: ["It doesn't need to — sizeof(arr) works fine inside the function", "Because the array decays to a pointer, which carries no length information", "Because C arrays cannot be passed to functions at all", "Because size is only needed for char arrays"], answer: 1 },
+                { id: 8, question: "What is the output?\n\nvoid modify(int x) { x = 99; }\nint main() {\n int num = 1;\n modify(num);\n printf(\"%d\", num);\n}", options: ["99", "1", "0", "Compilation error"], answer: 1 },
+                { id: 9, question: "What is the bug in this code?\n\nint* getValue() {\n int local = 10;\n return &local;\n}", options: ["It returns a pointer to a local variable that no longer exists after the function returns", "It should return local instead of &local", "The function must be declared void", "There is no bug — this is safe C code"], answer: 0 },
+                { id: 10, question: "Which statement correctly describes a void pointer?", options: ["It can never be assigned an address", "It automatically knows what type it points to", "It can hold the address of any type but must be cast before being dereferenced", "It is only used for functions that return nothing"], answer: 2 },
+                { id: 11, question: "What is the output?\n\nint a = 10, b = 20;\nint *p = &a;\np = &b;\n*p = 99;\nprintf(\"%d %d\", a, b);", options: ["10 20", "99 99", "10 99", "99 20"], answer: 2 },
+                { id: 12, question: "What should replace the missing line so that main() prints 2?\n\nint* counter() {\n static int count = 0;\n count++;\n // MISSING LINE\n}\nint main() {\n int *p1 = counter();\n int *p2 = counter();\n printf(\"%d\", *p2);\n}", options: ["return count;", "return &count;", "return &local;", "return NULL;"], answer: 1 },
+                { id: 13, question: "What happens when this program runs?\n\nint *p = NULL;\nprintf(\"%d\", *p);", options: ["It prints 0", "It prints NULL", "It crashes with a segmentation fault, since NULL is never a valid address to dereference", "It prints a random garbage integer safely"], answer: 2 },
+                { id: 14, question: "What is the output?\n\nint arr[3] = {1, 2, 3};\nint *start = &arr[0];\nint *end = &arr[2];\nprintf(\"%ld\", end - start);", options: ["8 (the byte difference)", "2 (the element difference)", "1", "Undefined behavior in every case"], answer: 1 },
+                { id: 15, question: "Why does swap(&x, &y) succeed in swapping two variables while swapWrong(x, y) does not, given identical logic inside each function?", options: ["swap uses a temp variable and swapWrong does not", "swapWrong passes copies of x and y by value, so its changes never reach the caller; swap passes addresses, giving it access to the original memory", "C does not allow int parameters to be swapped, only pointers", "There is no real difference; both would behave identically"], answer: 1 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 6,
+              title: "Chapter 6: Dynamic Memory Allocation",
+              explanation: "content/c/chapter6.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Which memory region is managed automatically, with variables destroyed as soon as their function returns?", options: ["The heap", "The stack", "Global memory", "ROM"], answer: 1 },
+                { id: 2, question: "Which function allocates memory and initializes every byte to zero?", options: ["malloc", "calloc", "realloc", "free"], answer: 1 },
+                { id: 3, question: "What must always be checked immediately after calling malloc?", options: ["Whether the returned pointer equals NULL", "Whether the value stored is even", "Whether the pointer is a global variable", "Nothing - malloc never fails"], answer: 0 },
+                { id: 4, question: "What does free(p) do?", options: ["Deletes the variable p entirely", "Returns the memory p points to back to the heap for reuse", "Sets p to NULL automatically", "Converts p into a stack variable"], answer: 1 },
+                { id: 5, question: "What is the output of: int *arr = (int*) calloc(3, sizeof(int)); printf(\"%d %d %d\", arr[0], arr[1], arr[2]);", options: ["Garbage values", "0 0 0", "1 1 1", "Compilation error"], answer: 1 },
+                { id: 6, question: "Why is arr = realloc(arr, newSize); considered unsafe?", options: ["realloc always fails on the first call", "If realloc returns NULL, the original pointer is overwritten and the original block becomes an unreachable leak", "realloc cannot shrink memory, only grow it", "It is actually always safe and recommended"], answer: 1 },
+                { id: 7, question: "What is the bug in this code? int *p = (int*) malloc(sizeof(int)); free(p); free(p);", options: ["malloc was called with the wrong size", "A double free - freeing the same pointer twice, which corrupts the heap", "p was never dereferenced", "There is no bug"], answer: 1 },
+                { id: 8, question: "What happens when this program runs? int *p; *p = 10; printf(\"%d\", *p);", options: ["It prints 10 safely", "It prints 0", "Undefined behavior / likely crash - p is a wild pointer, never initialized", "It automatically allocates memory for p"], answer: 2 },
+                { id: 9, question: "Why does a dynamic array typically double its capacity instead of growing by a fixed small amount each time?", options: ["Doubling is required by the C standard", "It reduces the total number of costly reallocation operations as the array grows large", "Fixed increments are illegal in C", "It has no real benefit; it's purely stylistic"], answer: 1 },
+                { id: 10, question: "How many bytes should be allocated for a dynamic copy of a C string read into a buffer?", options: ["strlen(buffer)", "strlen(buffer) + 1", "sizeof(buffer)", "strlen(buffer) - 1"], answer: 1 },
+                { id: 11, question: "What is the output of: int *p = (int*) malloc(sizeof(int)); *p = 5; free(p); p = NULL; if (p == NULL) printf(\"safe\"); else printf(\"%d\", *p);", options: ["5", "safe", "Compilation error", "Undefined behavior always"], answer: 1 },
+                { id: 12, question: "What should replace the missing line so the block grows safely and no memory is leaked on failure?\n\nint *arr = (int*) malloc(4 * sizeof(int));\n// MISSING LINE\nif (temp == NULL) { free(arr); return 1; }\narr = temp;", options: ["int *temp = (int*) malloc(8 * sizeof(int));", "int *temp = (int*) realloc(arr, 8 * sizeof(int));", "arr = realloc(arr, 8 * sizeof(int));", "free(arr); arr = realloc(arr, 8 * sizeof(int));"], answer: 1 },
+                { id: 13, question: "What is the key difference between a dangling pointer and a wild pointer?", options: ["There is no difference; the terms are interchangeable", "A dangling pointer once pointed to valid memory that has since been freed; a wild pointer was never initialized to a valid address at all", "A wild pointer only occurs with arrays, never with single variables", "A dangling pointer only occurs with calloc, never with malloc"], answer: 1 },
+                { id: 14, question: "What is the bug in this code? void leaky() { int *p = (int*) malloc(sizeof(int)); *p = 5; } int main() { for (int i = 0; i < 1000; i++) leaky(); }", options: ["malloc's argument is wrong", "p is never dereferenced", "The allocated memory is never freed before the function returns, leaking 1000 blocks", "There is no bug"], answer: 2 },
+                { id: 15, question: "Given a heap block allocated with malloc(3 * sizeof(int)) and later resized with realloc(arr, 6 * sizeof(int)), what happens to the original 3 values?", options: ["They are discarded and replaced with garbage", "They are preserved in the resized block, which may or may not be at the original address", "They are automatically set to zero", "realloc cannot grow a malloc'd block, only calloc'd blocks"], answer: 1 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 7,
+              title: "Chapter 7: Structures, Unions & Enums",
+              explanation: "content/c/chapter7.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What is the main difference between a structure and an array?", options: ["Arrays store different data types; structures store same data types", "Structures store different data types under one name; arrays store same data types", "Structures are dynamic; arrays are static", "There is no difference"], answer: 1 },
+                { id: 2, question: "What is the mandatory character that must follow a structure's closing brace in C?", options: ["A period (.)", "A colon (:)", "A semicolon (;)", "Nothing is required"], answer: 2 },
+                { id: 3, question: "Given a pointer to a struct: struct Student *p = &s1;. How do you access the member roll using the arrow operator?", options: ["p.roll", "*p.roll", "p->roll", "p&roll"], answer: 2 },
+                { id: 4, question: "If p is a pointer to a structure, which of the following is equivalent to p->name?", options: ["*p.name", "*(p.name)", "(*p).name", "&p->name"], answer: 2 },
+                { id: 5, question: "What is the main efficiency advantage of passing a structure pointer to a function rather than the whole structure by value?", options: ["It prevents any function from reading the structure", "It avoids copying the entire structure's bytes into memory, only copying the address", "It automatically converts the structure to a union", "It makes the structure constant"], answer: 1 },
+                { id: 6, question: "Why is it dangerous to return a pointer to a local structure variable from a function?", options: ["Structures cannot be returned from functions", "The local structure variable is destroyed when the function returns, leaving a dangling pointer", "It causes compile errors immediately", "It uses too much heap memory"], answer: 1 },
+                { id: 7, question: "How does a union's memory layout differ from a structure's?", options: ["Members of a union are stored in separate files", "Members of a union all share the same memory location, overlapping each other", "Unions do not use RAM", "Unions only allow integer types"], answer: 1 },
+                { id: 8, question: "What is the size of union Data { int i; float f; char str[20]; }?", options: ["28 bytes", "4 bytes", "20 bytes", "8 bytes"], answer: 2 },
+                { id: 9, question: "By default, what integer value is assigned to the first constant of an enum in C?", options: ["1", "-1", "0", "NULL"], answer: 2 },
+                { id: 10, question: "Given enum Level { LOW = 5, MEDIUM, HIGH = 10, EXTREME };, what are the integer values of MEDIUM and EXTREME?", options: ["6 and 11", "0 and 1", "6 and 10", "5 and 10"], answer: 0 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 8,
+              title: "Chapter 8: File Handling",
+              explanation: "content/c/chapter8.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "Where does every variable, array, or structure live in a C program, which gets wiped when the program ends?", options: ["ROM", "Disk", "RAM", "Cache"], answer: 2 },
+                { id: 2, question: "What is the key difference between a text file and a binary file?", options: ["Text files store data as raw bytes; binary files store as human-readable characters", "Text files store data as ASCII/UTF-8 characters; binary files store data as raw memory bytes", "Binary files can be edited in Notepad; text files cannot", "There is no difference"], answer: 1 },
+                { id: 3, question: "What does fopen() return if it fails to open a file?", options: ["0", "EOF", "NULL", "-1"], answer: 2 },
+                { id: 4, question: "Which file mode should be used to append data to the end of an existing text file without erasing its contents?", options: ["w", "r", "a", "wb"], answer: 2 },
+                { id: 5, question: "What happens if you open an existing file in 'w' (write) mode?", options: ["It reads the file contents", "It appends new data to the end", "It deletes/erases all existing content of the file", "It returns an error"], answer: 2 },
+                { id: 6, question: "Why is it a bad practice to control a read loop with while (!feof(fp))?", options: ["It is deprecated in C", "feof only becomes true after a read operation has already failed, which can cause the loop to process the last read value twice", "It causes compile errors", "It clears the file position indicator"], answer: 1 },
+                { id: 7, question: "Which function reads an entire line of text (including spaces) from a file safely by specifying a size limit?", options: ["fscanf()", "gets()", "fgets()", "fread()"], answer: 2 },
+                { id: 8, question: "What are the arguments of fread(), in order?", options: ["FILE *fp, size_t size, size_t count, void *ptr", "void *ptr, size_t size, size_t count, FILE *fp", "void *ptr, FILE *fp, size_t size, size_t count", "FILE *fp, void *ptr, size_t size, size_t count"], answer: 1 },
+                { id: 9, question: "Why should you always open binary files in binary modes like 'rb' or 'wb' rather than text modes on Windows?", options: ["To speed up compile times", "To prevent automatic translation of newline characters, which would corrupt binary data", "Binary files cannot be opened in text mode on any OS", "Text mode makes binary files read-only"], answer: 1 },
+                { id: 10, question: "What does fclose() do beyond just ending file access?", options: ["It deletes the file", "It flushes any buffered data to disk and releases the system file handle resource", "It rewinds the file pointer to the start", "It changes the file mode"], answer: 1 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 9,
+              title: "Chapter 9: Advanced C Programming",
+              explanation: "content/c/chapter9.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What does the preprocessor do with the line #include <stdio.h>?", options: ["Compiles the stdio library into machine code", "Textually pastes the contents of stdio.h into the file at that location", "Links the stdio library into the final executable", "Nothing - it is only a comment for the programmer"], answer: 1 },
+                { id: 2, question: "Which stage of compilation would catch a missing semicolon?", options: ["Linking", "Preprocessing", "Compilation", "Assembly"], answer: 2 },
+                { id: 3, question: "What is printed by the following code? #define SQUARE(x) x * x; printf(\"%d\\\\n\", SQUARE(2 + 3));", options: ["25", "11", "10", "Compilation error"], answer: 1 },
+                { id: 4, question: "Which directive prevents a header file's contents from being included more than once in a translation unit?", options: ["#once", "#ifndef / #define / #endif (include guard)", "#include", "#pragma link"], answer: 1 },
+                { id: 5, question: "What kind of error does calling a declared-but-never-defined function produce?", options: ["A compiler error", "A linker error (\"undefined reference\")", "A runtime crash only", "No error at all"], answer: 1 },
+                { id: 6, question: "What is the output of the following program? (using static count initialized to 0 and incremented on each function call)", options: ["1 1 1", "0 1 2", "1 2 3", "Compilation error"], answer: 2 },
+                { id: 7, question: "Applying static to a global variable in a .c file has what effect?", options: ["It makes the variable persist longer than a normal global", "It restricts the variable's linkage to only that file", "It moves the variable to the heap", "It has no effect on global variables"], answer: 1 },
+                { id: 8, question: "What does a & 1 determine for an integer a?", options: ["Whether a is negative", "Whether a is odd or even", "Whether a is a power of two", "The absolute value of a"], answer: 1 },
+                { id: 9, question: "Which of these correctly declares that int total; is defined in another file?", options: ["static int total;", "auto int total;", "extern int total;", "register int total;"], answer: 2 },
+                { id: 10, question: "What is wrong with the following code? FILE *f = fopen(\"data.txt\", \"r\"); fscanf(f, \"%d\", &value);", options: ["fscanf cannot read integers", "The return value of fopen is never checked for NULL", "fopen should use mode \"w\" instead", "Nothing is wrong with this code"], answer: 1 },
+                { id: 11, question: "What is the output of the following program where g=2 (global), f has static s=0 and normal l=0, s+=g, l+=g, g++ are executed twice?", options: ["s=2 l=2 g=3 / s=4 l=2 g=4", "s=2 l=2 g=3 / s=5 l=3 g=4", "s=2 l=2 g=3 / s=2 l=2 g=3", "s=4 l=4 g=4 / s=8 l=8 g=5"], answer: 1 },
+                { id: 12, question: "Which fix correctly resolves the bug in this macro usage? #define DOUBLE(x) x + x; int result = DOUBLE(3) * 5;", options: ["#define DOUBLE(x) (x) + (x)", "#define DOUBLE(x) ((x) + (x))", "#define DOUBLE(x) 2 * x", "No fix is needed; the output is already correct"], answer: 1 },
+                { id: 13, question: "Given #define FLAG_A (1 << 0) and #define FLAG_B (1 << 1), what does flags &= ~FLAG_A; do, assuming flags currently has both flags set?", options: ["Sets both flags", "Clears FLAG_A only, leaving FLAG_B set", "Clears both flags", "Toggles FLAG_A"], answer: 1 },
+                { id: 14, question: "Fill in the missing code so that this program compiles and links correctly across two files: file1.c has 'sharedValue = 100'; file2.c has 'sharedValue' and prints it.", options: ["static in file1.c, static in file2.c", "(nothing) in file1.c, extern in file2.c", "extern in file1.c, (nothing) in file2.c", "register in both files"], answer: 1 },
+                { id: 15, question: "Why does the following program compile successfully but crash (or behave unpredictably) at runtime? printf(\"%d\\\\n\", divide(10, 0));", options: ["The compiler cannot detect division by zero at compile time; it is only checked (or not checked) at runtime, and this program never checks for it", "printf cannot print integers", "divide is missing a prototype", "This is a linker error, not a runtime error"], answer: 0 }
+              ]),
+              challenges: "[]"
+            },
+            {
+              orderNumber: 10,
+              title: "Chapter 10: Interview Preparation & Complete C Revision",
+              explanation: "content/c/chapter10.md",
+              quizData: JSON.stringify([
+                { id: 1, question: "What does the following code print? printf(\"%d\", 7 / 2);", options: ["3.5", "3", "4", "Compilation error"], answer: 1 },
+                { id: 2, question: "Which storage class keeps a local variable's value between function calls?", options: ["auto", "register", "static", "extern"], answer: 2 },
+                { id: 3, question: "What is the correct format specifier to read a double using scanf?", options: ["%f", "%d", "%lf", "%c"], answer: 2 },
+                { id: 4, question: "Which function checks if a character is a digit?", options: ["isalpha()", "isdigit()", "isupper()", "isnumeric()"], answer: 1 },
+                { id: 5, question: "What does free(NULL) do?", options: ["Crashes the program", "Causes undefined behavior", "Does nothing (safe, well-defined)", "Frees all previously allocated memory"], answer: 2 },
+                { id: 6, question: "What is the output of the following code? int x = 5; int *p = &x; *p = *p + 10; printf(\"%d\", x);", options: ["5", "10", "15", "Compilation error"], answer: 2 },
+                { id: 7, question: "What is the size of the following union on a typical 64-bit system? union Data { int i; double d; char str[10]; };", options: ["4", "8", "10", "22"], answer: 1 },
+                { id: 8, question: "Which of these correctly swaps two integers using pointers?", options: ["swap(int a, int b)", "swap(int *a, int *b) { int t = a; a = b; b = t; }", "swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }", "swap(int a, int b) { int t = *a; *a = *b; *b = t; }"], answer: 2 },
+                { id: 9, question: "What does this code print? char arr[] = \"hello\"; printf(\"%lu\", sizeof(arr));", options: ["5", "6", "8", "Depends on the pointer size"], answer: 1 },
+                { id: 10, question: "What is wrong with the following function? int* getArray(void) { int arr[5] = {1, 2, 3, 4, 5}; return arr; }", options: ["Nothing - this is correct", "Arrays can't be returned by value", "It returns a dangling pointer to a destroyed stack variable", "The array is too small"], answer: 2 },
+                { id: 11, question: "What is the output? int a = 5; int b = a++ + ++a; printf(\"%d\", b);", options: ["10", "11", "12", "Undefined behavior in strict interpretation, but commonly 12 on many compilers"], answer: 3 },
+                { id: 12, question: "Identify the bug: int *createArray(int size) { int *arr = malloc(size * sizeof(int)); for (int i = 0; i <= size; i++) { arr[i] = i; } return arr; }", options: ["malloc should be calloc", "Off-by-one: loop should use i < size, not i <= size", "arr should be freed before returning", "size should be a pointer"], answer: 1 },
+                { id: 13, question: "What does this print, assuming a typical 64-bit little-endian system? union U { int i; char c[4]; }; union U u; u.i = 1; printf(\"%d\", u.c[0]);", options: ["0", "1", "Undefined - cannot be determined", "4"], answer: 1 },
+                { id: 14, question: "What is missing to make this code correctly free all allocated memory with no leaks? int **matrix = malloc(3 * sizeof(int *)); for (int i = 0; i < 3; i++) { matrix[i] = malloc(4 * sizeof(int)); } // ... use matrix ... __________ free(matrix);", options: ["Nothing else needed", "free(matrix[0]); only", "A loop: for (int i = 0; i < 3; i++) free(matrix[i]);", "free(*matrix);"], answer: 2 },
+                { id: 15, question: "What is the output? #define SQUARE(x) x * x; printf(\"%d\", 100 / SQUARE(5));", options: ["4", "100", "20", "500"], answer: 3 }
+              ]),
+              challenges: "[]"
+            }
           ];
         } else {
           // Standard Chapters for other courses (C, C++) starting at 1
           chaptersToCreate = [
             {
-              orderNumber: 1,
-              title: "Chapter 1: Language Syntax, Variables & Data Types",
+              orderNumber: 0,
+              title: "Chapter 0: Language Syntax, Variables & Data Types",
               explanation: `Welcome to Chapter 1! In this lesson, we will explore fundamental data types, variable declarations, memory representation, and syntax rules for ${courseData.title}. Variables store data values in computer memory. Pay close attention to data type constraints and memory allocation.`,
               quizData: JSON.stringify([
                 { id: 1, question: "What is the size of an integer in memory?", options: ["2 or 4 Bytes", "1 Byte", "8 Bytes", "Depends on OS"], answer: 0 },
