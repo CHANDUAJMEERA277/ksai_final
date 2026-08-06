@@ -13,7 +13,7 @@ export async function POST(
 
     // 1. Primary check: Resolve user via Better Auth session API
     const sessionData = await auth.api.getSession({ headers: req.headers });
-    let user = sessionData?.user ?? null;
+    let user: any = sessionData?.user ?? null;
 
     // 2. Fallback check: Resolve user via cookie session token lookup in DB
     if (!user) {

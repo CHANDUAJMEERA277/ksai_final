@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { RightAIPanel } from "@/components/dashboard/RightAIPanel";
@@ -10,7 +10,7 @@ import { BookOpen, ArrowRight, Compass, Sparkles, Star } from "lucide-react";
 
 export default function MyCoursesPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const [activeTab, setActiveTab] = useState("Courses");
   const [enrollments, setEnrollments] = useState<any[]>([]);
