@@ -65,14 +65,17 @@ export default function MyCoursesPage() {
   };
 
   const handleStartLearning = (course: any) => {
-    if (course.title.toLowerCase().includes("python")) {
+    const lang = course.language ? course.language.toLowerCase() : "";
+    if (lang === "python" || course.title.toLowerCase().includes("python")) {
       router.push("/courses/python");
-    } else if (course.title.toLowerCase().includes("java")) {
+    } else if (lang === "java" || course.title.toLowerCase().includes("java")) {
       router.push("/courses/java");
-    } else if (course.title.toLowerCase().includes("c++") || course.language === "cpp") {
+    } else if (lang === "cpp" || lang === "c++" || course.title.toLowerCase().includes("c++")) {
       router.push("/courses/cpp");
+    } else if (lang === "c" || course.title.toLowerCase().includes("c programming") || course.title.toLowerCase() === "c") {
+      router.push("/courses/c");
     } else {
-      router.push("/dashboard");
+      router.push(`/courses/${lang || "python"}`);
     }
   };
 
