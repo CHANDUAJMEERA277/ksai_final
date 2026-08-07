@@ -40,6 +40,8 @@ interface LeftSidebarProps {
     targetXp: number;
     image?: string | null;
   };
+  isLight?: boolean;
+  fullHeight?: boolean;
 }
 
 const MENU_ITEMS = [
@@ -114,7 +116,7 @@ const MENU_ITEMS = [
   },
 ];
 
-export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebarProps) {
+export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = false, fullHeight = false }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -163,10 +165,47 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebar
 
   return (
     <aside
-      className={`dark-sidebar h-[calc(100vh-4rem)] border-r border-white/10 bg-[#09090B]/90 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 sticky top-16 z-30 select-none ${
+      className={`flex flex-col justify-between transition-all duration-300 z-30 select-none border-r ${
+        isLight 
+          ? "bg-white border-slate-200/80 text-slate-700" 
+          : "dark-sidebar bg-[#09090B]/90 border-white/10 backdrop-blur-xl text-white"
+      } ${
+        fullHeight 
+          ? "h-screen sticky top-0" 
+          : "h-[calc(100vh-4rem)] sticky top-16"
+      } ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
+      {/* Brand Logo Header if fullHeight */}
+      {fullHeight && (
+        <div className={`p-4 border-b flex items-center justify-between ${
+          isLight ? "border-slate-100 bg-white" : "border-white/10 bg-[#060609]"
+        }`}>
+          {!collapsed ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white shadow-md">
+                <Brain size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-extrabold text-xs text-[#0F172A] dark:text-white tracking-tight leading-none">
+                  KnowledgeStream AI
+                </span>
+                <span className="text-[8px] text-slate-400 font-medium mt-0.5">
+                  Teach to Code. Not to Copy.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full flex justify-center py-1">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                <Brain size={14} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation List */}
       <div className="p-3 overflow-hidden flex-1 space-y-0.5">
         {MENU_ITEMS.map((item) => {
@@ -217,24 +256,32 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebar
               title={collapsed ? item.label : undefined}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${
                 isActive
-                  ? "bg-gradient-to-r from-blue-600/30 to-purple-600/20 border border-blue-500/60 text-white shadow-lg shadow-blue-500/10"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                  ? isLight
+                    ? "bg-[#EEF2FF] text-[#4F46E5] font-extrabold border-r-4 border-[#4F46E5] shadow-sm shadow-[#4F46E5]/10"
+                    : "bg-gradient-to-r from-blue-600/30 to-purple-600/20 border border-blue-500/60 text-white shadow-lg shadow-blue-500/10"
+                  : isLight
+                    ? "text-slate-500 hover:text-[#0F172A] hover:bg-slate-50"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
               }`}
             >
               <Icon
                 size={18}
                 className={`shrink-0 transition-transform group-hover:scale-110 ${
-                  isActive ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-300"
+                  isActive 
+                    ? isLight ? "text-[#4F46E5]" : "text-cyan-400" 
+                    : isLight ? "text-slate-400 group-hover:text-slate-600" : "text-slate-400 group-hover:text-cyan-300"
                 }`}
               />
               {!collapsed && (
                 <span className="truncate">{item.label}</span>
               )}
               {isLocked ? (
-                <Lock size={12} className="ml-auto text-slate-500 shrink-0" />
+                <Lock size={12} className="ml-auto text-slate-400 shrink-0" />
               ) : (
                 isActive && !collapsed && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 ml-auto animate-pulse" />
+                  <span className={`w-1.5 h-1.5 rounded-full ml-auto animate-pulse ${
+                    isLight ? "bg-[#4F46E5]" : "bg-cyan-400"
+                  }`} />
                 )
               )}
             </button>
@@ -243,20 +290,32 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebar
       </div>
 
       {/* Footer Controls & Collapse Toggle */}
-      <div className="p-3 border-t border-white/10 space-y-4 bg-[#060609]">
+      <div className={`p-3 border-t space-y-4 ${
+        isLight ? "border-slate-100 bg-[#F8FAFC]" : "border-white/10 bg-[#060609]"
+      }`}>
         {!collapsed && (
           <>
             {/* Upgrade to Pro Card */}
-            <div className="glass-panel p-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-blue-950/15 text-center space-y-3">
-              <div className="text-xs font-black text-white flex items-center justify-center gap-1">
+            <div className={`p-4 rounded-2xl border text-center space-y-3 ${
+              isLight 
+                ? "bg-[#EEF2FF]/60 border-purple-100" 
+                : "glass-panel border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-blue-950/15"
+            }`}>
+              <div className={`text-xs font-black flex items-center justify-center gap-1 ${
+                isLight ? "text-[#0F172A]" : "text-white"
+              }`}>
                 👑 Upgrade to Pro
               </div>
-              <p className="text-[10px] text-slate-300 leading-relaxed font-sans">
+              <p className={`text-[10px] leading-relaxed font-sans ${
+                isLight ? "text-slate-600" : "text-slate-300"
+              }`}>
                 Unlock unlimited AI help, advanced analytics, and more.
               </p>
               <button 
                 onClick={() => alert("Payment Gateway Integration Active: Razorpay Subscription Triggered")}
-                className="w-full py-2 rounded-xl text-[10px] font-black text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 transition-opacity cursor-pointer shadow-md shadow-purple-500/10"
+                className={`w-full py-2 rounded-xl text-[10px] font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all cursor-pointer shadow-md ${
+                  isLight ? "shadow-[#4F46E5]/15" : "shadow-purple-500/10"
+                }`}
               >
                 Upgrade Now
               </button>
@@ -264,34 +323,46 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebar
 
             {/* Sidebar Profile Widget */}
             {activeProfile && (
-              <div className="glass-panel p-3 rounded-2xl border border-white/5 bg-white/5 flex flex-col gap-2">
+              <div className={`p-3 rounded-2xl border flex flex-col gap-2 ${
+                isLight ? "bg-white border-slate-150" : "glass-panel border-white/5 bg-white/5"
+              }`}>
                 <div className="flex items-center gap-3">
                   {activeProfile.image ? (
                     <img 
                       src={activeProfile.image} 
                       alt={activeProfile.name} 
-                      className="w-8 h-8 rounded-full border border-white/20 object-cover"
+                      className="w-8 h-8 rounded-full border border-slate-200/50 object-cover shrink-0"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-bold text-white text-xs border border-white/20">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-bold text-white text-xs border border-white/20 shrink-0">
                       {activeProfile.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-black text-white truncate">{activeProfile.name}</div>
-                    <div className="text-[10px] text-cyan-400 font-mono font-bold">Level {activeProfile.level}</div>
+                    <div className={`text-xs font-black truncate ${isLight ? "text-[#0F172A]" : "text-white"}`}>
+                      {activeProfile.name}
+                    </div>
+                    <div className={`text-[10px] font-mono font-bold ${isLight ? "text-[#4F46E5]" : "text-cyan-400"}`}>
+                      Level {activeProfile.level}
+                    </div>
                   </div>
                 </div>
                 
                 {/* XP Progress Bar */}
                 <div className="space-y-1">
-                  <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${
+                    isLight ? "bg-slate-100" : "bg-white/10"
+                  }`}>
                     <div 
-                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isLight ? "bg-gradient-to-r from-blue-500 to-[#4F46E5]" : "bg-gradient-to-r from-blue-500 to-cyan-400"
+                      }`}
                       style={{ width: `${Math.min(100, (activeProfile.xp / activeProfile.targetXp) * 100)}%` }}
                     />
                   </div>
-                  <div className="text-[9px] text-slate-400 font-mono text-right font-bold">
+                  <div className={`text-[9px] font-mono text-right font-bold ${
+                    isLight ? "text-slate-400" : "text-slate-400"
+                  }`}>
                     {activeProfile.xp} / {activeProfile.targetXp} XP
                   </div>
                 </div>
@@ -309,7 +380,7 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebar
             }
             window.location.href = "/auth";
           }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-all text-left cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-all text-left cursor-pointer"
         >
           <LogOut size={18} className="shrink-0" />
           {!collapsed && <span>Logout</span>}
@@ -317,7 +388,11 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebar
 
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-white glass-panel border border-white/10"
+          className={`w-full flex items-center justify-center p-2 rounded-xl transition-all border ${
+            isLight 
+              ? "text-slate-400 hover:text-[#0F172A] border-slate-200 bg-white" 
+              : "text-slate-400 hover:text-white border-white/10 bg-[#060609]"
+          }`}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
