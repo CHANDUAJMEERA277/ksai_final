@@ -1,4 +1,4 @@
-import type { User as PrismaUser, Session as PrismaSession } from "@prisma/client";
+import type { User as PrismaUser, Session as PrismaSession } from "@/generated/client";
 
 declare global {
   namespace BetterAuth {

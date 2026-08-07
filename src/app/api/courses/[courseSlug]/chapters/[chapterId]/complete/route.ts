@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
+import { XP_CONFIG } from "@/lib/xp-config";
+import { awardXpAndStreak } from "@/lib/xp-service";
 
 export async function POST(
   req: Request,
@@ -90,9 +92,20 @@ export async function POST(
       });
     }
 
+    // Award XP and update daily streak
+    const xpResult = await awardXpAndStreak({
+      userId: user.id,
+      amount: XP_CONFIG.CHAPTER_COMPLETE,
+      source: "chapter_complete",
+      courseId: course.id,
+    });
+
     return NextResponse.json({
       success: true,
       message: "Chapter marked complete successfully",
+      xpEarned: xpResult.xpAwarded,
+      currentStreak: xpResult.user.currentStreak,
+      longestStreak: xpResult.user.longestStreak,
     });
   } catch (error) {
     console.error("POST Chapter Complete Error:", error);

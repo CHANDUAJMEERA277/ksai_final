@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
@@ -31,7 +31,7 @@ interface ProgressItem {
 
 export default function CppOverviewPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [courseTitle, setCourseTitle] = useState("Modern C++ Architecture & Performance Masterclass");
@@ -44,14 +44,14 @@ export default function CppOverviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session, status]);
+  }, [session]);
 
   useEffect(() => {
     const fetchOverviewData = async () => {

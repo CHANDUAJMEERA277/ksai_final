@@ -2,6 +2,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
@@ -27,12 +28,17 @@ model User {
   googleId        String?
   activeSessionId String?
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  sessions        Session[]
-  accounts        Account[]
-  enrollments     Enrollment[]
-  progresses      ChapterProgress[]
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  currentStreak              Int                         @default(0)
+  longestStreak              Int                         @default(0)
+  lastActiveDate             DateTime?
+  sessions                   Session[]
+  accounts                   Account[]
+  enrollments                Enrollment[]
+  progresses                 ChapterProgress[]
+  xpTransactions             XpTransaction[]
+  weeklyLeaderboardSnapshots WeeklyLeaderboardSnapshot[]
 }
 
 model Session {
@@ -85,22 +91,23 @@ model Otp {
 }
 
 model Course {
-  id           String       @id @default(uuid())
-  title        String       // C Programming | C++ Mastery | Python AI | Java Enterprise
-  description  String
-  language     String       @default("cpp") // c | cpp | python | java
-  price        Float        // e.g. 1999
-  validityDays Int          @default(90) // 90 Days validity
-  instructor   String
-  level        String       // Beginner | Intermediate | Advanced
-  category     String
-  thumbnail    String
-  duration     String
-  lessons      Int
-  rating       Float        @default(4.9)
-  createdAt    DateTime     @default(now())
-  chapters     Chapter[]
-  enrollments  Enrollment[]
+  id             String          @id @default(uuid())
+  title          String          // C Programming | C++ Mastery | Python AI | Java Enterprise
+  description    String
+  language       String          @default("cpp") // c | cpp | python | java
+  price          Float           // e.g. 1999
+  validityDays   Int             @default(90) // 90 Days validity
+  instructor     String
+  level          String          // Beginner | Intermediate | Advanced
+  category       String
+  thumbnail      String
+  duration       String
+  lessons        Int
+  rating         Float           @default(4.9)
+  createdAt      DateTime        @default(now())
+  chapters       Chapter[]
+  enrollments    Enrollment[]
+  xpTransactions XpTransaction[]
 }
 
 model Chapter {
@@ -140,4 +147,33 @@ model Enrollment {
   paymentId  String   // Razorpay Payment ID (e.g. pay_Rzp987123)
   progress   Int      @default(0)
   createdAt  DateTime @default(now())
+}
+
+model XpTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  source    String   // e.g. chapter_complete | quiz_pass | challenge_solved | streak_bonus | accuracy_bonus
+  courseId  String?
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model WeeklyLeaderboardSnapshot {
+  id        String   @id @default(uuid())
+  weekStart DateTime
+  weekEnd   DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rank      Int
+  xp        Int
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([weekStart, userId])
 }

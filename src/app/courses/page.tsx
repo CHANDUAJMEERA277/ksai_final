@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { RightAIPanel } from "@/components/dashboard/RightAIPanel";
@@ -10,7 +10,7 @@ import { BookOpen, ArrowRight, Compass, Sparkles, Star } from "lucide-react";
 
 export default function MyCoursesPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
 
   const [activeTab, setActiveTab] = useState("Courses");
   const [enrollments, setEnrollments] = useState<any[]>([]);
@@ -23,36 +23,40 @@ export default function MyCoursesPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      const currentUser = {
-        id: (session.user as any).id,
-        name: session.user.name ?? "",
-        email: session.user.email ?? "",
-        role: (session.user as any).role ?? "Student",
-      };
-      setUser(currentUser);
+    if (!isPending) {
+      if (session?.user) {
+        const currentUser = {
+          id: (session.user as any).id,
+          name: session.user.name ?? "",
+          email: session.user.email ?? "",
+          role: (session.user as any).role ?? "Student",
+        };
+        setUser(currentUser);
 
-      fetch(`/api/courses/my-courses?email=${currentUser.email}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.enrollments) {
-            setEnrollments(data.enrollments);
-          }
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-          setLoading(false);
-        });
-    } else if (status === "unauthenticated") {
-      router.push("/auth");
+        fetch(`/api/courses/my-courses?email=${currentUser.email}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.enrollments) {
+              setEnrollments(data.enrollments);
+            }
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error(err);
+            setLoading(false);
+          });
+      } else {
+        router.push("/auth");
+      }
     }
-  }, [session, status, router]);
+  }, [session, isPending, router]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "Dashboard") {
       router.push("/dashboard");
+    } else if (tab === "Leaderboard") {
+      router.push("/leaderboard");
     }
   };
 

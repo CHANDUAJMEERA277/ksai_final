@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
@@ -14,7 +14,7 @@ import { Sparkles, Star, BookOpen, Layers } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [activeSection, setActiveSection] = useState<"catalog" | "my-courses">("catalog");
@@ -45,7 +45,7 @@ export default function DashboardPage() {
       });
 
     // Fetch logged-in user
-    if (status === "authenticated" && session?.user) {
+    if (session?.user) {
       const currentUser = {
         id: (session.user as any).id,
         name: session.user.name ?? "",
@@ -65,12 +65,14 @@ export default function DashboardPage() {
         })
         .catch(console.error);
     }
-  }, [session, status]);
+  }, [session]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "Courses") {
       router.push("/courses");
+    } else if (tab === "Leaderboard") {
+      router.push("/leaderboard");
     }
   };
 

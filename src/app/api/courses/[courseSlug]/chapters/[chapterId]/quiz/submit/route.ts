@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
+import { XP_CONFIG } from "@/lib/xp-config";
+import { awardXpAndStreak } from "@/lib/xp-service";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +109,10 @@ export async function POST(
     const scorePercentage = Math.round((correctCount / totalCount) * 100);
     const passed = scorePercentage >= 70;
 
+    let xpEarned = 0;
+    let currentStreak = (user as any).currentStreak ?? 0;
+    let longestStreak = (user as any).longestStreak ?? 0;
+
     // Update progress in database if passed
     if (passed) {
       const existingProgress = await db.chapterProgress.findUnique({
@@ -136,6 +142,29 @@ export async function POST(
           },
         });
       }
+
+      // Award base quiz pass XP & update daily streak
+      const passResult = await awardXpAndStreak({
+        userId: user.id,
+        amount: XP_CONFIG.QUIZ_PASS,
+        source: "quiz_pass",
+        courseId: course.id,
+      });
+
+      xpEarned += XP_CONFIG.QUIZ_PASS;
+      currentStreak = passResult.user.currentStreak;
+      longestStreak = passResult.user.longestStreak;
+
+      // Award accuracy bonus if perfect 100% score
+      if (scorePercentage === 100) {
+        await awardXpAndStreak({
+          userId: user.id,
+          amount: XP_CONFIG.ACCURACY_BONUS_PERFECT_QUIZ,
+          source: "accuracy_bonus",
+          courseId: course.id,
+        });
+        xpEarned += XP_CONFIG.ACCURACY_BONUS_PERFECT_QUIZ;
+      }
     }
 
     return NextResponse.json({
@@ -152,6 +181,9 @@ export async function POST(
       correctCount,
       totalCount,
       breakdown,
+      xpEarned,
+      currentStreak,
+      longestStreak,
     });
   } catch (error) {
     console.error("POST Quiz Submit Error:", error);
