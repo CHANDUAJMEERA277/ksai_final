@@ -73,6 +73,10 @@ export default function DashboardPage() {
       router.push("/courses");
     } else if (tab === "Leaderboard") {
       router.push("/leaderboard");
+    } else if (tab === "AI Mentor") {
+      router.push("/codexai");
+    } else if (tab === "AI Quiz Generator") {
+      router.push("/quiz-generator");
     }
   };
 

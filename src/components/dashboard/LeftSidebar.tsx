@@ -23,7 +23,11 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Brain,
+  Lock,
 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
+import { usePathname, useRouter } from "next/navigation";
 
 interface LeftSidebarProps {
   activeTab: string;
@@ -47,8 +51,15 @@ const MENU_ITEMS = [
 
   {
     id: "AI Mentor",
-    label: "CodeAI",
+    label: "CodexAI",
     icon: Code2,
+    category: "AI Tools",
+  },
+
+  {
+    id: "AI Quiz Generator",
+    label: "AI Quiz Generator",
+    icon: Brain,
     category: "AI Tools",
   },
 
@@ -64,13 +75,6 @@ const MENU_ITEMS = [
     label: "Certificates",
     icon: Award,
     category: "Career",
-  },
-
-  {
-    id: "Settings",
-    label: "Settings",
-    icon: Settings,
-    category: "System",
   },
 
   {
@@ -93,10 +97,23 @@ const MENU_ITEMS = [
     icon: Video,
     category: "Career",
   },
+
+  {
+    id: "Settings",
+    label: "Settings",
+    icon: Settings,
+    category: "System",
+  },
 ];
 
 export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const userRole = (session?.user as any)?.role ?? "Student";
+  const isPro = userRole !== "Student";
 
   return (
     <aside
@@ -108,11 +125,49 @@ export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
       <div className="p-3 overflow-hidden flex-1 space-y-0.5">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          
+          let isActive = activeTab === item.id;
+          if (pathname) {
+            if (item.id === "Dashboard" && pathname === "/dashboard") {
+              isActive = true;
+            } else if (item.id === "Courses" && pathname.startsWith("/courses")) {
+              isActive = true;
+            } else if (item.id === "AI Mentor" && (pathname.startsWith("/codexai") || pathname.startsWith("/codeai"))) {
+              isActive = true;
+            } else if (item.id === "AI Quiz Generator" && pathname.startsWith("/quiz-generator")) {
+              isActive = true;
+            } else if (item.id === "Leaderboard" && pathname.startsWith("/leaderboard")) {
+              isActive = true;
+            } else if (item.id === "Settings" && pathname.startsWith("/settings")) {
+              isActive = true;
+            }
+          }
+
+          const isLocked = !isPro && (item.id === "Resume Builder" || item.id === "Interview Prep");
+
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => {
+                if (isLocked) {
+                  alert("🔒 This feature is premium. Please upgrade to Pro Developer to unlock!");
+                  return;
+                }
+                onTabChange(item.id);
+                
+                // Sidebar routing
+                if (item.id === "Dashboard") {
+                  router.push("/dashboard");
+                } else if (item.id === "Courses") {
+                  router.push("/courses");
+                } else if (item.id === "AI Mentor") {
+                  router.push("/codexai");
+                } else if (item.id === "AI Quiz Generator") {
+                  router.push("/quiz-generator");
+                } else if (item.id === "Leaderboard") {
+                  router.push("/leaderboard");
+                }
+              }}
               title={collapsed ? item.label : undefined}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group relative ${
                 isActive
@@ -129,8 +184,12 @@ export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
               {!collapsed && (
                 <span className="truncate">{item.label}</span>
               )}
-              {isActive && !collapsed && (
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 ml-auto animate-pulse" />
+              {isLocked ? (
+                <Lock size={12} className="ml-auto text-slate-500 shrink-0" />
+              ) : (
+                isActive && !collapsed && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 ml-auto animate-pulse" />
+                )
               )}
             </button>
           );
