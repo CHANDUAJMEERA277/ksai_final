@@ -63,10 +63,8 @@ export async function GET(req: Request) {
     const newThisMonth = enrollments.filter(e => new Date(e.createdAt) >= startOfMonth).length;
 
     // B. Chapters Completed
-    // Calculate total chapters in enrolled courses
     const totalChaptersCount = enrollments.reduce((sum, e) => sum + (e.course?.chapters?.length || 0), 0);
     
-    // Fetch completed chapter progresses
     const completedProgresses = await db.chapterProgress.findMany({
       where: {
         userId: user.id,
@@ -82,115 +80,90 @@ export async function GET(req: Request) {
       ? Math.round((completedChaptersCount / totalChaptersCount) * 100) 
       : 0;
 
-    // C. Quiz Accuracy
+    // C. Quiz Accuracy & Quiz Improvement
     const progressesWithQuiz = await db.chapterProgress.findMany({
       where: {
         userId: user.id,
         quizScore: { gt: 0 }
       },
+      orderBy: { updatedAt: "asc" },
       select: { quizScore: true }
     });
 
     const quizScoresList = progressesWithQuiz.map(p => p.quizScore);
     const quizAccuracy = quizScoresList.length > 0
       ? Math.round(quizScoresList.reduce((sum, val) => sum + val, 0) / quizScoresList.length)
-      : 0; // 0% if no quizzes taken
-    const quizImprovement = quizScoresList.length > 0 ? 6 : 0;
+      : 0;
 
-    // D. Learning Streak (Consecutive days of activity)
-    const activityLogs = await db.activityLog.findMany({
+    let quizImprovement = 0;
+    if (quizScoresList.length >= 2) {
+      const mid = Math.floor(quizScoresList.length / 2);
+      const firstHalf = quizScoresList.slice(0, mid);
+      const secondHalf = quizScoresList.slice(mid);
+      const avg1 = firstHalf.reduce((s, v) => s + v, 0) / firstHalf.length;
+      const avg2 = secondHalf.reduce((s, v) => s + v, 0) / secondHalf.length;
+      quizImprovement = Math.max(0, Math.round(avg2 - avg1));
+    }
+
+    // D. Learning Streak (Requires 15 minutes of active learning per day)
+    const activityLogsForStreak = await db.activityLog.findMany({
       where: { userId: user.id },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "asc" }
     });
 
-    const uniqueDates = Array.from(new Set(
-      activityLogs.map(log => new Date(log.createdAt).toISOString().split("T")[0])
-    ));
+    const dateActiveMinutes: { [dateStr: string]: number } = {};
+    for (const log of activityLogsForStreak) {
+      const dateStr = new Date(log.createdAt).toISOString().split("T")[0];
+      let weight = 1;
+      if (log.actionType === "CHAPTER_COMPLETE") weight = 5;
+      else if (log.actionType === "QUIZ_SUBMIT") weight = 5;
+      else if (log.actionType === "AI_CHAT") weight = 2;
+      else if (log.actionType.startsWith("EDITOR_")) weight = 3;
+      
+      dateActiveMinutes[dateStr] = (dateActiveMinutes[dateStr] || 0) + weight;
+    }
+
+    const qualifyingDates = Object.keys(dateActiveMinutes)
+      .filter(dateStr => dateActiveMinutes[dateStr] >= 15)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // descending order
 
     let streak = 0;
-    if (uniqueDates.length > 0) {
+    if (qualifyingDates.length > 0) {
       const todayStr = new Date().toISOString().split("T")[0];
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-      if (uniqueDates[0] === todayStr || uniqueDates[0] === yesterdayStr) {
+      const hasTodayActivity = (dateActiveMinutes[todayStr] || 0) > 0;
+      const isTodayQualifying = dateActiveMinutes[todayStr] >= 15;
+      const isYesterdayQualifying = dateActiveMinutes[yesterdayStr] >= 15;
+
+      if (isTodayQualifying || isYesterdayQualifying || (hasTodayActivity && isYesterdayQualifying)) {
         streak = 1;
-        let currentDate = new Date(uniqueDates[0]);
-
-        for (let i = 1; i < uniqueDates.length; i++) {
-          const prevDate = new Date(uniqueDates[i]);
-          const diffTime = Math.abs(currentDate.getTime() - prevDate.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          if (diffDays === 1) {
+        let checkDate = new Date(isTodayQualifying ? todayStr : yesterdayStr);
+        
+        while (true) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const checkDateStr = checkDate.toISOString().split("T")[0];
+          if (dateActiveMinutes[checkDateStr] >= 15) {
             streak++;
-            currentDate = prevDate;
-          } else if (diffDays > 1) {
+          } else {
             break;
           }
         }
       }
     }
 
-    // E. Continue Learning Course Details
-    // Find the most recently active incomplete course
+    // E. Enrolled In-Progress Courses List (Continue Learning Carousels)
+    const continueLearningCourses = [];
     const courseProgresses = await db.chapterProgress.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: "desc" }
     });
 
-    let activeEnrollment = null;
-    for (const progress of courseProgresses) {
-      const chapter = await db.chapter.findUnique({
-        where: { id: progress.chapterId },
-        include: {
-          course: {
-            include: {
-              chapters: true
-            }
-          }
-        }
-      });
-      if (chapter) {
-        const enroll = enrollments.find(e => e.courseId === chapter.courseId);
-        if (enroll) {
-          const courseChapters = chapter.course.chapters || [];
-          const courseChaptersCompleted = courseProgresses.filter(
-            p => p.isCompleted && courseChapters.some(ch => ch.id === p.chapterId)
-          ).length;
-          
-          if (courseChapters.length === 0 || courseChaptersCompleted < courseChapters.length) {
-            activeEnrollment = enroll;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!activeEnrollment) {
-      // Fallback: take the first incomplete enrollment
-      for (const enroll of enrollments) {
-        const courseChapters = enroll.course.chapters || [];
-        const courseChaptersCompleted = courseProgresses.filter(
-          p => p.isCompleted && courseChapters.some(ch => ch.id === p.chapterId)
-        ).length;
-        
-        if (courseChapters.length === 0 || courseChaptersCompleted < courseChapters.length) {
-          activeEnrollment = enroll;
-          break;
-        }
-      }
-    }
-
-    if (!activeEnrollment && enrollments.length > 0) {
-      activeEnrollment = enrollments[0];
-    }
-
-    let continueLearning = null;
-    if (activeEnrollment) {
+    for (const enroll of enrollments) {
       const courseChapters = await db.chapter.findMany({
-        where: { courseId: activeEnrollment.courseId },
+        where: { courseId: enroll.courseId },
         orderBy: { orderNumber: "asc" }
       });
 
@@ -210,26 +183,30 @@ export async function GET(req: Request) {
         ch => !courseChapterProgresses.some(p => p.chapterId === ch.id && p.isCompleted)
       );
 
-      let currentChapter = incompleteChapters.length > 0 ? incompleteChapters[0] : (courseChapters.length > 0 ? courseChapters[courseChapters.length - 1] : null);
-      let nextChapter = incompleteChapters.length > 1 ? incompleteChapters[1] : null;
+      const currentChapter = incompleteChapters.length > 0 
+        ? incompleteChapters[0] 
+        : (courseChapters.length > 0 ? courseChapters[courseChapters.length - 1] : null);
+        
+      const nextChapter = incompleteChapters.length > 1 ? incompleteChapters[1] : null;
 
-      continueLearning = {
-        courseId: activeEnrollment.course.id,
-        courseTitle: activeEnrollment.course.title,
-        courseThumbnail: activeEnrollment.course.thumbnail,
-        courseLanguage: activeEnrollment.course.language,
+      continueLearningCourses.push({
+        courseId: enroll.course.id,
+        courseTitle: enroll.course.title,
+        courseThumbnail: enroll.course.thumbnail,
+        courseLanguage: enroll.course.language,
         progressPercent,
         completedChaptersCount: completedChapters.length,
         totalChaptersCount: courseChapters.length,
         currentChapter: currentChapter ? {
           id: currentChapter.id,
           title: currentChapter.title,
+          orderNumber: currentChapter.orderNumber,
           description: currentChapter.title.includes("Topic") ? currentChapter.title.split(":")[1]?.trim() || "Concept overview" : "Concept overview",
         } : null,
         upNext: nextChapter ? {
           title: nextChapter.title,
         } : null,
-      };
+      });
     }
 
     // F. Learning Progress Donut Data
@@ -252,7 +229,7 @@ export async function GET(req: Request) {
 
     // G. This Week's Goals & Targets
     const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 is Sunday, 1 is Monday...
+    const dayOfWeek = today.getDay(); 
     const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     const mondayDate = new Date(today.setDate(diffToMonday));
     mondayDate.setHours(0, 0, 0, 0);
@@ -290,7 +267,7 @@ export async function GET(req: Request) {
           if (meta && meta.questionsCount) {
             quizQuestionsSolvedThisWeek += meta.questionsCount;
           } else {
-            quizQuestionsSolvedThisWeek += 5; // default fallback questions count
+            quizQuestionsSolvedThisWeek += 5; 
           }
         } catch (e) {
           quizQuestionsSolvedThisWeek += 5;
@@ -315,22 +292,23 @@ export async function GET(req: Request) {
       }
     };
 
-    // H. Coding Activity heatmap (past 5 weeks aligned to Mon-Sun)
+    // H. Editor Activity heatmap (past 5 weeks aligned to Mon-Sun)
     const currentMonday = new Date(mondayDate);
     const startOfGrid = new Date(currentMonday);
-    startOfGrid.setDate(startOfGrid.getDate() - 28); // Go back 4 weeks
+    startOfGrid.setDate(startOfGrid.getDate() - 28); 
 
-    const dailyActivityCounts: { [dateStr: string]: number } = {};
-    const allLogs = await db.activityLog.findMany({
+    const editorActivityCounts: { [dateStr: string]: number } = {};
+    const editorLogs = await db.activityLog.findMany({
       where: {
         userId: user.id,
+        actionType: { startsWith: "EDITOR_" },
         createdAt: { gte: startOfGrid }
       }
     });
 
-    for (const log of allLogs) {
+    for (const log of editorLogs) {
       const dateStr = new Date(log.createdAt).toISOString().split("T")[0];
-      dailyActivityCounts[dateStr] = (dailyActivityCounts[dateStr] || 0) + 1;
+      editorActivityCounts[dateStr] = (editorActivityCounts[dateStr] || 0) + 1;
     }
 
     const heatmapData = [];
@@ -340,46 +318,79 @@ export async function GET(req: Request) {
         const targetDate = new Date(startOfGrid);
         targetDate.setDate(targetDate.getDate() + (w * 7) + d);
         const dateStr = targetDate.toISOString().split("T")[0];
-        const count = dailyActivityCounts[dateStr] || 0;
+        const count = editorActivityCounts[dateStr] || 0;
         
         let intensity = 0;
         if (count > 0) {
-          if (count <= 1) intensity = 1;
-          else if (count <= 3) intensity = 2;
-          else if (count <= 5) intensity = 3;
-          else intensity = 4;
+          if (count <= 2) intensity = 1;
+          else if (count <= 5) intensity = 2;
+          else intensity = 3;
         }
         
         weekDays.push({
           date: dateStr,
-          dayIndex: d, // 0 = Mon, 6 = Sun
+          dayIndex: d, 
           count,
           intensity
         });
       }
       heatmapData.push({
-        weekIndex: w, // 0 = W1, 4 = W5
+        weekIndex: w, 
         days: weekDays
       });
     }
 
-    // I. Recommended Courses
+    // I. Recommended Courses (Logic-based)
     const allCourses = await db.course.findMany({
       include: { chapters: true }
     });
 
-    const recommendedCourses = allCourses
-      .filter(c => !enrollments.some(e => e.courseId === c.id))
-      .map(c => ({
-        id: c.id,
-        title: c.title,
-        description: c.description,
-        level: c.level,
-        category: c.category,
-        language: c.language,
-        thumbnail: c.thumbnail,
-        rating: c.rating
-      }));
+    const recommendedCourses = [];
+
+    // Quiz reinforcement check
+    for (const enroll of enrollments) {
+      const courseChapterProgresses = await db.chapterProgress.findMany({
+        where: {
+          userId: user.id,
+          chapterId: { in: enroll.course.chapters.map(ch => ch.id) },
+          quizScore: { gt: 0 }
+        }
+      });
+      const quizScores = courseChapterProgresses.map(p => p.quizScore);
+      const avgQuiz = quizScores.length > 0 
+        ? quizScores.reduce((a, b) => a + b, 0) / quizScores.length
+        : 100;
+
+      if (avgQuiz < 70) {
+        recommendedCourses.push({
+          id: enroll.course.id,
+          title: enroll.course.title,
+          description: `⚠️ Needs Reinforcement: Your quiz accuracy is ${Math.round(avgQuiz)}%. Review chapter materials and retry quizzes to boost retention.`,
+          level: enroll.course.level,
+          category: enroll.course.category,
+          language: enroll.course.language,
+          thumbnail: enroll.course.thumbnail,
+          rating: enroll.course.rating,
+          badge: "Review Required"
+        });
+      }
+    }
+
+    // Unenrolled recommendations
+    const unenrolledCourses = allCourses.filter(c => !enrollments.some(e => e.courseId === c.id));
+    for (const course of unenrolledCourses) {
+      recommendedCourses.push({
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        level: course.level,
+        category: course.category,
+        language: course.language,
+        thumbnail: course.thumbnail,
+        rating: course.rating,
+        badge: "New Release"
+      });
+    }
 
     // J. Notifications
     const unreadNotifications = await db.notification.findMany({
@@ -450,7 +461,8 @@ export async function GET(req: Request) {
         quizImprovement,
         streak
       },
-      continueLearning,
+      continueLearning: continueLearningCourses[0] || null,
+      continueLearningCourses,
       learningProgress,
       weeklyGoals: weeklyGoalsData,
       heatmap: heatmapData,

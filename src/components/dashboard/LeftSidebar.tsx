@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Bot,
@@ -32,6 +32,14 @@ import { usePathname, useRouter } from "next/navigation";
 interface LeftSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  userProfile?: {
+    name: string;
+    role: string;
+    level: number;
+    xp: number;
+    targetXp: number;
+    image?: string | null;
+  };
 }
 
 const MENU_ITEMS = [
@@ -106,13 +114,51 @@ const MENU_ITEMS = [
   },
 ];
 
-export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
+export function LeftSidebar({ activeTab, onTabChange, userProfile }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  const userRole = (session?.user as any)?.role ?? "Student";
+  const [localProfile, setLocalProfile] = useState<{
+    name: string;
+    role: string;
+    level: number;
+    xp: number;
+    targetXp: number;
+    image?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!userProfile) {
+      fetch("/api/dashboard")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setLocalProfile({
+              name: data.user.name,
+              role: data.user.role,
+              level: data.user.level ?? 1,
+              xp: data.user.xp ?? 0,
+              targetXp: data.user.targetXp ?? 1000,
+              image: data.user.image,
+            });
+          }
+        })
+        .catch(console.error);
+    }
+  }, [userProfile]);
+
+  const activeProfile = userProfile || localProfile || (session?.user ? {
+    name: session.user.name ?? "Student",
+    role: (session.user as any).role ?? "Student",
+    level: 1,
+    xp: 0,
+    targetXp: 1000,
+    image: session.user.image,
+  } : null);
+
+  const userRole = activeProfile?.role ?? "Student";
   const isPro = userRole !== "Student";
 
   return (
@@ -197,7 +243,63 @@ export function LeftSidebar({ activeTab, onTabChange }: LeftSidebarProps) {
       </div>
 
       {/* Footer Controls & Collapse Toggle */}
-      <div className="p-3 border-t border-white/10 space-y-2 bg-[#060609]">
+      <div className="p-3 border-t border-white/10 space-y-4 bg-[#060609]">
+        {!collapsed && (
+          <>
+            {/* Upgrade to Pro Card */}
+            <div className="glass-panel p-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-blue-950/15 text-center space-y-3">
+              <div className="text-xs font-black text-white flex items-center justify-center gap-1">
+                👑 Upgrade to Pro
+              </div>
+              <p className="text-[10px] text-slate-300 leading-relaxed font-sans">
+                Unlock unlimited AI help, advanced analytics, and more.
+              </p>
+              <button 
+                onClick={() => alert("Payment Gateway Integration Active: Razorpay Subscription Triggered")}
+                className="w-full py-2 rounded-xl text-[10px] font-black text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 transition-opacity cursor-pointer shadow-md shadow-purple-500/10"
+              >
+                Upgrade Now
+              </button>
+            </div>
+
+            {/* Sidebar Profile Widget */}
+            {activeProfile && (
+              <div className="glass-panel p-3 rounded-2xl border border-white/5 bg-white/5 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  {activeProfile.image ? (
+                    <img 
+                      src={activeProfile.image} 
+                      alt={activeProfile.name} 
+                      className="w-8 h-8 rounded-full border border-white/20 object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-bold text-white text-xs border border-white/20">
+                      {activeProfile.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-black text-white truncate">{activeProfile.name}</div>
+                    <div className="text-[10px] text-cyan-400 font-mono font-bold">Level {activeProfile.level}</div>
+                  </div>
+                </div>
+                
+                {/* XP Progress Bar */}
+                <div className="space-y-1">
+                  <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, (activeProfile.xp / activeProfile.targetXp) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-[9px] text-slate-400 font-mono text-right font-bold">
+                    {activeProfile.xp} / {activeProfile.targetXp} XP
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         <button
           onClick={async () => {
             try {

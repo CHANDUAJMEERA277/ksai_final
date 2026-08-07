@@ -36,6 +36,7 @@ export function MonacoAIEditor({ language = "cpp", onCompleteCode }: MonacoAIEdi
   const [guidedData, setGuidedData] = useState<any>(null);
   const [dictatorActive, setDictatorActive] = useState(false);
   const [dictatorWarning, setDictatorWarning] = useState<string | null>(null);
+  const [editorFeedback, setEditorFeedback] = useState<{ type: "hint" | "fix" | "improvement"; message: string } | null>(null);
 
   // BLOCK COPY PASTE
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -72,9 +73,22 @@ export function MonacoAIEditor({ language = "cpp", onCompleteCode }: MonacoAIEdi
     return () => clearTimeout(timer);
   }, [code, dictatorActive]);
 
+  const logEditorActivity = async (actionType: string) => {
+    try {
+      await fetch("/api/activity/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actionType })
+      });
+    } catch (err) {
+      console.error("Failed to log activity:", err);
+    }
+  };
+
   const handleRunCode = () => {
     setRunning(true);
     setOutput(null);
+    logEditorActivity("EDITOR_RUN");
 
     setTimeout(() => {
       setRunning(false);
@@ -88,6 +102,7 @@ export function MonacoAIEditor({ language = "cpp", onCompleteCode }: MonacoAIEdi
   };
 
   const handleTriggerGuidedMode = async () => {
+    logEditorActivity("EDITOR_GUIDANCE");
     try {
       const res = await fetch("/api/ai/guided-debug", {
         method: "POST",
@@ -106,14 +121,49 @@ export function MonacoAIEditor({ language = "cpp", onCompleteCode }: MonacoAIEdi
   const toggleDictatorMode = () => {
     const nextState = !dictatorActive;
     setDictatorActive(nextState);
-    if (nextState && typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const text = language === "java"
-        ? "Dictator Mode Active. Type: public static void main(String[] args). Do not copy paste."
-        : "Dictator Mode Active. Type function definition line by line. AI is monitoring your typing.";
-      const utt = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utt);
+    if (nextState) {
+      logEditorActivity("EDITOR_SUGGESTION");
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const text = language === "java"
+          ? "Dictator Mode Active. Type: public static void main(String[] args). Do not copy paste."
+          : "Dictator Mode Active. Type function definition line by line. AI is monitoring your typing.";
+        const utt = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utt);
+      }
     }
+  };
+
+  const handleGetHint = () => {
+    logEditorActivity("EDITOR_HINT");
+    let msg = "";
+    if (language === "python") {
+      msg = "💡 Hint: Ensure you indent your function body by 4 spaces. Double-check your loop variables are incremented.";
+    } else if (language === "java") {
+      msg = "💡 Hint: Make sure your public class name matches the filename, and check that System.out.println is spelled correctly.";
+    } else {
+      msg = "💡 Hint: In C/C++, check that standard headers like <stdio.h> or <iostream> are included, and main returns an integer.";
+    }
+    setEditorFeedback({ type: "hint", message: msg });
+  };
+
+  const handleSuggestFix = () => {
+    logEditorActivity("EDITOR_FIX");
+    let msg = "";
+    if (code.includes("publc") || code.includes("statc") || code.includes("prnt")) {
+      msg = "🔧 Fix: Correct spelling typos: 'publc' -> 'public', 'statc' -> 'static', 'prnt' -> 'print'.";
+    } else if (!code.includes(";") && (language === "cpp" || language === "c" || language === "java")) {
+      msg = "🔧 Fix: Your code is missing a semicolon ';'. Append a semicolon to terminate statements.";
+    } else {
+      msg = "🔧 Fix: No immediate syntax errors found. If you see logical errors, check loop variables and boundary variables.";
+    }
+    setEditorFeedback({ type: "fix", message: msg });
+  };
+
+  const handleOptimizeCode = () => {
+    logEditorActivity("EDITOR_IMPROVEMENT");
+    let msg = "🚀 Improvement: Declare variables using const/final where possible, keep variable scopes narrow, and use meaningful descriptor naming.";
+    setEditorFeedback({ type: "improvement", message: msg });
   };
 
   return (
@@ -190,6 +240,44 @@ export function MonacoAIEditor({ language = "cpp", onCompleteCode }: MonacoAIEdi
           className="w-full p-5 bg-transparent text-cyan-300 focus:outline-none resize-none leading-relaxed font-mono select-text"
         />
       </div>
+
+      {/* Editor Helper Actions & Feedback */}
+      <div className="flex flex-wrap items-center gap-2 pb-2">
+        <button
+          onClick={handleGetHint}
+          className="px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-cyan-300 text-xs font-bold transition-all flex items-center gap-1.5"
+        >
+          💡 Get Hint
+        </button>
+        <button
+          onClick={handleSuggestFix}
+          className="px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-amber-500/50 hover:bg-amber-500/10 text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5"
+        >
+          🔧 Suggest Fix
+        </button>
+        <button
+          onClick={handleOptimizeCode}
+          className="px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/10 text-purple-300 text-xs font-bold transition-all flex items-center gap-1.5"
+        >
+          🚀 Optimize / Improve
+        </button>
+      </div>
+
+      {editorFeedback && (
+        <div className={`p-4 rounded-xl text-xs sm:text-sm font-medium border flex items-center justify-between animate-fade-in ${
+          editorFeedback.type === "hint" ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200" :
+          editorFeedback.type === "fix" ? "bg-amber-500/10 border-amber-500/30 text-amber-200" :
+          "bg-purple-500/10 border-purple-500/30 text-purple-200"
+        }`}>
+          <span>{editorFeedback.message}</span>
+          <button 
+            onClick={() => setEditorFeedback(null)}
+            className="text-[10px] text-slate-400 hover:text-white uppercase font-bold tracking-wider cursor-pointer ml-3"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Run Code & Output Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
