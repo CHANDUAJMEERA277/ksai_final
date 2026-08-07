@@ -118,7 +118,7 @@ export default function CppOverviewPage() {
         </div>
 
         {/* Reusable Course Switcher */}
-        <CourseSwitcher currentLanguage="cpp" />
+        <CourseSwitcher currentLanguage="CPP" />
       </header>
 
       {/* Main Body Content */}
