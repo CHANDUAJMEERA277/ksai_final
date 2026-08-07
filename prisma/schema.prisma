@@ -33,12 +33,17 @@ model User {
   currentStreak              Int                         @default(0)
   longestStreak              Int                         @default(0)
   lastActiveDate             DateTime?
+  xp                         Int                         @default(0)
+  level                      Int                         @default(1)
   sessions                   Session[]
   accounts                   Account[]
   enrollments                Enrollment[]
   progresses                 ChapterProgress[]
   xpTransactions             XpTransaction[]
   weeklyLeaderboardSnapshots WeeklyLeaderboardSnapshot[]
+  activityLogs               ActivityLog[]
+  notifications              Notification[]
+  weeklyGoals                WeeklyGoal[]
 }
 
 model Session {
@@ -177,3 +182,34 @@ model WeeklyLeaderboardSnapshot {
 
   @@unique([weekStart, userId])
 }
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  actionType String
+  metadata   String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WeeklyGoal {
+  id             String   @id @default(uuid())
+  userId         String
+  targetChapters Int      @default(2)
+  targetQuizzes  Int      @default(10)
+  targetAIChats  Int      @default(5)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
