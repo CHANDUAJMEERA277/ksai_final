@@ -31,7 +31,7 @@ interface ProgressItem {
 
 export default function CppOverviewPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [courseTitle, setCourseTitle] = useState("Modern C++ Architecture & Performance Masterclass");

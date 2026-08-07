@@ -211,6 +211,45 @@ const C_CHAPTER_SECTIONS: Record<number, string[]> = {
     "5.2 Pointers and Arrays",
     "5.3 Pointers and Functions",
     "Quiz Assessment"
+  ],
+  6: [
+    "6.1 Understanding Memory (RAM)",
+    "6.2 Dynamic Memory Allocation (DMA)",
+    "6.3 Memory Leaks & Dangling Pointers",
+    "Quiz Assessment"
+  ],
+  7: [
+    "7.1 Structures",
+    "7.2 Unions",
+    "7.3 Enumerations",
+    "Quiz Assessment"
+  ],
+  8: [
+    "8.1 File Basics",
+    "8.2 Text File I/O",
+    "8.3 Binary File I/O",
+    "8.4 Visual Learning - Diagrams",
+    "Quiz Assessment"
+  ],
+  9: [
+    "9.1 The C Compilation Process",
+    "9.2 The C Preprocessor",
+    "9.3 Conditional Compilation",
+    "9.4 Header Files",
+    "9.5 Multi-file Programs",
+    "9.6 Storage Classes (Deep Dive)",
+    "9.7 Bitwise Operators",
+    "9.8 Error Handling & Defensive Programming",
+    "Quiz Assessment"
+  ],
+  10: [
+    "10.1 Complete C Revision",
+    "10.2 Frequently Asked Interview Questions",
+    "10.3 Common Coding Patterns",
+    "10.4 Common Bugs and Debugging",
+    "10.5 Debugging Techniques",
+    "10.6 Coding Best Practices",
+    "Quiz Assessment"
   ]
 };
 

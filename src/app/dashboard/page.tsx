@@ -14,7 +14,7 @@ import { Sparkles, Star, BookOpen, Layers } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [activeSection, setActiveSection] = useState<"catalog" | "my-courses">("catalog");

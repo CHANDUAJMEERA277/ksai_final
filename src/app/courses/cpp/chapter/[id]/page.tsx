@@ -36,7 +36,7 @@ interface ProgressItem {
 export default function CppChapterReaderPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
 
   const chapterParam = (params?.id as string) || "1";
   const currentOrderNum = parseInt(chapterParam.replace(/[^0-9]/g, ""), 10) || 1;
