@@ -36,10 +36,16 @@ export default function CourseCurriculumPage() {
   const [courseTitle, setCourseTitle] = useState(
     courseSlug === "c"
       ? "C Language Mastery & System Programming"
+      : courseSlug === "cpp"
+      ? "C++ Object-Oriented & STL Masterclass"
+      : courseSlug === "java"
+      ? "Java Enterprise & Object-Oriented Architecture"
       : "Python AI & Data Structures Architecture"
   );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(courseSlug === "c" ? 1499 : 2499);
+  const [coursePrice, setCoursePrice] = useState(
+    courseSlug === "c" ? 1499 : (courseSlug === "cpp" || courseSlug === "java") ? 1999 : 2499
+  );
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [buying, setBuying] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -63,7 +69,7 @@ export default function CourseCurriculumPage() {
   const loadCurriculumData = async () => {
     setLoading(true);
     try {
-      const firstChapterOrder = 0;
+      const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
       const res = await fetch(`/api/courses/${courseSlug}/chapters/${firstChapterOrder}`);
       const data = await res.json();
 
@@ -187,7 +193,7 @@ export default function CourseCurriculumPage() {
 
   // Lock State Logic
   const isChapterUnlocked = (order: number) => {
-    const firstChapterOrder = 0;
+    const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
     if (order === firstChapterOrder) return true; // first chapter is always unlocked
     
     // Check previous chapter completion state
@@ -197,18 +203,25 @@ export default function CourseCurriculumPage() {
     const prevProgress = progresses.find((p) => p.chapterId === prevChapter.id);
     const prevCompleted = !!prevProgress?.isCompleted;
 
-    // Check if enrolled for chapters > firstChapterOrder
-    if (order > firstChapterOrder && !isEnrolled) return false;
+    const freeLimit = courseSlug === "python" ? 0 : 1;
+    // Check if enrolled for chapters > freeLimit
+    if (order > freeLimit && !isEnrolled) return false;
 
     return prevCompleted;
   };
 
   // Progress summary
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || (courseSlug === "c" ? 6 : 11);
+  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : courseSlug === "c" ? 6 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   const isC = courseSlug === "c";
+  const startsAtOne = courseSlug === "cpp" || courseSlug === "java";
+  const activeChapterOrder = startsAtOne
+    ? completedChaptersCount + 1
+    : isC
+    ? completedChaptersCount + 1
+    : completedChaptersCount;
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
@@ -220,7 +233,7 @@ export default function CourseCurriculumPage() {
           </div>
           <div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {isC ? "C" : "Python"} Course</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -289,7 +302,7 @@ export default function CourseCurriculumPage() {
                   Curriculum Syllabus
                 </h1>
                 <p className="text-xs text-slate-400 mt-1">
-                  {isC ? "C Course" : "Python AI Course"} &bull; {completedChaptersCount} of {totalChaptersCount} Chapters Passed ({progressPercentage}%)
+                  {courseSlug === "cpp" ? "C++ Course" : courseSlug === "java" ? "Java Course" : isC ? "C Course" : "Python AI Course"} &bull; {completedChaptersCount} of {totalChaptersCount} Chapters Passed ({progressPercentage}%)
                 </p>
               </div>
 
@@ -311,7 +324,7 @@ export default function CourseCurriculumPage() {
               {chapters.map((chapter) => {
                 const unlocked = isChapterUnlocked(chapter.orderNumber);
                 const isCompleted = !!progresses.find((p) => p.chapterId === chapter.id)?.isCompleted;
-                const active = chapter.orderNumber === (isC ? completedChaptersCount + 1 : completedChaptersCount);
+                const active = chapter.orderNumber === activeChapterOrder;
 
                 let cardStyle = "glass-panel border-white/10 bg-[#09090D] hover:border-cyan-500/50 hover:bg-white/5";
                 let lockIcon = <Unlock size={16} className="text-cyan-400" />;
@@ -325,7 +338,8 @@ export default function CourseCurriculumPage() {
                   cardStyle = "bg-white/5 border-white/5 opacity-60 cursor-not-allowed";
                   lockIcon = <Lock size={16} className="text-slate-500" />;
                   
-                  if (!isEnrolled && chapter.orderNumber > (isC ? 1 : 0)) {
+                  const freeLimit = courseSlug === "python" ? 0 : 1;
+                  if (!isEnrolled && chapter.orderNumber > freeLimit) {
                     statusLabel = "Locked: Subscribe to unlock all remaining chapters";
                   } else {
                     statusLabel = `Locked: Complete Chapter ${chapter.orderNumber - 1} to unlock`;
@@ -347,9 +361,10 @@ export default function CourseCurriculumPage() {
                   <div
                     key={chapter.id}
                     onClick={() => {
+                      const freeLimit = courseSlug === "python" ? 0 : 1;
                       if (unlocked) {
                         router.push(`/courses/${courseSlug}/chapter/${chapter.orderNumber}`);
-                      } else if (!isEnrolled && chapter.orderNumber > (isC ? 1 : 0)) {
+                      } else if (!isEnrolled && chapter.orderNumber > freeLimit) {
                         alert("🔒 This chapter is locked. Please subscribe to unlock access.");
                       } else {
                         alert(`🔒 This chapter is locked. Complete Chapter ${chapter.orderNumber - 1} quiz to unlock.`);

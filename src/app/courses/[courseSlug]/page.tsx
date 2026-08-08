@@ -37,10 +37,16 @@ export default function CourseOverviewPage() {
   const [courseTitle, setCourseTitle] = useState(
     courseSlug === "c"
       ? "C Language Mastery & System Programming"
+      : courseSlug === "cpp"
+      ? "C++ Object-Oriented & STL Masterclass"
+      : courseSlug === "java"
+      ? "Java Enterprise & Object-Oriented Architecture"
       : "Python AI & Data Structures Architecture"
   );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(courseSlug === "c" ? 1499 : 2499);
+  const [coursePrice, setCoursePrice] = useState(
+    courseSlug === "c" ? 1499 : (courseSlug === "cpp" || courseSlug === "java") ? 1999 : 2499
+  );
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [progresses, setProgresses] = useState<ProgressItem[]>([]);
@@ -63,7 +69,7 @@ export default function CourseOverviewPage() {
     const fetchOverviewData = async () => {
       setLoading(true);
       try {
-        const firstChapter = "0";
+        const firstChapter = (courseSlug === "cpp" || courseSlug === "java") ? "1" : "0";
         const res = await fetch(`/api/courses/${courseSlug}/chapters/${firstChapter}`);
         const data = await res.json();
 
@@ -90,7 +96,7 @@ export default function CourseOverviewPage() {
 
   // Calculate Progress Stats
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || (courseSlug === "c" ? 6 : 11);
+  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : courseSlug === "c" ? 6 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   // Continue Learning Logic
@@ -104,7 +110,7 @@ export default function CourseOverviewPage() {
     if (nextChapter) {
       router.push(`/courses/${courseSlug}/chapter/${nextChapter.orderNumber}`);
     } else {
-      router.push(`/courses/${courseSlug}/chapter/0`);
+      router.push(`/courses/${courseSlug}/chapter/${(courseSlug === "cpp" || courseSlug === "java") ? "1" : "0"}`);
     }
   };
 
@@ -120,7 +126,7 @@ export default function CourseOverviewPage() {
           </div>
           <div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {isC ? "C" : "Python"} Course</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -144,7 +150,7 @@ export default function CourseOverviewPage() {
             My Courses
           </button>
           <span>&bull;</span>
-          <span className="text-cyan-400 font-mono">{isC ? "C" : "Python"} Course Overview</span>
+          <span className="text-cyan-400 font-mono">{courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : isC ? "C" : "Python"} Course Overview</span>
         </div>
 
         {loading ? (

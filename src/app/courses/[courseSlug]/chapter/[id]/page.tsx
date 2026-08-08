@@ -469,8 +469,9 @@ export default function ChapterPage() {
       }
 
       // Check if user is trying to access locked chapters without enrollment
-      const firstChapterOrder = 0;
-      if (chapterOrder > firstChapterOrder && !chapterData.isEnrolled) {
+      const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
+      const freeLimit = courseSlug === "python" ? 0 : 1;
+      if (chapterOrder > freeLimit && !chapterData.isEnrolled) {
         alert("🔒 This chapter is locked. Please subscribe to the course to unlock access.");
         router.push(`/courses/${courseSlug}/chapter/${firstChapterOrder}`);
         setLoading(false);
@@ -625,13 +626,14 @@ export default function ChapterPage() {
   const isCompleted = !!progresses.find((p) => p.chapterId === currentChapter?.id)?.isCompleted;
 
   const isChapterUnlockedLocal = (order: number) => {
-    const firstChapterOrder = 0;
+    const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
     if (order === firstChapterOrder) return true;
     const prevChapter = chapters.find((c) => c.orderNumber === order - 1);
     if (!prevChapter) return false;
     const prevProgress = progresses.find((p) => p.chapterId === prevChapter.id);
     
-    if (order > firstChapterOrder && !isEnrolled) return false;
+    const freeLimit = courseSlug === "python" ? 0 : 1;
+    if (order > freeLimit && !isEnrolled) return false;
 
     return !!prevProgress?.isCompleted;
   };
@@ -648,7 +650,7 @@ export default function ChapterPage() {
           </div>
           <div>
             <span className="text-[10px] text-blue-600 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {courseSlug === "c" ? "C" : "Python"} Course</span>
+            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : courseSlug === "c" ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
