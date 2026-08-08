@@ -547,3 +547,43 @@ html.light ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* Overrides for dark-sidebar when html has light class, preserving dark theme styles */
+html.light .dark-sidebar {
+  background-color: #09090b !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+html.light .dark-sidebar .text-white {
+  color: #ffffff !important;
+}
+
+html.light .dark-sidebar .text-slate-200 {
+  color: #e2e8f0 !important;
+}
+
+html.light .dark-sidebar .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+html.light .dark-sidebar .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.light .dark-sidebar .glass-panel {
+  background-image: linear-gradient(to bottom right, rgba(88, 28, 135, 0.2), rgba(30, 58, 138, 0.15)) !important;
+  background-color: rgba(9, 9, 11, 0.6) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: none !important;
+}
+
+html.light .dark-sidebar .border-t {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.light .dark-sidebar button:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+

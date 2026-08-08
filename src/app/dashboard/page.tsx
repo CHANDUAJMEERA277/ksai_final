@@ -307,7 +307,7 @@ export default function DashboardPage() {
           else if (tab === "Workspace") router.push("/workspace");
         }} 
         userProfile={activeUser}
-        isLight={true}
+        isLight={false}
         fullHeight={true}
       />
 
