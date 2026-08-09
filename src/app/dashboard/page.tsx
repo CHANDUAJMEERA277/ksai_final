@@ -315,7 +315,7 @@ export default function DashboardPage() {
       />
 
       {/* Main Right Area */}
-      <main className="flex-1 h-full flex flex-col overflow-hidden p-5 gap-3.5 max-w-7xl mx-auto w-full min-w-0">
+      <main className="flex-1 h-full flex flex-col overflow-hidden p-5 sm:p-6 gap-3.5 w-full min-w-0">
         
         {/* Header Row */}
         <div className="flex items-center justify-between flex-shrink-0">
