@@ -49,16 +49,17 @@ export default function CodexAIPage() {
   };
 
   return (
-    <div className="h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden font-sans">
-      <TopNavbar
-        userName={user?.name || "Loading..."}
-        userRole={user?.role || "Student"}
+    <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">
+      {/* Left Sidebar Menu */}
+      <LeftSidebar
+        activeTab="AI Mentor"
+        onTabChange={handleTabChange}
+        userProfile={user || undefined}
+        isLight={false}
+        fullHeight={true}
       />
 
-      <div className="flex-1 flex w-full overflow-hidden">
-        <LeftSidebar activeTab="AI Mentor" onTabChange={handleTabChange} />
-
-        <main className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full custom-scrollbar">
+      <main className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 w-full custom-scrollbar">
           <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 space-y-2 bg-gradient-to-r from-purple-950/40 via-blue-950/20 to-cyan-950/30 shadow-2xl relative overflow-hidden">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs font-semibold border border-purple-500/20">
               <Sparkles size={13} /> CodexAI &bull; Advanced Coding Partner
@@ -105,7 +106,6 @@ export default function CodexAIPage() {
         </main>
 
         <RightAIPanel />
-      </div>
     </div>
   );
 }

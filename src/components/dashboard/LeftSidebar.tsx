@@ -34,12 +34,13 @@ interface LeftSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   userProfile?: {
-    name: string;
-    role: string;
-    level: number;
-    xp: number;
-    targetXp: number;
+    name?: string;
+    role?: string;
+    level?: number;
+    xp?: number;
+    targetXp?: number;
     image?: string | null;
+    [key: string]: any;
   };
   isLight?: boolean;
   fullHeight?: boolean;
@@ -357,20 +358,20 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
                   {activeProfile.image ? (
                     <img 
                       src={activeProfile.image} 
-                      alt={activeProfile.name} 
+                      alt={activeProfile.name || "User"} 
                       className="w-7 h-7 rounded-full border border-slate-200/50 object-cover shrink-0"
                     />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-black text-white text-xs border border-white/20 shrink-0">
-                      {activeProfile.name.charAt(0).toUpperCase()}
+                      {(activeProfile.name || "S").charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className={`text-xs font-extrabold truncate ${isLight ? "text-[#0F172A]" : "text-white"}`}>
-                      {activeProfile.name}
+                      {activeProfile.name || "Student"}
                     </div>
                     <div className={`text-[10px] font-mono font-bold ${isLight ? "text-[#4F46E5]" : "text-cyan-400"}`}>
-                      Level {activeProfile.level}
+                      Level {activeProfile.level ?? 0}
                     </div>
                   </div>
                 </div>
@@ -384,13 +385,13 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
                       className={`h-full rounded-full transition-all duration-500 ${
                         isLight ? "bg-gradient-to-r from-blue-500 to-[#4F46E5]" : "bg-gradient-to-r from-blue-500 to-cyan-400"
                       }`}
-                      style={{ width: `${Math.min(100, (activeProfile.xp / activeProfile.targetXp) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (((activeProfile.xp ?? 0) / (activeProfile.targetXp || 1000))) * 100)}%` }}
                     />
                   </div>
                   <div className={`text-[9px] font-mono text-right font-bold ${
                     isLight ? "text-slate-500" : "text-slate-400"
                   }`}>
-                    {activeProfile.xp} / {activeProfile.targetXp} XP
+                    {activeProfile.xp ?? 0} / {activeProfile.targetXp ?? 1000} XP
                   </div>
                 </div>
               </div>

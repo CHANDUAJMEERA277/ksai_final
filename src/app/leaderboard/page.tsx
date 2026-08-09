@@ -244,16 +244,18 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans">
-      {/* Top Navbar */}
-      <TopNavbar user={user} />
+    <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">
+      {/* Left Sidebar */}
+      <LeftSidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        userProfile={user || undefined}
+        isLight={false}
+        fullHeight={true}
+      />
 
-      <div className="flex-1 flex">
-        {/* Left Sidebar */}
-        <LeftSidebar activeTab={activeTab} onTabChange={handleTabChange} />
-
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto space-y-8 overflow-y-auto pb-28">
+      {/* Main Content Area */}
+      <main className="flex-1 p-6 md:p-8 space-y-8 overflow-y-auto w-full custom-scrollbar">
           {/* Header Banner */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -611,7 +613,6 @@ export default function LeaderboardPage() {
             </>
           )}
         </main>
-      </div>
 
       {/* Sticky "Your Rank" Footer Card */}
       {currentUserEntry && (

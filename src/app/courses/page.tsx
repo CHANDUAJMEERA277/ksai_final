@@ -80,20 +80,18 @@ export default function MyCoursesPage() {
   };
 
   return (
-    <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden">
-      {/* Top Navbar */}
-      <TopNavbar
-        userName={user?.name || "Loading..."}
-        userRole={user?.role || "Student"}
+    <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">
+      {/* Left Sidebar Menu */}
+      <LeftSidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        userProfile={user || undefined}
+        isLight={false}
+        fullHeight={true}
       />
 
-      {/* Main Workspace Layout */}
-      <div className="flex-1 flex w-full overflow-hidden">
-        {/* Left Sidebar Menu */}
-        <LeftSidebar activeTab={activeTab} onTabChange={handleTabChange} />
-
-        {/* Center Main Workspace Content Area */}
-        <main data-lenis-prevent className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full custom-scrollbar">
+      {/* Center Main Workspace Content Area */}
+      <main className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 w-full custom-scrollbar">
           {/* Welcome Header */}
           <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-2 bg-white shadow-sm">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
@@ -195,7 +193,6 @@ export default function MyCoursesPage() {
 
         {/* Right Copilot Panel */}
         <RightAIPanel />
-      </div>
     </div>
   );
 }
