@@ -300,11 +300,14 @@ export default function DashboardPage() {
       <LeftSidebar 
         activeTab="Dashboard" 
         onTabChange={(tab) => {
-          if (tab === "Courses") router.push("/courses");
+          if (tab === "Explore Courses") router.push("/courses/catalog");
+          else if (tab === "Courses") router.push("/courses");
           else if (tab === "Leaderboard") router.push("/leaderboard");
           else if (tab === "AI Mentor") router.push("/codexai");
           else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
           else if (tab === "Workspace") router.push("/workspace");
+          else if (tab === "Certificates") router.push("/certificates");
+          else if (tab === "Settings") router.push("/settings");
         }} 
         userProfile={activeUser}
         isLight={false}
@@ -487,7 +490,7 @@ export default function DashboardPage() {
                   Subscribe to a language curriculum to start coding.
                 </p>
                 <button 
-                  onClick={() => router.push("/courses")}
+                  onClick={() => router.push("/courses/catalog")}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors"
                 >
                   Browse Catalog
@@ -975,7 +978,7 @@ export default function DashboardPage() {
                     if (course.badge === "Review Required") {
                       router.push(`/courses/${course.language}/curriculum`);
                     } else {
-                      router.push("/courses");
+                      router.push(`/courses/catalog?enroll=${course.language}`);
                     }
                   }}
                   className="flex-shrink-0 w-60 p-2 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100/50 hover:border-[#4F46E5]/40 flex gap-2.5 items-center cursor-pointer transition-all hover:scale-101 group"

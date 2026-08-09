@@ -138,7 +138,7 @@ export default function MyCoursesPage() {
                 </p>
               </div>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/courses/catalog")}
                 className="px-6 py-3.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-95 transition-opacity inline-flex items-center gap-1.5 shadow-md shadow-blue-500/10"
               >
                 Browse Available Courses <ArrowRight size={14} />

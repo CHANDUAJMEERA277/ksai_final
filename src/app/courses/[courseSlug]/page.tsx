@@ -80,6 +80,11 @@ export default function CourseOverviewPage() {
           setIsEnrolled(data.isEnrolled);
           setChapters(data.chapters);
           setProgresses(data.progresses);
+
+          if (!data.isEnrolled) {
+            router.push(`/courses/catalog?enroll=${courseSlug}`);
+            return;
+          }
         } else {
           setError(data.error || "Failed to load course details.");
         }

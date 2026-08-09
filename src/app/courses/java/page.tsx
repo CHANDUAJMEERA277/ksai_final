@@ -67,6 +67,11 @@ export default function JavaOverviewPage() {
           setIsEnrolled(data.isEnrolled);
           setChapters(data.chapters);
           setProgresses(data.progresses);
+
+          if (!data.isEnrolled) {
+            router.push("/courses/catalog?enroll=java");
+            return;
+          }
         } else {
           setError(data.error || "Failed to load course details.");
         }

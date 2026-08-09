@@ -67,6 +67,11 @@ export default function CppOverviewPage() {
           setIsEnrolled(data.isEnrolled);
           setChapters(data.chapters);
           setProgresses(data.progresses);
+
+          if (!data.isEnrolled) {
+            router.push("/courses/catalog?enroll=cpp");
+            return;
+          }
         } else {
           setError(data.error || "Failed to load C++ course details.");
         }

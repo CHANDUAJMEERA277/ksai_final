@@ -80,28 +80,13 @@ export async function GET(
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
 
-    // Check if user is enrolled or auto-enroll active user
-    let enrollment = await db.enrollment.findFirst({
+    // Check if user is enrolled
+    const enrollment = await db.enrollment.findFirst({
       where: {
         userId: user.id,
         courseId: course.id,
       },
     });
-
-    if (!enrollment && user.id) {
-      try {
-        enrollment = await db.enrollment.create({
-          data: {
-            userId: user.id,
-            courseId: course.id,
-            paidAmount: 0,
-            paymentId: "auto_preview",
-          },
-        });
-      } catch (e) {
-        // Fallback if duplicate or constraint
-      }
-    }
 
     // Fetch progress for this user in this course
     const progresses = await db.chapterProgress.findMany({

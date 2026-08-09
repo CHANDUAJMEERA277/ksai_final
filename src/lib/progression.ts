@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { calculateUserLevelAndXp } from "@/lib/xp-service";
+import { XpSourceType } from "@/lib/xp-config";
 
 /**
  * Logs a user activity in the database, awards XP, handles leveling up,
@@ -68,41 +70,40 @@ export async function logUserActivity(userId: string, actionType: string, metada
       });
 
       if (user) {
-        let currentXp = user.xp + xpToAdd;
-        let currentLevel = user.level;
+        let source: XpSourceType = "chapter_complete";
+        if (actionType === "AI_CHAT") source = "ai_chat";
+        else if (actionType === "QUIZ_SUBMIT") source = "quiz_pass";
+        else if (actionType === "COURSE_ENROLL") source = "chapter_complete";
 
-        while (true) {
-          // Progression thresholds matching Level 12 @ 5000 XP denominator
-          let targetXp = 1000;
-          if (currentLevel >= 10) {
-            targetXp = 5000;
-          } else if (currentLevel >= 5) {
-            targetXp = 2500;
-          }
+        await db.xpTransaction.create({
+          data: {
+            userId,
+            amount: xpToAdd,
+            source,
+            createdAt: new Date(),
+          },
+        });
 
-          if (currentXp >= targetXp) {
-            currentXp -= targetXp;
-            currentLevel += 1;
+        const levelAndXp = await calculateUserLevelAndXp(userId);
 
-            // Generate level up notification
+        if (levelAndXp.level > user.level) {
+          for (let lvl = user.level + 1; lvl <= levelAndXp.level; lvl++) {
             await db.notification.create({
               data: {
                 userId,
                 title: "Level Up! 🎉",
-                message: `Congratulations! You've leveled up to Level ${currentLevel}!`,
+                message: `Congratulations! You've leveled up to Level ${lvl}!`,
                 read: false,
               },
             });
-          } else {
-            break;
           }
         }
 
         await db.user.update({
           where: { id: userId },
           data: {
-            xp: currentXp,
-            level: currentLevel,
+            xp: levelAndXp.xp,
+            level: levelAndXp.level,
           },
         });
       }

@@ -57,4 +57,6 @@ export type XpSourceType =
   | "quiz_pass"
   | "challenge_solved"
   | "streak_bonus"
-  | "accuracy_bonus";
+  | "accuracy_bonus"
+  | "ai_chat"
+  | "editor_practice";

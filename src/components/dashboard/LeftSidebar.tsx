@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Brain,
   Lock,
+  Compass,
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { usePathname, useRouter } from "next/navigation";
@@ -45,6 +46,12 @@ interface LeftSidebarProps {
 }
 
 const MENU_ITEMS = [
+  {
+    id: "Explore Courses",
+    label: "Explore Courses",
+    icon: Compass,
+    category: "Main",
+  },
   {
     id: "Dashboard",
     label: "Dashboard",
@@ -226,15 +233,19 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
           
           let isActive = activeTab === item.id;
           if (pathname) {
-            if (item.id === "Dashboard" && pathname === "/dashboard") {
+            if (item.id === "Explore Courses" && pathname.startsWith("/courses/catalog")) {
               isActive = true;
-            } else if (item.id === "Courses" && pathname.startsWith("/courses")) {
+            } else if (item.id === "Dashboard" && pathname === "/dashboard") {
+              isActive = true;
+            } else if (item.id === "Courses" && pathname.startsWith("/courses") && !pathname.startsWith("/courses/catalog")) {
               isActive = true;
             } else if (item.id === "AI Mentor" && (pathname.startsWith("/codexai") || pathname.startsWith("/codeai"))) {
               isActive = true;
             } else if (item.id === "AI Quiz Generator" && pathname.startsWith("/quiz-generator")) {
               isActive = true;
             } else if (item.id === "Leaderboard" && pathname.startsWith("/leaderboard")) {
+              isActive = true;
+            } else if (item.id === "Certificates" && pathname.startsWith("/certificates")) {
               isActive = true;
             } else if (item.id === "Settings" && pathname.startsWith("/settings")) {
               isActive = true;
@@ -254,7 +265,9 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
                 onTabChange(item.id);
                 
                 // Sidebar routing
-                if (item.id === "Dashboard") {
+                if (item.id === "Explore Courses") {
+                  router.push("/courses/catalog");
+                } else if (item.id === "Dashboard") {
                   router.push("/dashboard");
                 } else if (item.id === "Courses") {
                   router.push("/courses");
@@ -264,6 +277,10 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
                   router.push("/quiz-generator");
                 } else if (item.id === "Leaderboard") {
                   router.push("/leaderboard");
+                } else if (item.id === "Certificates") {
+                  router.push("/certificates");
+                } else if (item.id === "Settings") {
+                  router.push("/settings");
                 }
               }}
               title={collapsed ? item.label : undefined}

@@ -69,6 +69,11 @@ export default function PythonOverviewPage() {
           setIsEnrolled(data.isEnrolled);
           setChapters(data.chapters);
           setProgresses(data.progresses);
+
+          if (!data.isEnrolled) {
+            router.push("/courses/catalog?enroll=python");
+            return;
+          }
         } else {
           setError(data.error || "Failed to load course details.");
         }

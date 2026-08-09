@@ -44,6 +44,7 @@ model User {
   activityLogs               ActivityLog[]
   notifications              Notification[]
   weeklyGoals                WeeklyGoal[]
+  certificates               Certificate[]
 }
 
 model Session {
@@ -113,6 +114,7 @@ model Course {
   chapters       Chapter[]
   enrollments    Enrollment[]
   xpTransactions XpTransaction[]
+  certificates   Certificate[]
 }
 
 model Chapter {
@@ -211,5 +213,16 @@ model WeeklyGoal {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id             String   @id @default(uuid())
+  userId         String
+  courseId       String
+  uniqueId       String   @unique // e.g. KSAI-CERT-12345
+  verificationId String   @unique // e.g. v_98127391
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 

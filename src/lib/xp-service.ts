@@ -114,13 +114,17 @@ export async function awardXpAndStreak({
     }
   }
 
-  // 5. Update user streak fields and lastActiveDate
+  // 5. Update user streak fields, lastActiveDate, and dynamic Level/XP
+  const levelAndXp = await calculateUserLevelAndXp(userId);
+
   const updatedUser = await db.user.update({
     where: { id: userId },
     data: {
       currentStreak: newCurrentStreak,
       longestStreak: newLongestStreak,
       lastActiveDate: now,
+      xp: levelAndXp.xp,
+      level: levelAndXp.level,
     },
   });
 
@@ -129,5 +133,53 @@ export async function awardXpAndStreak({
     xpTransaction: xpTx,
     milestoneTransaction: milestoneTx,
     user: updatedUser,
+  };
+}
+
+/**
+ * Calculates a user's current Level, XP progress, and target XP dynamically
+ * by aggregating all their XpTransaction entries.
+ */
+export async function calculateUserLevelAndXp(userId: string) {
+  const aggregate = await db.xpTransaction.aggregate({
+    where: { userId },
+    _sum: {
+      amount: true,
+    },
+  });
+
+  const totalXp = aggregate._sum.amount ?? 0;
+
+  let level = 0;
+  let remainingXp = totalXp;
+
+  while (true) {
+    let targetXp = 1000;
+    if (level >= 10) {
+      targetXp = 5000;
+    } else if (level >= 5) {
+      targetXp = 2500;
+    }
+
+    if (remainingXp >= targetXp) {
+      remainingXp -= targetXp;
+      level += 1;
+    } else {
+      break;
+    }
+  }
+
+  let nextLevelTarget = 1000;
+  if (level >= 10) {
+    nextLevelTarget = 5000;
+  } else if (level >= 5) {
+    nextLevelTarget = 2500;
+  }
+
+  return {
+    level,
+    xp: remainingXp,
+    targetXp: nextLevelTarget,
+    totalXp,
   };
 }
