@@ -412,7 +412,7 @@ export default function MyCertificatesPage() {
                     Certificates will automatically appear here once you fully complete all chapters of any enrolled course.
                   </p>
                   <button
-                    onClick={() => router.push("/courses/catalog")}
+                    onClick={() => router.push("/dashboard")}
                     className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold hover:opacity-95 shadow-md text-xs inline-flex items-center gap-1.5"
                   >
                     Explore Courses Catalog <ArrowRight size={13} />

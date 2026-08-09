@@ -69,7 +69,7 @@ export default function CppOverviewPage() {
           setProgresses(data.progresses);
 
           if (!data.isEnrolled) {
-            router.push("/courses/catalog?enroll=cpp");
+            router.push("/courses/cpp/curriculum");
             return;
           }
         } else {

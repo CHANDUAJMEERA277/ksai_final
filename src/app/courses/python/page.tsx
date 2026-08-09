@@ -71,7 +71,7 @@ export default function PythonOverviewPage() {
           setProgresses(data.progresses);
 
           if (!data.isEnrolled) {
-            router.push("/courses/catalog?enroll=python");
+            router.push("/courses/python/curriculum");
             return;
           }
         } else {

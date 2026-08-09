@@ -82,7 +82,7 @@ export default function CourseOverviewPage() {
           setProgresses(data.progresses);
 
           if (!data.isEnrolled) {
-            router.push(`/courses/catalog?enroll=${courseSlug}`);
+            router.push(`/courses/${courseSlug}/curriculum`);
             return;
           }
         } else {

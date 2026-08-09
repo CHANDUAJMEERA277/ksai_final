@@ -69,7 +69,7 @@ export default function JavaOverviewPage() {
           setProgresses(data.progresses);
 
           if (!data.isEnrolled) {
-            router.push("/courses/catalog?enroll=java");
+            router.push("/courses/java/curriculum");
             return;
           }
         } else {
