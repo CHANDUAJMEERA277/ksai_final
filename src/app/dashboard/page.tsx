@@ -301,7 +301,7 @@ export default function DashboardPage() {
       <LeftSidebar 
         activeTab="Dashboard" 
         onTabChange={(tab) => {
-          if (tab === "Explore Courses") router.push("/dashboard");
+          if (tab === "Explore Courses") router.push("/courses/catalog");
           else if (tab === "Courses") router.push("/courses");
           else if (tab === "Leaderboard") router.push("/leaderboard");
           else if (tab === "AI Mentor") router.push("/codexai");

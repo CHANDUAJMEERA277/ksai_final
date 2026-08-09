@@ -87,15 +87,37 @@ export default function CourseQuizPage() {
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const isPending = sessionData?.isPending ?? false;
+
+  // Resolve defaults based on course slug
+  const getCourseDefaults = () => {
+    switch (courseSlug.toLowerCase()) {
+      case "c":
+        return {
+          title: "C Language Mastery & System Programming",
+        };
+      case "cpp":
+        return {
+          title: "C++ Object-Oriented & STL Masterclass",
+        };
+      case "java":
+        return {
+          title: "Java Enterprise & Object-Oriented Architecture",
+        };
+      default:
+        return {
+          title: "Python AI & Data Structures Architecture",
+        };
+    }
+  };
+
+  const defaults = getCourseDefaults();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState(
-    courseSlug === "c"
-      ? "C Language Mastery & System Programming"
-      : "Python AI & Data Structures Architecture"
-  );
+  const [courseTitle, setCourseTitle] = useState(defaults.title);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [shuffledQuestions, setShuffledQuestions] = useState<ShuffledQuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -132,6 +154,7 @@ export default function CourseQuizPage() {
           if (!data.questions || data.questions.length === 0) {
             setError("No quiz assessment is available for this chapter.");
           } else {
+            setCourseTitle(data.courseTitle || defaults.title);
             setQuizQuestions(data.questions);
             setShuffledQuestions(shuffleQuiz(data.questions));
             setStartTime(Date.now());
@@ -242,8 +265,6 @@ export default function CourseQuizPage() {
     ? Math.round(((currentQuestionIndex + 1) / shuffledQuestions.length) * 100)
     : 0;
 
-  const isC = courseSlug === "c";
-
   return (
     <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden">
       {/* Custom Top Bar */}
@@ -254,7 +275,7 @@ export default function CourseQuizPage() {
           </div>
           <div>
             <span className="text-[10px] text-blue-600 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {isC ? "C" : "Python"} Course</span>
+            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {courseSlug.toUpperCase()} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -272,7 +293,7 @@ export default function CourseQuizPage() {
         
         {/* Breadcrumb Navigation & Back link */}
         <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-slate-505">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
             <button
               onClick={() => router.push("/dashboard")}
               className="hover:text-slate-800 transition-colors"
@@ -419,7 +440,7 @@ export default function CourseQuizPage() {
             </div>
           </div>
         ) : (
-          /* Quiz Result Dashboard */
+          /* Quiz Result Dashboard (Completion State) */
           <div className="space-y-8 animate-fade-in max-w-3xl mx-auto w-full pb-10">
             
             {/* Score Header Card */}
@@ -442,7 +463,7 @@ export default function CourseQuizPage() {
                 <h3 className="text-2xl font-black text-slate-800 tracking-tight">
                   {quizResult.passed ? "🎉 Chapter Assessment Passed!" : "❌ Quiz Attempt Failed"}
                 </h3>
-                <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                <p className="text-xs text-slate-650 max-w-md mx-auto leading-relaxed">
                   {quizResult.passed
                     ? `Congratulations! You scored ${quizResult.score}% and passed the Chapter ${chapterOrder} quiz. The next chapter is now unlocked.`
                     : `You did not achieve the required passing score of 70% (your score: ${quizResult.score}%). Review the lesson notes and try again.`}
@@ -490,7 +511,7 @@ export default function CourseQuizPage() {
 
             {/* Detailed Breakdown Review */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                 <HelpCircle size={16} className="text-blue-600" />
                 Assessment Question Review
               </h3>
@@ -510,14 +531,14 @@ export default function CourseQuizPage() {
                         <span className="font-mono text-slate-400 font-bold">
                           Q{idx + 1}.
                         </span>
-                        <h4 className="font-bold text-slate-800 text-sm sm:text-base leading-relaxed">
+                        <h4 className="font-bold text-slate-850 text-sm sm:text-base leading-relaxed">
                           {item.question}
                         </h4>
                       </div>
                       <span
                         className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase shrink-0 ${
                           item.correct
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-250"
                             : "bg-red-50 text-red-700 border border-red-250"
                         }`}
                       >
@@ -530,7 +551,7 @@ export default function CourseQuizPage() {
                         const isUserChoice = item.userAnswer === optIdx;
                         const isCorrectChoice = item.correctAnswer === optIdx;
 
-                        let optionStyle = "bg-slate-50 border-slate-200 text-slate-650";
+                        let optionStyle = "bg-slate-50 border-slate-200 text-slate-600";
                         if (isCorrectChoice) {
                           optionStyle = "bg-emerald-50 border-emerald-300 text-emerald-800 font-bold";
                         } else if (isUserChoice && !item.correct) {

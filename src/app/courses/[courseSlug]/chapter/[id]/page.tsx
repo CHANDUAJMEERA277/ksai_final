@@ -248,7 +248,160 @@ const C_CHAPTER_SECTIONS: Record<number, string[]> = {
     "10.3 Common Coding Patterns",
     "10.4 Common Bugs and Debugging",
     "10.5 Debugging Techniques",
-    "10.6 Coding Best Practices",
+    "Quiz Assessment"
+  ]
+};
+
+const cppSubtopics = [
+  "Real-World Applications",
+  "Core Learning Sections",
+  "Learning Support Elements",
+  "Debugging and Problem Solving",
+  "Practical Application & Mini Project",
+  "Progressive Code Examples: Four Tiers",
+  "Common Mistakes and How to Fix Them",
+  "Chapter Mind Map",
+  "Quiz Assessment"
+];
+
+const CPP_CHAPTER_SECTIONS: Record<number, string[]> = {};
+for (let i = 1; i <= 15; i++) {
+  CPP_CHAPTER_SECTIONS[i] = cppSubtopics;
+}
+
+const JAVA_CHAPTER_SECTIONS: Record<number, string[]> = {
+  1: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. What is Java?",
+    "2. Major Application Areas",
+    "3. Deep Dive into Primary Features",
+    "4. Code Demonstration — First Look at Java",
+    "5. Visual Comparison — Java vs C++ vs Python",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  2: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Anatomy of a Basic Java Program",
+    "2. JDK vs. JRE vs. JVM Architecture",
+    "3. Source File Constraints & Multi-Class Rules",
+    "4. What Happens at Runtime?",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  3: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Variables and Variable Scopes in Java",
+    "2. Primitive vs. Non-Primitive Data Types",
+    "3. The Java Unicode System",
+    "4. Control Flow Statements",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  4: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. The 6 Pillars of Object-Oriented Programming",
+    "2. Deep Dive: Code Implementation of OOP Pillars",
+    "3. Object Relationships & Software Architecture",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  5: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Java Constructors & Constructor Overloading",
+    "2. The Singleton Design Pattern",
+    "3. Core Keywords: `static`, `final`, `this`, and `super`",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  6: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Compile-Time vs. Runtime Polymorphism",
+    "2. Method Overloading Rules & Return Type Conflicts",
+    "3. Dynamic Method Dispatch & Virtual Method Table (vtable)",
+    "4. Object Typecasting & The `instanceof` Operator",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  7: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Abstract Classes vs. Interfaces",
+    "2. Deep Dive: Code Implementation",
+    "3. Java 8+ Interface Enhancements",
+    "4. Marker Interfaces",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  8: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Java Packages & Sub-Packages",
+    "2. The 4 Access Modifiers",
+    "3. Encapsulation & Data Hiding",
+    "4. Resolving Package Naming Collisions",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  9: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Java Arrays",
+    "2. The `Object` Class & Object Cloning",
+    "3. Wrapper Classes & Autoboxing / Unboxing",
+    "4. The `strictfp` Keyword",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  10: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. String Immutability & The String Constant Pool (SCP)",
+    "2. `String` vs. `StringBuffer` vs. `StringBuilder`",
+    "3. The `toString()` Method",
+    "4. Text Tokenization",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  11: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. The Java Exception Hierarchy",
+    "2. Exception Control Keywords",
+    "3. Try-With-Resources (AutoCloseable)",
+    "4. Comparison: `final` vs `finally` vs `finalize()`",
+    "5. Custom Exceptions",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  12: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Process vs. Thread Multitasking",
+    "2. The 5 Thread Lifecycle States",
+    "3. Thread Creation: `Thread` Class vs. `Runnable` Interface",
+    "4. Thread Scheduler & Priority Scheduling",
+    "5. Thread Pools, Daemon Threads, & Shutdown Hooks",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  13: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Race Conditions & Object Monitor Synchronization",
+    "2. Inter-Thread Communication (`wait`, `notify`, `notifyAll`)",
+    "3. Deadlock Analysis & Prevention",
+    "4. Concurrent Collections",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  14: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. The Java Collections Hierarchy",
+    "2. Java Generics & The PECS Principle",
+    "3. Sorting Collections: `Comparable` vs `Comparator`",
+    "✏ Try It Yourself",
+    "Quiz Assessment"
+  ],
+  15: [
+    "By the End of This Chapter, You Will Be Able To:",
+    "1. Traditional File I/O vs. Java NIO.2",
+    "2. The Java 8 Streams API",
+    "3. Parallel Streams",
+    "✏ Try It Yourself",
     "Quiz Assessment"
   ]
 };
@@ -270,24 +423,54 @@ function stripMarkdown(md: string): string {
     .trim();
 }
 
-export default function ChapterPage() {
+export default function CourseChapterPage() {
   const router = useRouter();
   const params = useParams();
   const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
+  const isPending = sessionData?.isPending ?? false;
+
+  // Resolve defaults based on course slug
+  const getCourseDefaults = () => {
+    switch (courseSlug.toLowerCase()) {
+      case "c":
+        return {
+          title: "C Language Mastery & System Programming",
+          price: 1499,
+          firstChapter: 0,
+        };
+      case "cpp":
+        return {
+          title: "C++ Object-Oriented & STL Masterclass",
+          price: 1999,
+          firstChapter: 1,
+        };
+      case "java":
+        return {
+          title: "Java Enterprise & Object-Oriented Architecture",
+          price: 1999,
+          firstChapter: 1,
+        };
+      default:
+        return {
+          title: "Python AI & Data Structures Architecture",
+          price: 2499,
+          firstChapter: 0,
+        };
+    }
+  };
+
+  const defaults = getCourseDefaults();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState(
-    courseSlug === "c"
-      ? "C Language Mastery & System Programming"
-      : "Python AI & Data Structures Architecture"
-  );
+  const [courseTitle, setCourseTitle] = useState(defaults.title);
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(courseSlug === "c" ? 1499 : 2499);
+  const [coursePrice, setCoursePrice] = useState(defaults.price);
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [buying, setBuying] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -317,6 +500,15 @@ export default function ChapterPage() {
     { sender: "ai", text: "Hi! Ask me any questions or doubts about this chapter's notes, and I will explain them using details from the text." }
   ]);
 
+  const CHAPTER_SECTIONS = 
+    courseSlug === "c" 
+      ? C_CHAPTER_SECTIONS 
+      : courseSlug === "cpp"
+      ? CPP_CHAPTER_SECTIONS
+      : courseSlug === "java"
+      ? JAVA_CHAPTER_SECTIONS
+      : PYTHON_CHAPTER_SECTIONS;
+
   const generateChapterSummary = (notes: string): string => {
     if (!notes) return "No notes available to summarize.";
     const lines = notes.split("\n");
@@ -334,8 +526,8 @@ export default function ChapterPage() {
     }
     
     summary += "\n### Condensed Summary:\n";
-    if (notes.toLowerCase().includes("compiled") || notes.toLowerCase().includes("dennis ritchie")) {
-      summary += "This chapter contrasts compiled and interpreted languages, introduces C's compilation process (preprocessing, compiling, assembling, and linking), and explores basic formatted I/O and variable scopes.\n";
+    if (notes.toLowerCase().includes("compiled") || notes.toLowerCase().includes("compiler")) {
+      summary += `This chapter explores syntax and compilation concepts, introduces the ${courseSlug.toUpperCase()} execution model, walks through setting up the compiler/IDE, and shows how to write basic statements.\n`;
     } else {
       summary += "A condensed outline of the chapter lessons, focusing on syntax conventions, execution paths, scope rules, and coding practices to help you pass the assessment quiz.\n";
     }
@@ -352,50 +544,30 @@ export default function ChapterPage() {
       return headings.map(h => `Key concept: ${h}`);
     }
     return [
-      "Syntax conventions and execution options",
-      "Translating code into machine instructions via compiler stages",
-      "Configuring variables, types, and formatted input/output options",
-      "Writing simple statements and running your first programming scripts"
+      `${courseSlug.toUpperCase()} syntax conventions and execution options`,
+      "Translating code into bytecode vs compilation to machine instructions",
+      "Configuring local virtual environments, paths, and workspace tools",
+      "Writing basic statements and executing your first simple scripts"
     ];
   };
 
   const generateGroundedResponse = (question: string, notes: string): string => {
     const q = question.toLowerCase();
-    const isC = courseSlug === "c";
-
-    if (isC) {
-      if (q.includes("c ") && q.includes("what")) {
-        return "Based on Chapter notes, C is a powerful, fast, and structured programming language created in 1972 by Dennis Ritchie at Bell Labs. It runs close to the hardware and is widely used for systems programming.";
-      }
-      if (q.includes("pointer")) {
-        return "Based on Chapter notes, a pointer is a special variable that stores the memory address of another variable. Modifying a dereferenced pointer (*p) directly changes the value at that address.";
-      }
-      if (q.includes("data type")) {
-        return "According to the notes, C's basic data types are int (whole numbers, typically 4 bytes), float (single precision decimal numbers, 4 bytes), double (double precision decimal numbers, 8 bytes), and char (single characters, 1 byte).";
-      }
-    } else {
-      if (q.includes("python") && q.includes("what")) {
-        return "Based on Chapter notes, Python is a high-level, interpreted programming language known for its clear syntax and readability. It was created by Guido van Rossum and released in 1991.";
-      }
+    const slug = courseSlug.toLowerCase();
+    if (q.includes(slug) && q.includes("what")) {
+      return `Based on Chapter notes, ${courseSlug.toUpperCase()} is a powerful programming language widely used in industry. Refer to the introduction section in the notes for details on its history and release.`;
     }
-
     if (q.includes("compiled") || q.includes("interpreted")) {
-      return isC 
-        ? "According to the notes, C is a compiled language where a compiler translates the human-readable source code into machine code/object files (through preprocessing, compiling, assembling, and linking) before the program can run."
-        : "According to the notes, compiled languages translate code into machine instructions before execution, while interpreted languages (like Python) execute code line-by-line using an interpreter, which makes development faster but execution slightly slower.";
+      return "According to the notes, compiled languages translate code into machine instructions before execution, while interpreted languages execute code line-by-line using an interpreter, which makes development faster but execution slightly slower.";
     }
     if (q.includes("applications") || q.includes("used for")) {
-      return isC
-        ? "The notes state C is used to build operating systems (Windows, Linux, Android), embedded systems, and compilers/interpreters for other languages."
-        : "The notes state that Python is used in Machine Learning/AI, Web Development, Automation, Data Science, and Cybersecurity.";
+      return `The notes outline several industry applications of ${courseSlug.toUpperCase()}, including system programming, backend systems, and application architecture depending on the chapter context.`;
     }
     if (q.includes("install") || q.includes("ide")) {
-      return "The notes recommend setting up a local compiler or code editor/IDE to write and run your programming code.";
+      return "The notes recommend installing the required compiler/SDK and using an IDE/editor like VS Code to write and test your programs.";
     }
     if (q.includes("first program") || q.includes("hello world")) {
-      return isC
-        ? "Your first C program is written using stdio.h library, main() function, curly braces, and printf('Hello, World!')."
-        : "Your first Python program is written as: print('Hello, World!'). The print() function displays the text argument inside single or double quotes.";
+      return "The first program is written as a standard entry point displaying 'Hello, World!' to the console. Refer to the program examples in the notes.";
     }
 
     const lines = notes.split("\n");
@@ -468,12 +640,10 @@ export default function ChapterPage() {
         return;
       }
 
-      // Check if user is trying to access locked chapters without enrollment
-      const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
-      const freeLimit = courseSlug === "python" ? 0 : 1;
-      if (chapterOrder > freeLimit && !chapterData.isEnrolled) {
+      // Check if user is trying to access locked chapters (>first) without enrollment
+      if (chapterOrder > defaults.firstChapter && !chapterData.isEnrolled) {
         alert("🔒 This chapter is locked. Please subscribe to the course to unlock access.");
-        router.push(`/courses/${courseSlug}/chapter/${firstChapterOrder}`);
+        router.push(`/courses/${courseSlug}/chapter/${defaults.firstChapter}`);
         setLoading(false);
         return;
       }
@@ -625,21 +795,6 @@ export default function ChapterPage() {
 
   const isCompleted = !!progresses.find((p) => p.chapterId === currentChapter?.id)?.isCompleted;
 
-  const isChapterUnlockedLocal = (order: number) => {
-    const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
-    if (order === firstChapterOrder) return true;
-    const prevChapter = chapters.find((c) => c.orderNumber === order - 1);
-    if (!prevChapter) return false;
-    const prevProgress = progresses.find((p) => p.chapterId === prevChapter.id);
-    
-    const freeLimit = courseSlug === "python" ? 0 : 1;
-    if (order > freeLimit && !isEnrolled) return false;
-
-    return !!prevProgress?.isCompleted;
-  };
-
-  const CHAPTER_SECTIONS = courseSlug === "c" ? C_CHAPTER_SECTIONS : PYTHON_CHAPTER_SECTIONS;
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden h-screen">
       {/* Custom Top Bar */}
@@ -650,7 +805,7 @@ export default function ChapterPage() {
           </div>
           <div>
             <span className="text-[10px] text-blue-600 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : courseSlug === "c" ? "C" : "Python"} Course</span>
+            <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; {courseSlug.toUpperCase()} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -663,7 +818,7 @@ export default function ChapterPage() {
           
           <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              {session?.user?.name?.charAt(0) || "N"}
+              {user?.name?.charAt(0) || "N"}
             </div>
             <ChevronDown size={14} className="text-slate-500" />
           </div>
@@ -755,7 +910,7 @@ export default function ChapterPage() {
                   {isExpanded && (
                     <div className="pl-9 pr-2 py-1 space-y-2 border-l border-slate-200 ml-5">
                       {(CHAPTER_SECTIONS[ch.orderNumber] || []).map((sec, secIdx) => {
-                        const isQuiz = sec === "Quiz Assessment" || sec === "Chapter Quiz";
+                        const isQuiz = sec === "Quiz Assessment";
                         return (
                           <button
                             key={secIdx}
@@ -854,10 +1009,10 @@ export default function ChapterPage() {
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div>
                       <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                        {currentChapter.difficulty || "Beginner"} &bull; {currentChapter.title.split(":")[0]} Notes
+                        {currentChapter.difficulty || "Beginner"} &bull; Chapter {chapterOrder} Notes
                       </span>
                       <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tracking-tight">
-                        {currentChapter.title.replace(/^Chapter \d+:/, `Chapter ${currentChapter.orderNumber}:`)}
+                        {currentChapter.title}
                       </h2>
                     </div>
 
@@ -908,7 +1063,7 @@ export default function ChapterPage() {
           )}
         </main>
 
-        {/* Right Collapsible AI Side Panel */}
+        {/* Right Collapsible AI Side Panel (Reserved Space) */}
         <aside className={`h-full border-l border-slate-200 flex flex-col shrink-0 transition-all duration-300 select-none overflow-hidden bg-slate-50 ${
           rightPanelExpanded ? "w-80" : "w-14"
         }`}>

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
-import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
 import {
   Clock,
   Award,
@@ -122,7 +121,6 @@ export default function PythonOverviewPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <CourseSwitcher currentLanguage="python" />
           <button
             onClick={() => router.push("/dashboard")}
             className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
