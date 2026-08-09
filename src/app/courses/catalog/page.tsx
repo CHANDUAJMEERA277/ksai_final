@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { CourseDetailsModal, CourseData } from "@/components/courses/CourseDetailsModal";
 import { ArrowRight, Sparkles, Star, Search, Bell, AlertTriangle } from "lucide-react";
 
-export default function CourseCatalogPage() {
+function CourseCatalogContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enrollParam = searchParams.get("enroll");
@@ -117,7 +117,6 @@ export default function CourseCatalogPage() {
         body: JSON.stringify({ id: notificationId })
       });
       if (res.ok && session?.user) {
-        // Refresh notifications
         fetchCatalogData(session.user.email ?? "");
       }
     } catch (err) {
@@ -141,7 +140,6 @@ export default function CourseCatalogPage() {
   };
 
   const handlePaymentSuccess = (course: CourseData) => {
-    // Add new enrollment to local state to reflect purchase immediately
     setEnrollments((prev) => [...prev, { courseId: course.id, course }]);
     setSelectedCourse(null);
     alert(`🎉 Success! You have enrolled in ${course.title}.`);
@@ -208,7 +206,6 @@ export default function CourseCatalogPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Search Input */}
             <div className="relative hidden md:block">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
@@ -219,7 +216,6 @@ export default function CourseCatalogPage() {
               />
             </div>
 
-            {/* Notification Icon */}
             <div className="relative" ref={notificationsRef}>
               <button 
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -263,7 +259,6 @@ export default function CourseCatalogPage() {
         {/* Scrollable grid area */}
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar pb-6 min-h-0">
           {loading ? (
-            /* Loading Skeleton */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-1">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white space-y-4 animate-pulse">
@@ -281,7 +276,6 @@ export default function CourseCatalogPage() {
               ))}
             </div>
           ) : (
-            /* Courses Catalog Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-1">
               {courses.map((c) => {
                 const isPurchased = enrollments.some((e) => e.courseId === c.id || e.course?.id === c.id);
@@ -356,5 +350,13 @@ export default function CourseCatalogPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function CourseCatalogPage() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-[#F8FAFC] flex items-center justify-center font-bold text-slate-500">Loading catalog...</div>}>
+      <CourseCatalogContent />
+    </Suspense>
   );
 }

@@ -45,35 +45,35 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className={`w-full mx-auto transition-all duration-300 ${isSignupActive ? "max-w-xl sm:max-w-2xl" : "max-w-md sm:max-w-lg"}`}>
       {/* Floating Glassmorphic Container */}
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className={`glass-panel p-6 sm:p-8 rounded-3xl border border-white/15 shadow-2xl relative overflow-hidden bg-[#0C0C14]/80 backdrop-blur-2xl glow-border-blue animate-float w-full flex flex-col min-h-0 ${isSignupActive ? "h-[min(84dvh,760px)] max-h-[min(84dvh,760px)]" : "max-h-[min(90dvh,900px)]"}`}
+        className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/20 shadow-2xl relative bg-[#0C0C14]/90 backdrop-blur-2xl glow-border-blue w-full flex flex-col"
       >
         {/* Top Radial Glow */}
-        <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
 
         {activeTab === "login" && (
-          <div className="text-center mb-6 space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <div className="text-center mb-5 space-y-1">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               Welcome Back 👋
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-300 font-medium">
               Continue your intelligent AI journey.
             </p>
           </div>
         )}
 
         {/* Tab Switcher Pills */}
-        <div className="relative p-1 rounded-2xl bg-white/5 border border-white/10 flex items-center mb-6">
+        <div className="relative p-1.5 rounded-2xl bg-white/5 border border-white/15 flex items-center mb-5 shadow-inner">
           <button
             type="button"
             onClick={() => setActiveTab("login")}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all relative z-10 ${
+            className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all relative z-10 ${
               activeTab === "login" ? "text-white" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -82,7 +82,7 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
           <button
             type="button"
             onClick={() => setActiveTab("signup")}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all relative z-10 ${
+            className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all relative z-10 ${
               activeTab === "signup" ? "text-white" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -91,18 +91,18 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
 
           {/* Animated Pill Background */}
           <motion.div
-            className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-md"
+            className="absolute inset-y-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg"
             initial={false}
             animate={{
-              left: activeTab === "login" ? "4px" : "50%",
-              width: "calc(50% - 4px)",
+              left: activeTab === "login" ? "6px" : "50%",
+              width: "calc(50% - 6px)",
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         </div>
 
         {/* Form Content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="w-full">
           <AnimatePresence mode="wait">
             {activeTab === "login" ? (
               <motion.div
@@ -111,7 +111,6 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
-                className="h-full"
               >
                 <LoginForm
                   onSubmitSuccess={handleStartAuth}
@@ -126,7 +125,6 @@ export function AuthGlassCard({ onAuthSuccess }: AuthGlassCardProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                className="h-full"
               >
                 <SignUpForm
                   onSubmitSuccess={handleStartAuth}
