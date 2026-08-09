@@ -60,19 +60,34 @@ export async function POST(req: Request) {
       },
     });
 
-    const sessionResponse = await auth.api.signInEmail({
-      body: {
-        email: user.email,
-        password,
-        rememberMe: true,
-      },
-      asResponse: true,
-      headers: req.headers,
-    });
+    try {
+      const sessionResponse = await auth.api.signInEmail({
+        body: {
+          email: user.email,
+          password,
+          rememberMe: true,
+        },
+        asResponse: true,
+        headers: req.headers,
+      });
 
-    const setCookieHeader = sessionResponse.headers.get("set-cookie");
-    if (setCookieHeader) {
-      response.headers.set("set-cookie", setCookieHeader);
+      // Extract set-cookie headers securely across Node/Next versions
+      if (sessionResponse && sessionResponse.headers) {
+        const getSetCookieFn = (sessionResponse.headers as any).getSetCookie;
+        if (typeof getSetCookieFn === "function") {
+          const cookies = sessionResponse.headers.getSetCookie();
+          cookies.forEach((c) => {
+            response.headers.append("set-cookie", c);
+          });
+        } else {
+          const setCookieHeader = sessionResponse.headers.get("set-cookie");
+          if (setCookieHeader) {
+            response.headers.set("set-cookie", setCookieHeader);
+          }
+        }
+      }
+    } catch (authErr) {
+      console.warn("Better-auth session creation warning:", authErr);
     }
 
     return response;

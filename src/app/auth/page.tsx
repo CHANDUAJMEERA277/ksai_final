@@ -10,6 +10,15 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function AuthPage() {
   const [authUser, setAuthUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
 
+  React.useEffect(() => {
+    if (authUser) {
+      const timer = setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [authUser]);
+
   return (
     <main className="relative min-h-screen bg-[#09090B] text-white overflow-hidden flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
       {/* Background Particles & Grid */}
