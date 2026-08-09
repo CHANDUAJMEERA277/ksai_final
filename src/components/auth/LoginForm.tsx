@@ -53,8 +53,10 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
 
   const forgotPasswordState = useMemo(() => validatePassword(forgotPassword), [forgotPassword]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+
+    if (submitting) return;
 
     if (!email.trim() || !password) {
       setError("Please enter both email address and password.");
@@ -84,6 +86,13 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
       console.error(err);
       setError("Network error connecting to authentication server.");
       setSubmitting(false);
+    }
+  };
+
+  const handleKeyDownEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void handleSubmit(e);
     }
   };
 
@@ -410,6 +419,7 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={handleKeyDownEnter}
                   placeholder="developer@knowledgestream.ai"
                   className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-[#161626] border border-white/15 text-sm sm:text-base text-white placeholder-slate-400 font-medium focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40 transition-all shadow-inner"
                 />
@@ -432,6 +442,7 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyDownEnter}
                   placeholder="••••••••••••"
                   className="w-full pl-11 pr-11 py-3.5 rounded-2xl bg-[#161626] border border-white/15 text-sm sm:text-base text-white placeholder-slate-400 font-medium focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40 transition-all shadow-inner"
                 />
@@ -491,7 +502,7 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
 
             <div className="text-center pt-2 text-xs sm:text-sm text-slate-300 font-medium">
               Don&apos;t have an account?{" "}
-              <button type="button" onClick={onSwitchToLogin} className="text-cyan-400 font-extrabold hover:underline cursor-pointer ml-1">
+              <button type="button" onClick={onSwitchToSignUp} className="text-cyan-400 font-extrabold hover:underline cursor-pointer ml-1">
                 Create Account &rarr;
               </button>
             </div>
