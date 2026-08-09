@@ -5,20 +5,21 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
+// Curated Sleek Developer Tech Stack Colors (Harmonious Sapphire, Azure, Cyan & White)
 const TECH_STACK = [
-  { name: "Python", color: "#38BDF8", icon: "🐍" },
-  { name: "Java", color: "#F97316", icon: "☕" },
-  { name: "React", color: "#06B6D4", icon: "⚛️" },
-  { name: "Next.js", color: "#FFFFFF", icon: "▲" },
+  { name: "Python", color: "#60A5FA", icon: "🐍" },
+  { name: "Java", color: "#93C5FD", icon: "☕" },
+  { name: "React", color: "#38BDF8", icon: "⚛️" },
+  { name: "Next.js", color: "#F8FAFC", icon: "▲" },
   { name: "Docker", color: "#3B82F6", icon: "🐳" },
-  { name: "Linux", color: "#FACC15", icon: "🐧" },
-  { name: "AI", color: "#A855F7", icon: "🤖" },
-  { name: "ML", color: "#EC4899", icon: "🧠" },
+  { name: "Linux", color: "#38BDF8", icon: "🐧" },
+  { name: "AI", color: "#818CF8", icon: "🤖" },
+  { name: "ML", color: "#A5B4FC", icon: "🧠" },
   { name: "Cloud", color: "#60A5FA", icon: "☁️" },
-  { name: "Git", color: "#EF4444", icon: "🌿" },
-  { name: "Firebase", color: "#F59E0B", icon: "🔥" },
-  { name: "Supabase", color: "#10B981", icon: "⚡" },
-  { name: "JavaScript", color: "#F7DF1E", icon: "🟨" },
+  { name: "Git", color: "#F87171", icon: "🌿" },
+  { name: "Firebase", color: "#FBBF24", icon: "🔥" },
+  { name: "Supabase", color: "#34D399", icon: "⚡" },
+  { name: "JavaScript", color: "#FBBF24", icon: "🟨" },
 ];
 
 function NeuralCoreSphere() {
@@ -57,19 +58,19 @@ function NeuralCoreSphere() {
         <icosahedronGeometry args={[1.3, 3]} />
         <meshStandardMaterial
           color="#3B82F6"
-          emissive="#1D4ED8"
+          emissive="#1E40AF"
           emissiveIntensity={1.8}
           wireframe
           transparent
-          opacity={0.8}
+          opacity={0.85}
         />
       </mesh>
 
       <mesh ref={outerWireframeRef}>
         <sphereGeometry args={[1.7, 16, 16]} />
         <meshStandardMaterial
-          color="#A855F7"
-          emissive="#7C3AED"
+          color="#60A5FA"
+          emissive="#2563EB"
           emissiveIntensity={1.2}
           wireframe
           transparent
@@ -80,8 +81,8 @@ function NeuralCoreSphere() {
       <mesh ref={ring1Ref} rotation={[Math.PI / 4, 0, 0]}>
         <torusGeometry args={[2.1, 0.025, 16, 100]} />
         <meshStandardMaterial
-          color="#06B6D4"
-          emissive="#06B6D4"
+          color="#38BDF8"
+          emissive="#0284C7"
           emissiveIntensity={2.5}
         />
       </mesh>
@@ -89,8 +90,8 @@ function NeuralCoreSphere() {
       <mesh ref={ring2Ref} rotation={[-Math.PI / 3, Math.PI / 6, 0]}>
         <torusGeometry args={[2.5, 0.025, 16, 100]} />
         <meshStandardMaterial
-          color="#A855F7"
-          emissive="#9333EA"
+          color="#818CF8"
+          emissive="#4F46E5"
           emissiveIntensity={2.5}
         />
       </mesh>
@@ -98,8 +99,8 @@ function NeuralCoreSphere() {
       <mesh ref={ring3Ref} rotation={[Math.PI / 6, -Math.PI / 4, Math.PI / 3]}>
         <torusGeometry args={[2.8, 0.02, 16, 100]} />
         <meshStandardMaterial
-          color="#10B981"
-          emissive="#059669"
+          color="#60A5FA"
+          emissive="#2563EB"
           emissiveIntensity={2.0}
         />
       </mesh>
@@ -115,9 +116,9 @@ function FloatingParticles({ count = 250 }) {
     const col = new Float32Array(count * 3);
     const palette = [
       new THREE.Color("#3B82F6"),
-      new THREE.Color("#06B6D4"),
-      new THREE.Color("#A855F7"),
-      new THREE.Color("#10B981"),
+      new THREE.Color("#38BDF8"),
+      new THREE.Color("#818CF8"),
+      new THREE.Color("#60A5FA"),
     ];
 
     for (let i = 0; i < count; i++) {
@@ -191,13 +192,13 @@ function OrbitingTechBadges() {
             <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.5}>
               <Html center distanceFactor={11} zIndexRange={[0, 10]}>
                 <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full glass-panel border border-white/20 text-[11px] font-semibold whitespace-nowrap shadow-lg cursor-pointer transition-all hover:scale-110 hover:border-blue-400 select-none"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0B0F19]/90 backdrop-blur-xl border text-xs font-bold whitespace-nowrap shadow-xl cursor-pointer transition-all hover:scale-110 hover:border-cyan-400 select-none"
                   style={{
-                    boxShadow: `0 0 15px ${tech.color}40`,
-                    borderColor: `${tech.color}60`,
+                    boxShadow: `0 0 16px ${tech.color}35`,
+                    borderColor: `${tech.color}45`,
                   }}
                 >
-                  <span className="text-xs">{tech.icon}</span>
+                  <span className="text-sm">{tech.icon}</span>
                   <span style={{ color: tech.color }}>{tech.name}</span>
                 </div>
               </Html>
@@ -216,9 +217,9 @@ export function HeroCoreCanvas() {
         camera={{ position: [0, 0, 9.8], fov: 48 }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 10, 5]} intensity={1.5} color="#3B82F6" />
-        <pointLight position={[-10, -10, -5]} intensity={2} color="#A855F7" />
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[10, 10, 5]} intensity={1.6} color="#3B82F6" />
+        <pointLight position={[-10, -10, -5]} intensity={2.2} color="#06B6D4" />
 
         <NeuralCoreSphere />
         <FloatingParticles count={250} />

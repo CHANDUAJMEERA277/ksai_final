@@ -8,23 +8,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Sparkles, ShieldCheck, Cpu, Code2, Users } from "lucide-react";
 
 const AUTH_TECH_STACK = [
-  { name: "React", color: "#06B6D4", icon: "⚛️" },
-  { name: "Next.js", color: "#FFFFFF", icon: "▲" },
-  { name: "Java", color: "#F97316", icon: "☕" },
-  { name: "Python", color: "#38BDF8", icon: "🐍" },
+  { name: "React", color: "#38BDF8", icon: "⚛️" },
+  { name: "Next.js", color: "#F8FAFC", icon: "▲" },
+  { name: "Java", color: "#93C5FD", icon: "☕" },
+  { name: "Python", color: "#60A5FA", icon: "🐍" },
   { name: "Docker", color: "#3B82F6", icon: "🐳" },
-  { name: "Linux", color: "#FACC15", icon: "🐧" },
-  { name: "AI", color: "#A855F7", icon: "🤖" },
+  { name: "Linux", color: "#38BDF8", icon: "🐧" },
+  { name: "AI", color: "#818CF8", icon: "🤖" },
   { name: "Cloud", color: "#60A5FA", icon: "☁️" },
-  { name: "Git", color: "#EF4444", icon: "🌿" },
+  { name: "Git", color: "#F87171", icon: "🌿" },
 ];
 
 const HIGHLIGHTS = [
   { text: "AI Coding Mentor", icon: Code2, color: "#3B82F6" },
-  { text: "Smart Learning", icon: Sparkles, color: "#06B6D4" },
-  { text: "Workforce Management", icon: Cpu, color: "#7C3AED" },
+  { text: "Smart Learning", icon: Sparkles, color: "#38BDF8" },
+  { text: "Workforce Management", icon: Cpu, color: "#818CF8" },
   { text: "Real-Time Collaboration", icon: Users, color: "#10B981" },
-  { text: "Secure Authentication", icon: ShieldCheck, color: "#EC4899" },
+  { text: "Secure Authentication", icon: ShieldCheck, color: "#60A5FA" },
 ];
 
 function CoreSphere() {
@@ -58,7 +58,7 @@ function CoreSphere() {
         <icosahedronGeometry args={[1.2, 2]} />
         <meshStandardMaterial
           color="#3B82F6"
-          emissive="#1D4ED8"
+          emissive="#1E40AF"
           emissiveIntensity={2.0}
           wireframe
           transparent
@@ -69,8 +69,8 @@ function CoreSphere() {
       <mesh ref={outerRef}>
         <sphereGeometry args={[1.6, 16, 16]} />
         <meshStandardMaterial
-          color="#A855F7"
-          emissive="#7C3AED"
+          color="#60A5FA"
+          emissive="#2563EB"
           emissiveIntensity={1.2}
           wireframe
           transparent
@@ -80,12 +80,12 @@ function CoreSphere() {
 
       <mesh ref={ring1Ref} rotation={[Math.PI / 4, 0, 0]}>
         <torusGeometry args={[2.0, 0.025, 16, 100]} />
-        <meshStandardMaterial color="#06B6D4" emissive="#06B6D4" emissiveIntensity={2.5} />
+        <meshStandardMaterial color="#38BDF8" emissive="#0284C7" emissiveIntensity={2.5} />
       </mesh>
 
       <mesh ref={ring2Ref} rotation={[-Math.PI / 3, Math.PI / 6, 0]}>
         <torusGeometry args={[2.4, 0.025, 16, 100]} />
-        <meshStandardMaterial color="#A855F7" emissive="#9333EA" emissiveIntensity={2.5} />
+        <meshStandardMaterial color="#818CF8" emissive="#4F46E5" emissiveIntensity={2.5} />
       </mesh>
     </group>
   );
@@ -114,13 +114,13 @@ function OrbitingBadges() {
             <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.5}>
               <Html center distanceFactor={10.5}>
                 <div
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full glass-panel border border-white/20 text-[8.5px] font-semibold whitespace-nowrap shadow-lg select-none"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0B0F19]/90 backdrop-blur-xl border text-xs font-bold whitespace-nowrap shadow-xl select-none"
                   style={{
-                    boxShadow: `0 0 12px ${tech.color}35`,
-                    borderColor: `${tech.color}55`,
+                    boxShadow: `0 0 14px ${tech.color}35`,
+                    borderColor: `${tech.color}45`,
                   }}
                 >
-                  <span>{tech.icon}</span>
+                  <span className="text-xs">{tech.icon}</span>
                   <span style={{ color: tech.color }}>{tech.name}</span>
                 </div>
               </Html>
@@ -149,11 +149,11 @@ export function AuthSceneCanvas() {
     <div className="w-full h-full relative flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-16 z-10 overflow-hidden">
       {/* Ambient Radial Lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/4 left-1/3 w-[350px] h-[350px] bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/3 w-[350px] h-[350px] bg-cyan-600/15 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Top Header Logo (Positioned cleanly below top-6 back button) */}
+      {/* Top Header Logo */}
       <div className="flex items-center gap-3 z-20 pt-8 pl-2">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/30">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-blue-400 p-[1px] shadow-lg shadow-blue-500/30">
           <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
             <Sparkles size={18} className="text-cyan-400" />
           </div>
@@ -173,7 +173,7 @@ export function AuthSceneCanvas() {
         <Canvas camera={{ position: [0, 0, 8.5], fov: 46 }} gl={{ alpha: true }}>
           <ambientLight intensity={0.8} />
           <directionalLight position={[10, 10, 5]} intensity={1.5} color="#3B82F6" />
-          <pointLight position={[-8, -5, -5]} intensity={1.5} color="#A855F7" />
+          <pointLight position={[-8, -5, -5]} intensity={1.5} color="#06B6D4" />
 
           <CoreSphere />
           <OrbitingBadges />
