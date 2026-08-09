@@ -12,12 +12,27 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/settings");
 
   if (isProtectedRoute) {
+    // Check any valid session token cookie name (with underscore, hyphen, or standard prefixes)
     const sessionToken =
       request.cookies.get("better-auth.session_token")?.value ||
+      request.cookies.get("better-auth.session-token")?.value ||
       request.cookies.get("__Secure-better-auth.session_token")?.value ||
-      request.cookies.get("session_token")?.value;
+      request.cookies.get("__Secure-better-auth.session-token")?.value ||
+      request.cookies.get("session_token")?.value ||
+      request.cookies.get("session-token")?.value ||
+      request.cookies.get("ksai_session")?.value;
 
-    if (!sessionToken) {
+    const allCookies = request.cookies.getAll();
+    const hasAnySession =
+      Boolean(sessionToken) ||
+      allCookies.some(
+        (c) =>
+          c.name.includes("session") ||
+          c.name.includes("better-auth") ||
+          c.name.includes("auth")
+      );
+
+    if (!hasAnySession) {
       const loginUrl = new URL("/auth", request.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -35,4 +50,3 @@ export const config = {
     "/settings/:path*",
   ],
 };
-

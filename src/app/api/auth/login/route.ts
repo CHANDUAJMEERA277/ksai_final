@@ -60,7 +60,6 @@ export async function POST(req: Request) {
       },
     });
 
-    let setCookieHeader = null;
     try {
       const sessionResponse = await auth.api.signInEmail({
         body: {
@@ -71,37 +70,24 @@ export async function POST(req: Request) {
         asResponse: true,
         headers: req.headers,
       });
-      setCookieHeader = sessionResponse?.headers?.get("set-cookie") || null;
-    } catch (e) {
-      // Fallback to manual session creation
-    }
 
-    if (setCookieHeader) {
-      response.headers.set("set-cookie", setCookieHeader);
-    } else {
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      await db.session.create({
-        data: {
-          userId: user.id,
-          token,
-          expiresAt,
-        },
-      });
-      response.cookies.set("better-auth.session_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        expires: expiresAt,
-        path: "/",
-      });
-      response.cookies.set("sessionToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        expires: expiresAt,
-        path: "/",
-      });
+      // Extract set-cookie headers securely across Node/Next versions
+      if (sessionResponse && sessionResponse.headers) {
+        const getSetCookieFn = (sessionResponse.headers as any).getSetCookie;
+        if (typeof getSetCookieFn === "function") {
+          const cookies = sessionResponse.headers.getSetCookie();
+          cookies.forEach((c) => {
+            response.headers.append("set-cookie", c);
+          });
+        } else {
+          const setCookieHeader = sessionResponse.headers.get("set-cookie");
+          if (setCookieHeader) {
+            response.headers.set("set-cookie", setCookieHeader);
+          }
+        }
+      }
+    } catch (authErr) {
+      console.warn("Better-auth session creation warning:", authErr);
     }
 
     return response;
