@@ -7,13 +7,13 @@ import { Sparkles, Play, ArrowRight, ShieldCheck, Zap } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen pt-28 pb-16 flex flex-col justify-center items-center overflow-hidden z-10">
+    <section className="relative min-h-screen pt-28 pb-16 flex flex-col justify-center items-center overflow-x-hidden z-10">
       {/* Dynamic Background Glow Orbs */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute top-1/2 right-1/4 w-[450px] h-[450px] bg-cyan-500/15 rounded-full blur-[130px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* Left Typography Column */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
@@ -89,7 +89,7 @@ export function HeroSection() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="lg:col-span-6 h-[480px] sm:h-[580px] relative w-full flex items-center justify-center"
+          className="lg:col-span-6 h-[480px] sm:h-[580px] relative w-full flex items-center justify-center overflow-visible"
         >
           {/* Subtle Outer Frame Ring */}
           <div className="absolute inset-0 rounded-full border border-blue-500/10 animate-spin-slow pointer-events-none" />

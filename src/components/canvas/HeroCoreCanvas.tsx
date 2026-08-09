@@ -52,9 +52,9 @@ function NeuralCoreSphere() {
   });
 
   return (
-    <group scale={1.2}>
+    <group scale={0.95}>
       <mesh ref={meshRef}>
-        <icosahedronGeometry args={[1.5, 3]} />
+        <icosahedronGeometry args={[1.3, 3]} />
         <meshStandardMaterial
           color="#3B82F6"
           emissive="#1D4ED8"
@@ -66,7 +66,7 @@ function NeuralCoreSphere() {
       </mesh>
 
       <mesh ref={outerWireframeRef}>
-        <sphereGeometry args={[2.0, 16, 16]} />
+        <sphereGeometry args={[1.7, 16, 16]} />
         <meshStandardMaterial
           color="#A855F7"
           emissive="#7C3AED"
@@ -78,7 +78,7 @@ function NeuralCoreSphere() {
       </mesh>
 
       <mesh ref={ring1Ref} rotation={[Math.PI / 4, 0, 0]}>
-        <torusGeometry args={[2.5, 0.03, 16, 100]} />
+        <torusGeometry args={[2.1, 0.025, 16, 100]} />
         <meshStandardMaterial
           color="#06B6D4"
           emissive="#06B6D4"
@@ -87,7 +87,7 @@ function NeuralCoreSphere() {
       </mesh>
 
       <mesh ref={ring2Ref} rotation={[-Math.PI / 3, Math.PI / 6, 0]}>
-        <torusGeometry args={[2.9, 0.03, 16, 100]} />
+        <torusGeometry args={[2.5, 0.025, 16, 100]} />
         <meshStandardMaterial
           color="#A855F7"
           emissive="#9333EA"
@@ -96,7 +96,7 @@ function NeuralCoreSphere() {
       </mesh>
 
       <mesh ref={ring3Ref} rotation={[Math.PI / 6, -Math.PI / 4, Math.PI / 3]}>
-        <torusGeometry args={[3.3, 0.02, 16, 100]} />
+        <torusGeometry args={[2.8, 0.02, 16, 100]} />
         <meshStandardMaterial
           color="#10B981"
           emissive="#059669"
@@ -107,7 +107,7 @@ function NeuralCoreSphere() {
   );
 }
 
-function FloatingParticles({ count = 300 }) {
+function FloatingParticles({ count = 250 }) {
   const pointsRef = useRef<THREE.Points>(null);
 
   const [positions, colors] = useMemo(() => {
@@ -121,7 +121,7 @@ function FloatingParticles({ count = 300 }) {
     ];
 
     for (let i = 0; i < count; i++) {
-      const radius = 3.5 + Math.random() * 4.5;
+      const radius = 2.8 + Math.random() * 3.5;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
 
@@ -158,7 +158,7 @@ function FloatingParticles({ count = 300 }) {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.06}
+        size={0.05}
         vertexColors
         transparent
         opacity={0.85}
@@ -181,23 +181,23 @@ function OrbitingTechBadges() {
     <group ref={groupRef}>
       {TECH_STACK.map((tech, index) => {
         const angle = (index / TECH_STACK.length) * Math.PI * 2;
-        const radius = 4.2;
-        const heightOffset = Math.sin(index * 1.5) * 1.2;
+        const radius = 3.3;
+        const heightOffset = Math.sin(index * 1.5) * 0.9;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
         return (
           <group key={tech.name} position={[x, heightOffset, z]}>
             <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.5}>
-              <Html center distanceFactor={12} zIndexRange={[0, 10]}>
+              <Html center distanceFactor={11} zIndexRange={[0, 10]}>
                 <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-panel border border-white/20 text-xs font-semibold whitespace-nowrap shadow-lg cursor-pointer transition-all hover:scale-110 hover:border-blue-400"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full glass-panel border border-white/20 text-[11px] font-semibold whitespace-nowrap shadow-lg cursor-pointer transition-all hover:scale-110 hover:border-blue-400 select-none"
                   style={{
                     boxShadow: `0 0 15px ${tech.color}40`,
                     borderColor: `${tech.color}60`,
                   }}
                 >
-                  <span className="text-sm">{tech.icon}</span>
+                  <span className="text-xs">{tech.icon}</span>
                   <span style={{ color: tech.color }}>{tech.name}</span>
                 </div>
               </Html>
@@ -211,9 +211,9 @@ function OrbitingTechBadges() {
 
 export function HeroCoreCanvas() {
   return (
-    <div className="w-full h-full min-h-[500px] relative z-0">
+    <div className="w-full h-full min-h-[480px] sm:min-h-[550px] relative z-0 overflow-visible">
       <Canvas
-        camera={{ position: [0, 0, 9], fov: 55 }}
+        camera={{ position: [0, 0, 9.8], fov: 48 }}
         gl={{ antialias: true, alpha: true }}
       >
         <ambientLight intensity={0.6} />
@@ -221,7 +221,7 @@ export function HeroCoreCanvas() {
         <pointLight position={[-10, -10, -5]} intensity={2} color="#A855F7" />
 
         <NeuralCoreSphere />
-        <FloatingParticles count={350} />
+        <FloatingParticles count={250} />
         <OrbitingTechBadges />
 
         <OrbitControls
