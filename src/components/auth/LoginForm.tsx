@@ -56,6 +56,11 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!email.trim() || !password) {
+      setError("Please enter both email address and password.");
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
 
@@ -63,13 +68,13 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        setError(data.error || "Login failed.");
+        setError(data.error || "Login failed. Please check your credentials.");
         setSubmitting(false);
         return;
       }
@@ -374,7 +379,7 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col justify-between">
+    <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col justify-between">
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
         {error && (
           <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs sm:text-sm flex items-center gap-2">
@@ -457,7 +462,6 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
           <>
             <button
               type="submit"
-              onClick={handleSubmit}
               disabled={submitting}
               className="w-full py-3.5 sm:py-4 rounded-2xl font-black text-white text-sm sm:text-base bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2.5 group shadow-[0_0_20px_rgba(34,211,238,0.3),0_0_40px_rgba(139,92,246,0.2)] disabled:opacity-60 transition-all cursor-pointer"
             >
@@ -487,13 +491,13 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
 
             <div className="text-center pt-2 text-xs sm:text-sm text-slate-300 font-medium">
               Don&apos;t have an account?{" "}
-              <button type="button" onClick={onSwitchToSignUp} className="text-cyan-400 font-extrabold hover:underline cursor-pointer ml-1">
+              <button type="button" onClick={onSwitchToLogin} className="text-cyan-400 font-extrabold hover:underline cursor-pointer ml-1">
                 Create Account &rarr;
               </button>
             </div>
           </>
         ) : null}
       </div>
-    </div>
+    </form>
   );
 }
