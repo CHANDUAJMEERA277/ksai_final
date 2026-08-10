@@ -468,10 +468,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Middle Row: Continue Learning (Carousel), Course Completion (Carousel), and AI Teacher */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-5 gap-3 overflow-hidden">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-3 overflow-hidden">
           
           {/* Continue Learning Carousel */}
-          <div className="xl:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
+          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
                 <Play size={14} className="text-[#4F46E5] fill-[#4F46E5]" /> Continue Learning
@@ -588,7 +588,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Course Metric */}
-          <div className="xl:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
+          <div className="lg:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
                 <Award size={14} className="text-[#4F46E5]" /> Course Metric
@@ -683,7 +683,7 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Teacher */}
-          <div className="xl:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm h-full">
+          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
@@ -788,10 +788,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Row: Donut Chart, Goals, Heatmap */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-shrink-0 h-[20vh] min-h-[140px]">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 flex-shrink-0 h-[20vh] min-h-[140px]">
           
           {/* Learning Progress Donut */}
-          <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
+          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
             <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
               Learning Progress
             </h3>
@@ -847,7 +847,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Goals */}
-          <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
+          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
             <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
               This Week&apos;s Goals
             </h3>
@@ -899,7 +899,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Heatmap */}
-          <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
+          <div className="lg:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
               Editor Activity
             </h3>
