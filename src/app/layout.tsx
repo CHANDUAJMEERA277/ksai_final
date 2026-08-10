@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { Providers } from "@/components/providers/Providers";
 import { ThemeManager } from "@/components/providers/ThemeManager";
+import { NotificationProvider } from "@/components/ui/NotificationContext"; // ✅ ADD THIS
 
 export const metadata: Metadata = {
   title: "KnowledgeStream AI — Futuristic AI Operating System",
@@ -20,17 +22,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" className="dark scroll-smooth">
-     <body className="bg-[#09090B] text-white antialiased selection:bg-blue-500 selection:text-white">
-  <Providers>
-    <ThemeManager />
-    <SmoothScroll>{children}</SmoothScroll>
-  </Providers>
-</body> 
+      <body className="bg-[#09090B] text-white antialiased selection:bg-blue-500 selection:text-white">
+        <Providers>
+          <ThemeManager />
+
+          {/* ✅ THIS IS THE FIX */}
+          <NotificationProvider>
+            <SmoothScroll>{children}</SmoothScroll>
+          </NotificationProvider>
+
+        </Providers>
+      </body>
     </html>
   );
 }
