@@ -315,8 +315,8 @@ export default function DashboardPage() {
         fullHeight={true}
       />
 
-      {/* Main Right Area — Exactly 100% Viewport Height (Zero Scroll) */}
-      <main className="flex-1 h-full flex flex-col justify-between overflow-hidden p-4 gap-3 w-full min-w-0">
+      {/* Main Right Area — Dynamically Responsive & Viewport Height Fitted */}
+      <main className="flex-1 min-h-screen overflow-y-auto flex flex-col gap-3.5 p-4 w-full min-w-0 bg-slate-50 lg:[@media(min-height:800px)]:h-screen lg:[@media(min-height:800px)]:overflow-hidden lg:[@media(min-height:800px)]:justify-between lg:[@media(min-height:800px)]:p-5 lg:[@media(min-height:800px)]:gap-4">
         
         {/* Header Row */}
         <div className="flex items-center justify-between flex-shrink-0">
@@ -471,7 +471,7 @@ export default function DashboardPage() {
         <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-5 gap-3 overflow-hidden">
           
           {/* Continue Learning Carousel */}
-          <div className="xl:col-span-2 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative">
+          <div className="xl:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
                 <Play size={14} className="text-[#4F46E5] fill-[#4F46E5]" /> Continue Learning
@@ -587,8 +587,8 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Course Completion Carousel */}
-          <div className="xl:col-span-1 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative">
+          {/* Course Metric */}
+          <div className="xl:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
                 <Award size={14} className="text-[#4F46E5]" /> Course Metric
@@ -683,7 +683,7 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Teacher */}
-          <div className="xl:col-span-2 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm">
+          <div className="xl:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
@@ -791,31 +791,31 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-shrink-0 h-[24vh] min-h-[160px]">
           
           {/* Learning Progress Donut */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
+          <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
             <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
               Learning Progress
             </h3>
             
-            <div className="flex items-center gap-4 py-1 flex-1 min-h-0">
-              <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
+            <div className="flex items-center gap-3 py-0.5 flex-1 min-h-0">
+              <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="40" cy="40" r="30" className="stroke-slate-100 fill-none" strokeWidth="7" />
-                  <circle cx="40" cy="40" r="30" className="stroke-slate-300 fill-none" strokeWidth="7" 
-                    strokeDasharray={2 * Math.PI * 30}
-                    strokeDashoffset={2 * Math.PI * 30 - (100 / 100) * (2 * Math.PI * 30)}
+                  <circle cx="32" cy="32" r="24" className="stroke-slate-100 fill-none" strokeWidth="6" />
+                  <circle cx="32" cy="32" r="24" className="stroke-slate-300 fill-none" strokeWidth="6" 
+                    strokeDasharray={2 * Math.PI * 24}
+                    strokeDashoffset={2 * Math.PI * 24 - (100 / 100) * (2 * Math.PI * 24)}
                   />
-                  <circle cx="40" cy="40" r="30" className="stroke-[#7C3AED] fill-none" strokeWidth="7" 
-                    strokeDasharray={2 * Math.PI * 30}
-                    strokeDashoffset={2 * Math.PI * 30 - ((learningProgress?.completedPercentage + learningProgress?.inProgressPercentage) / 100) * (2 * Math.PI * 30)}
+                  <circle cx="32" cy="32" r="24" className="stroke-[#7C3AED] fill-none" strokeWidth="6" 
+                    strokeDasharray={2 * Math.PI * 24}
+                    strokeDashoffset={2 * Math.PI * 24 - ((learningProgress?.completedPercentage + learningProgress?.inProgressPercentage) / 100) * (2 * Math.PI * 24)}
                   />
-                  <circle cx="40" cy="40" r="30" className="stroke-emerald-500 fill-none" strokeWidth="7" 
-                    strokeDasharray={2 * Math.PI * 30}
-                    strokeDashoffset={2 * Math.PI * 30 - (learningProgress?.completedPercentage / 100) * (2 * Math.PI * 30)}
+                  <circle cx="32" cy="32" r="24" className="stroke-emerald-500 fill-none" strokeWidth="6" 
+                    strokeDasharray={2 * Math.PI * 24}
+                    strokeDashoffset={2 * Math.PI * 24 - (learningProgress?.completedPercentage / 100) * (2 * Math.PI * 24)}
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xs font-black text-slate-900 leading-none font-mono">{learningProgress?.overallProgressPercent ?? 0}%</span>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wide mt-0.5">Overall</span>
+                  <span className="text-[11px] font-black text-slate-900 leading-none font-mono">{learningProgress?.overallProgressPercent ?? 0}%</span>
+                  <span className="text-[8px] text-slate-400 font-extrabold uppercase tracking-wide mt-0.5">Overall</span>
                 </div>
               </div>
 
@@ -847,7 +847,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Goals */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
+          <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
             <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
               This Week&apos;s Goals
             </h3>
@@ -899,42 +899,44 @@ export default function DashboardPage() {
           </div>
 
           {/* Heatmap */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
-            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
+          <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
               Editor Activity
             </h3>
             
-            <div className="flex flex-col justify-between flex-1 min-h-0 pt-1.5 space-y-2">
-              <div className="flex gap-1.5 justify-center">
-                {heatmap.map((week: any, wIdx: number) => (
-                  <div key={wIdx} className="flex flex-col gap-1">
-                    {week.days.map((day: any, dIdx: number) => (
-                      <div 
-                        key={dIdx}
-                        title={`${day.date}: ${day.count} editor activities`}
-                        className={`w-3 h-3 rounded-sm transition-all duration-300 hover:scale-110 cursor-pointer ${
-                          day.intensity === 0 ? "bg-slate-100" :
-                          day.intensity === 1 ? "bg-indigo-100 border border-indigo-200/30" :
-                          day.intensity === 2 ? "bg-indigo-300 border border-indigo-400/30" :
-                          "bg-[#4F46E5] shadow-sm shadow-[#4F46E5]/15"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                ))}
+            <div className="flex flex-col justify-between flex-1 min-h-0 pt-1 space-y-1.5">
+              <div className="flex justify-center items-center h-full">
+                <div className="flex gap-1 p-1 bg-slate-50/50 rounded-lg border border-slate-100/60">
+                  {heatmap.map((week: any, wIdx: number) => (
+                    <div key={wIdx} className="flex flex-col gap-1">
+                      {week.days.map((day: any, dIdx: number) => (
+                        <div 
+                          key={dIdx}
+                          title={`${day.date}: ${day.count} editor activities`}
+                          className={`w-3 h-3 rounded-[3px] transition-all duration-300 hover:scale-125 cursor-pointer shrink-0 ${
+                            day.intensity === 0 ? "bg-slate-100" :
+                            day.intensity === 1 ? "bg-indigo-100 border border-indigo-200/30" :
+                            day.intensity === 2 ? "bg-indigo-300 border border-indigo-400/30" :
+                            "bg-[#4F46E5] shadow-sm shadow-[#4F46E5]/15"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Heatmap Legend Swatches */}
-              <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-[8px] text-slate-400 font-mono font-bold uppercase tracking-wider">
                 <span>Less</span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-sm bg-indigo-100" />
                     <span>Hints</span>
                   </div>
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-sm bg-indigo-300" />
-                    <span>Suggestions</span>
+                    <span>Sugg</span>
                   </div>
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-sm bg-[#4F46E5]" />
@@ -944,60 +946,6 @@ export default function DashboardPage() {
                 <span>More</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Recommended for You Row */}
-        <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden flex-shrink-0 h-[10.5vh] min-h-[65px] select-none">
-          <div className="flex items-center justify-between pb-1 border-b border-slate-100 flex-shrink-0">
-            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider leading-none">
-              Recommended for You
-            </h3>
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Based on progress</span>
-          </div>
-          
-          <div className="flex items-center gap-3 overflow-x-auto py-0.5 scrollbar-thin min-h-0 flex-shrink-0 relative">
-            {recommended.length === 0 ? (
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-wide">All courses fully enrolled! Outstanding progress!</span>
-            ) : (
-              recommended.map((course: any) => (
-                <div 
-                  key={course.id}
-                  onClick={() => {
-                    if (course.badge === "Review Required") {
-                      router.push(`/courses/${course.language}/curriculum`);
-                    } else {
-                      router.push(`/courses/${course.language}/curriculum`);
-                    }
-                  }}
-                  className="flex-shrink-0 w-64 p-1.5 px-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/50 hover:border-[#4F46E5]/40 flex gap-2.5 items-center cursor-pointer transition-all hover:scale-101 group shadow-sm"
-                >
-                  <img 
-                    src={course.thumbnail} 
-                    alt={course.title}
-                    className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
-                  />
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex items-center justify-between gap-1 leading-none">
-                      <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border leading-none ${
-                        course.badge === "Review Required" 
-                          ? "bg-red-50 border-red-200 text-red-600" 
-                          : "bg-indigo-50 border-indigo-100 text-[#4F46E5]"
-                      }`}>
-                        {course.badge}
-                      </span>
-                      <div className="flex items-center gap-0.5 text-[10px] text-amber-500 font-bold shrink-0">
-                        <Star size={10} className="fill-amber-400 text-amber-500" />
-                        <span>{course.rating}</span>
-                      </div>
-                    </div>
-                    <h4 className="text-xs font-black text-slate-900 truncate group-hover:text-[#4F46E5] transition-colors">
-                      {course.title}
-                    </h4>
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         </div>
 

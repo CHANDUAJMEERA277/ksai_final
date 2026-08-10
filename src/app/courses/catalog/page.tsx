@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { RightAIPanel } from "@/components/dashboard/RightAIPanel";
-import { Sparkles, BookOpen, Star, Clock, Compass, ShieldCheck, CheckCircle } from "lucide-react";
+import { Sparkles, BookOpen, Star, Clock, Compass, ShieldCheck, CheckCircle, Search } from "lucide-react";
 
 interface CourseCatalogItem {
   id: string;
@@ -35,6 +35,7 @@ export default function ExploreCoursesCatalogPage() {
 
   const [activeTab, setActiveTab] = useState("Explore Courses");
   const [courses, setCourses] = useState<CourseCatalogItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [enrollments, setEnrollments] = useState<EnrollmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [buyingCourseId, setBuyingCourseId] = useState<string | null>(null);
@@ -222,6 +223,17 @@ export default function ExploreCoursesCatalogPage() {
     }
   };
 
+  const filteredCourses = courses.filter((course) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      course.title.toLowerCase().includes(query) ||
+      course.category.toLowerCase().includes(query) ||
+      course.description.toLowerCase().includes(query) ||
+      course.level.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">
       {/* Left Sidebar Menu */}
@@ -252,6 +264,18 @@ export default function ExploreCoursesCatalogPage() {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="relative max-w-md w-full">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search courses by title, category, description..."
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-all shadow-sm"
+          />
+        </div>
+
         {loading ? (
           /* Loading Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
@@ -266,10 +290,19 @@ export default function ExploreCoursesCatalogPage() {
           </div>
         ) : error ? (
           <div className="text-center py-12 text-slate-500">{error}</div>
+        ) : filteredCourses.length === 0 ? (
+          /* Empty State */
+          <div className="text-center py-12 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm space-y-4 max-w-md mx-auto">
+            <div className="text-4xl">🔍</div>
+            <h3 className="text-sm font-extrabold text-slate-950">No courses found</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              We couldn't find any courses matching "{searchQuery}". Try using different keywords or clearing your search.
+            </p>
+          </div>
         ) : (
           /* Courses Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {courses.map((course) => {
+            {filteredCourses.map((course) => {
               const isEnrolled = enrollments.some((e) => e.courseId === course.id);
               const isBuying = buyingCourseId === course.id;
 
