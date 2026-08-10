@@ -254,3 +254,11 @@ model WeeklyGoal {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+
+model Practice {
+  id        String   @id @default(cuid())
+  userEmail String
+  courseId  String
+  meta      String
+  createdAt DateTime @default(now())
+}
