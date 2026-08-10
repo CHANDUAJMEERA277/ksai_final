@@ -246,7 +246,7 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
       )}
 
       {/* Navigation List */}
-      <div data-lenis-prevent className="p-2 overflow-y-auto custom-scrollbar flex-1 space-y-0.5">
+      <div data-lenis-prevent className="p-2 overflow-y-auto custom-scrollbar flex-1 flex flex-col justify-between min-h-0">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           

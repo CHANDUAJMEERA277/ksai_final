@@ -788,7 +788,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Row: Donut Chart, Goals, Heatmap */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-shrink-0 h-[24vh] min-h-[160px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-shrink-0 h-[20vh] min-h-[140px]">
           
           {/* Learning Progress Donut */}
           <div className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
