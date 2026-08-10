@@ -468,10 +468,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Middle Row: Continue Learning (Carousel), Course Completion (Carousel), and AI Teacher */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-3 overflow-hidden">
+        <div className="flex-grow min-h-[320px] h-[48vh] grid grid-cols-1 lg:grid-cols-8 gap-3 overflow-hidden flex-shrink-0">
           
           {/* Continue Learning Carousel */}
-          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
+          <div className="lg:col-span-3 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
                 <Play size={14} className="text-[#4F46E5] fill-[#4F46E5]" /> Continue Learning
@@ -588,7 +588,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Course Metric */}
-          <div className="lg:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
+          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
                 <Award size={14} className="text-[#4F46E5]" /> Course Metric
@@ -627,12 +627,12 @@ export default function DashboardPage() {
                 {continueLearningCourses.map((course: CourseSlide, idx: number) => {
                   if (idx !== currentCompleteIndex) return null;
                   return (
-                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-2 px-1">
+                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-1.5 px-1">
                       <div className="flex flex-col items-center text-center space-y-1">
                         <img 
                           src={course.courseThumbnail} 
                           alt={course.courseTitle}
-                          className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm"
+                          className="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm"
                         />
                         <h4 className="text-xs font-black text-slate-900 line-clamp-2">
                           {course.courseTitle}
@@ -683,7 +683,7 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Teacher */}
-          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm h-full">
+          <div className="lg:col-span-3 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm h-full">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
@@ -788,7 +788,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Row: Donut Chart, Goals, Heatmap */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 flex-shrink-0 h-[20vh] min-h-[140px]">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 flex-shrink-0 h-[26vh] min-h-[170px]">
           
           {/* Learning Progress Donut */}
           <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
