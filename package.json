@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.19.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
@@ -39,5 +38,8 @@
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   }
 }

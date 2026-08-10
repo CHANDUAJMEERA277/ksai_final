@@ -52,10 +52,6 @@ export async function GET(req: Request) {
       }
     }
 
-    if (!user) {
-      user = await db.user.findFirst();
-    }
-
     // 2. Validate scope-specific required parameters
     if (scope === "course" && (!courseId || courseId.trim() === "")) {
       return NextResponse.json(

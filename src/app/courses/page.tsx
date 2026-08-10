@@ -80,18 +80,20 @@ export default function MyCoursesPage() {
   };
 
   return (
-    <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">
-      {/* Left Sidebar Menu */}
-      <LeftSidebar
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        userProfile={user || undefined}
-        isLight={false}
-        fullHeight={true}
+    <div className="h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col selection:bg-cyan-500 selection:text-black overflow-hidden">
+      {/* Top Navbar */}
+      <TopNavbar
+        userName={user?.name || "Loading..."}
+        userRole={user?.role || "Student"}
       />
 
-      {/* Center Main Workspace Content Area */}
-      <main data-lenis-prevent className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 w-full custom-scrollbar bg-slate-50">
+      {/* Main Workspace Layout */}
+      <div className="flex-1 flex w-full overflow-hidden">
+        {/* Left Sidebar Menu */}
+        <LeftSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+
+        {/* Center Main Workspace Content Area */}
+        <main data-lenis-prevent className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full custom-scrollbar">
           {/* Welcome Header */}
           <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-2 bg-white shadow-sm">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
@@ -151,48 +153,31 @@ export default function MyCoursesPage() {
                 return (
                   <div
                     key={item.id}
-                    className="glass-panel rounded-3xl border border-slate-200 bg-white hover:border-[#4F46E5]/50 hover:bg-slate-50/50 transition-all duration-300 shadow-sm flex flex-col justify-between overflow-hidden group hover:scale-[1.01]"
+                    className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-blue-500/50 hover:bg-slate-50/50 transition-all space-y-4 shadow-md flex flex-col justify-between"
                   >
-                    <div>
-                      {/* Thumbnail Banner */}
-                      <div className="relative h-44 w-full overflow-hidden">
-                        <img
-                          src={c.thumbnail}
-                          alt={c.title}
-                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/10 uppercase">
-                            {c.level || "Beginner"}
-                          </span>
-                          <div className="flex items-center gap-1 text-xs text-amber-400 font-bold bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full">
-                            <Star size={12} className="fill-amber-400 text-amber-400" />
-                            <span>{c.rating}</span>
-                          </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                          {c.category} &bull; Enrolled
+                        </span>
+                        <div className="flex items-center gap-1 text-xs text-amber-400 font-bold">
+                          <Star size={13} className="fill-amber-400" />
+                          <span>{c.rating}</span>
                         </div>
                       </div>
 
-                      {/* Body Content */}
-                      <div className="p-6 space-y-3">
-                        <span className="text-[10px] font-mono font-bold text-[#4F46E5] uppercase tracking-wider block">
-                          {c.category} &bull; Enrolled
-                        </span>
-                        <h3 className="text-lg font-extrabold text-slate-900 leading-snug group-hover:text-[#4F46E5] transition-colors">
-                          {c.title}
-                        </h3>
-                        <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
-                          {c.description}
-                        </p>
-                      </div>
+                      <h3 className="text-lg font-extrabold text-slate-900 leading-snug">
+                        {c.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        {c.description}
+                      </p>
                     </div>
 
-                    {/* Footer specs & actions */}
-                    <div className="px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-                      <div className="flex flex-col text-[10px] text-slate-400 font-mono space-y-0.5">
-                        <span>Valid &bull; 90 Days Access</span>
-                        <span>Instructor: {c.instructor || "KS Faculty"}</span>
-                      </div>
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        Valid &bull; 90 Days Access
+                      </span>
 
                       <button
                         onClick={() => handleStartLearning(c)}
@@ -210,6 +195,7 @@ export default function MyCoursesPage() {
 
         {/* Right Copilot Panel */}
         <RightAIPanel />
+      </div>
     </div>
   );
 }
