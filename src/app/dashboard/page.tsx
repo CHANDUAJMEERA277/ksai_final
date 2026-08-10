@@ -152,6 +152,7 @@ export default function DashboardPage() {
     stopLearnAutoplay();
     setPausedLearn(true);
     setCurrentLearnIndex(index);
+    // Resume autoplay after 6 seconds of inactivity
     setTimeout(() => {
       setPausedLearn(false);
     }, 6000);
@@ -178,6 +179,7 @@ export default function DashboardPage() {
     stopCompleteAutoplay();
     setPausedComplete(true);
     setCurrentCompleteIndex(index);
+    // Resume autoplay after 6 seconds of inactivity
     setTimeout(() => {
       setPausedComplete(false);
     }, 6000);
@@ -197,53 +199,50 @@ export default function DashboardPage() {
     return () => stopCompleteAutoplay();
   }, [data, pausedComplete]);
 
-  // Auto-scroll chat to bottom
+  // Scroll chat to bottom
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatLoading]);
+  }, [chatMessages]);
 
-  // AI Teacher Send Message
-  const handleSendChat = async (inputQuery: string, quickActionType?: string) => {
-    const query = inputQuery.trim();
-    if (!query && !quickActionType) return;
+  // AI Teacher triggers
+  const handleSendChat = async (messageText: string, quickAction?: string) => {
+    if (!messageText.trim() && !quickAction) return;
 
-    let userPromptText = query;
-    if (quickActionType === "explain") {
-      userPromptText = "Can you explain the main concept of my current course chapter in simple terms?";
-    } else if (quickActionType === "quiz") {
-      userPromptText = "Generate a practice quiz question related to my current lesson!";
-    } else if (quickActionType === "debug") {
-      userPromptText = "How do I debug common syntax or logic errors in my code?";
-    } else if (quickActionType === "summarize") {
-      userPromptText = "Give me a quick 3-bullet summary of my study progress today.";
+    setChatLoading(true);
+    if (!quickAction) {
+      setChatMessages((prev) => [...prev, { sender: "user", text: messageText }]);
+      setChatInput("");
+    } else {
+      let actionLabel = "";
+      if (quickAction === "explain") actionLabel = "📚 Explain Current Topic";
+      else if (quickAction === "quiz") actionLabel = "🎯 Quiz Me";
+      else if (quickAction === "debug") actionLabel = "🐞 Debug Flawed Code";
+      else if (quickAction === "summarize") actionLabel = "📝 Summarize Chapter";
+      
+      setChatMessages((prev) => [...prev, { sender: "user", text: actionLabel }]);
     }
 
-    setChatMessages((prev) => [...prev, { sender: "user", text: userPromptText }]);
-    setChatInput("");
-    setChatLoading(true);
-
     try {
+      const activeCourseLang = data?.continueLearningCourses?.[currentLearnIndex]?.courseLanguage || "cpp";
       const res = await fetch("/api/ai/teacher", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userPromptText })
+        body: JSON.stringify({
+          message: messageText,
+          quickAction,
+          courseLanguage: activeCourseLang
+        })
       });
-
-      const responseData = await res.json();
-      if (res.ok && responseData.reply) {
-        setChatMessages((prev) => [...prev, { sender: "ai", text: responseData.reply }]);
+      const resJson = await res.json();
+      if (resJson.success) {
+        setChatMessages((prev) => [...prev, { sender: "ai", text: resJson.reply }]);
+        fetchDashboardData();
       } else {
-        setChatMessages((prev) => [
-          ...prev, 
-          { sender: "ai", text: responseData.error || "Sorry, I couldn't process that right now. Please try again!" }
-        ]);
+        setChatMessages((prev) => [...prev, { sender: "ai", text: "Sorry, I couldn't generate a response. Please check your network and try again." }]);
       }
     } catch (err) {
-      console.error("AI Teacher chat failed:", err);
-      setChatMessages((prev) => [
-        ...prev, 
-        { sender: "ai", text: "Network error connecting to AI Teacher. Please check your internet connection." }
-      ]);
+      console.error(err);
+      setChatMessages((prev) => [...prev, { sender: "ai", text: "Failed to connect to AI server." }]);
     } finally {
       setChatLoading(false);
     }
@@ -268,7 +267,7 @@ export default function DashboardPage() {
     return (
       <div className="h-screen bg-[#F8FAFC] text-slate-800 flex items-center justify-center flex-col space-y-4">
         <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-[#4F46E5] animate-spin" />
-        <div className="text-slate-600 text-sm font-mono font-bold">Loading dashboard...</div>
+        <div className="text-slate-500 text-xs font-mono">Loading premium student dashboard...</div>
       </div>
     );
   }
@@ -301,42 +300,39 @@ export default function DashboardPage() {
       <LeftSidebar 
         activeTab="Dashboard" 
         onTabChange={(tab) => {
-          if (tab === "Explore Courses") router.push("/courses/catalog");
-          else if (tab === "Courses") router.push("/courses");
+          if (tab === "Courses") router.push("/courses");
           else if (tab === "Leaderboard") router.push("/leaderboard");
           else if (tab === "AI Mentor") router.push("/codexai");
           else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
           else if (tab === "Workspace") router.push("/workspace");
-          else if (tab === "Certificates") router.push("/certificates");
-          else if (tab === "Settings") router.push("/settings");
         }} 
         userProfile={activeUser}
         isLight={false}
         fullHeight={true}
       />
 
-      {/* Main Right Area — Dynamically Responsive & Viewport Height Fitted */}
-      <main className="flex-1 min-h-screen overflow-y-auto flex flex-col gap-3.5 p-4 w-full min-w-0 bg-slate-50 lg:[@media(min-height:800px)]:h-screen lg:[@media(min-height:800px)]:overflow-hidden lg:[@media(min-height:800px)]:justify-between lg:[@media(min-height:800px)]:p-5 lg:[@media(min-height:800px)]:gap-4">
+      {/* Main Right Area */}
+      <main className="flex-1 h-full flex flex-col overflow-hidden p-5 gap-3.5 max-w-7xl mx-auto w-full min-w-0">
         
         {/* Header Row */}
         <div className="flex items-center justify-between flex-shrink-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               Welcome back, {firstName}! <span className="animate-bounce">👋</span>
             </h1>
-            <p className="text-xs font-semibold text-slate-500">
+            <p className="text-[11px] text-slate-500 font-medium">
               Keep learning, keep growing. You&apos;re doing great!
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Search Input */}
             <div className="relative hidden md:block">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text" 
                 placeholder="Search courses, topics..." 
-                className="pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 w-56 focus:outline-none focus:border-[#4F46E5] placeholder-slate-400 font-medium shadow-sm"
+                className="pl-9 pr-4 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 w-60 focus:outline-none focus:border-[#4F46E5] placeholder-slate-400"
                 disabled
               />
             </div>
@@ -345,18 +341,18 @@ export default function DashboardPage() {
             <div className="relative" ref={notificationsRef}>
               <button 
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="w-8 h-8 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all hover:shadow-sm cursor-pointer"
+                className="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm"
               >
                 <Bell size={16} />
                 {notifications?.unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
                     {notifications.unreadCount}
                   </span>
                 )}
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 top-10 w-80 max-h-80 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 scrollbar-thin">
+                <div className="absolute right-0 top-11 w-80 max-h-96 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1.5 scrollbar-thin">
                   <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-xs font-black text-slate-900">Notifications</span>
                     <span className="text-[10px] text-slate-400 font-medium">{notifications?.unreadCount} unread</span>
@@ -368,7 +364,7 @@ export default function DashboardPage() {
                       <div 
                         key={n.id} 
                         onClick={() => handleMarkAsRead(n.id)}
-                        className={`p-2 rounded-xl text-left text-xs transition-colors cursor-pointer border ${
+                        className={`p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer border ${
                           n.read ? "bg-white border-transparent text-slate-500" : "bg-blue-50/40 border-slate-100 text-slate-800 hover:bg-blue-50/70"
                         }`}
                       >
@@ -389,10 +385,10 @@ export default function DashboardPage() {
               <img 
                 src={activeUser.image} 
                 alt={activeUser.name} 
-                className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
+                className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-sm"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-black text-xs shadow-sm border border-slate-200">
+              <div className="w-9 h-9 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-bold text-xs shadow-sm border border-slate-200">
                 {firstName.charAt(0).toUpperCase()}
               </div>
             )}
@@ -400,67 +396,67 @@ export default function DashboardPage() {
         </div>
 
         {/* Top 4 Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0 select-none h-[11vh] min-h-[75px]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 flex-shrink-0 select-none">
           {/* Courses Enrolled */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-3.5 h-full">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-4 h-[10.5vh] min-h-[75px]">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
               <BookOpen size={18} />
             </div>
             <div className="min-w-0 flex-1 flex flex-col justify-center">
-              <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider leading-none">Courses Enrolled</span>
-              <span className="text-2xl font-black text-slate-900 leading-tight mt-1">{stats?.coursesCount ?? 0}</span>
-              <span className="text-[11px] font-bold text-emerald-600 mt-0.5">
+              <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider leading-none">Courses Enrolled</span>
+              <span className="text-2xl font-black text-slate-800 leading-tight mt-1">{stats?.coursesCount ?? 0}</span>
+              <span className="text-[9px] text-emerald-500 font-bold mt-0.5">
                 ↑ {stats?.newThisMonth ?? 0} new <span className="text-slate-400 font-normal">this month</span>
               </span>
             </div>
           </div>
 
           {/* Chapters Completed */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-3.5 h-full">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-4 h-[10.5vh] min-h-[75px]">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
               <CheckCircle2 size={18} />
             </div>
             <div className="min-w-0 flex-1 flex flex-col justify-center space-y-0.5">
               <div className="flex justify-between items-end leading-none">
-                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Chapters Completed</span>
-                <span className="text-[10px] text-slate-400 font-mono font-bold">Out of {stats?.totalChaptersCount ?? 0}</span>
+                <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Chapters Completed</span>
+                <span className="text-[9px] text-slate-400 font-mono">Out of {stats?.totalChaptersCount ?? 0}</span>
               </div>
-              <span className="text-2xl font-black text-slate-900 leading-tight">{stats?.completedChaptersCount ?? 0}</span>
+              <span className="text-2xl font-black text-slate-800 leading-tight">{stats?.completedChaptersCount ?? 0}</span>
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">
                   <div 
                     className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
                     style={{ width: `${stats?.chaptersPercentage ?? 0}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-slate-600 font-mono font-bold">{stats?.chaptersPercentage ?? 0}%</span>
+                <span className="text-[9px] text-slate-400 font-mono font-bold">{stats?.chaptersPercentage ?? 0}%</span>
               </div>
             </div>
           </div>
 
           {/* Quiz Accuracy */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-3.5 h-full">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-4 h-[10.5vh] min-h-[75px]">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
               <Trophy size={18} />
             </div>
             <div className="min-w-0 flex-1 flex flex-col justify-center">
-              <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider leading-none">Quiz Accuracy</span>
-              <span className="text-2xl font-black text-slate-900 leading-tight mt-1">{stats?.quizAccuracy ?? 0}%</span>
-              <span className="text-[11px] font-bold text-emerald-600 mt-0.5">
+              <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider leading-none">Quiz Accuracy</span>
+              <span className="text-2xl font-black text-slate-800 leading-tight mt-1">{stats?.quizAccuracy ?? 0}%</span>
+              <span className="text-[9px] text-emerald-500 font-bold mt-0.5">
                 ↑ {stats?.quizImprovement ?? 0}% <span className="text-slate-400 font-normal">improvement</span>
               </span>
             </div>
           </div>
 
           {/* Learning Streak */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-3.5 h-full">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex items-center gap-4 h-[10.5vh] min-h-[75px]">
+            <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
               <Flame size={18} className="animate-pulse" />
             </div>
             <div className="min-w-0 flex-1 flex flex-col justify-center">
-              <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider leading-none">Learning Streak</span>
-              <span className="text-2xl font-black text-slate-900 leading-tight mt-1">{stats?.streak ?? 0} Days</span>
-              <span className="text-[11px] font-bold text-orange-500 mt-0.5">
+              <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider leading-none">Learning Streak</span>
+              <span className="text-2xl font-black text-slate-800 leading-tight mt-1">{stats?.streak ?? 0} Days</span>
+              <span className="text-[9px] text-orange-500 font-bold mt-0.5">
                 Keep it up! 🔥
               </span>
             </div>
@@ -468,13 +464,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Middle Row: Continue Learning (Carousel), Course Completion (Carousel), and AI Teacher */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-3 overflow-hidden">
+        <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-5 gap-4 overflow-hidden">
           
           {/* Continue Learning Carousel */}
-          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                <Play size={14} className="text-[#4F46E5] fill-[#4F46E5]" /> Continue Learning
+          <div className="xl:col-span-2 p-5 rounded-3xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
+              <h3 className="text-xs font-black text-slate-800 flex items-center gap-2">
+                <Play size={12} className="text-[#4F46E5] fill-[#4F46E5]" /> Continue Learning
               </h3>
               {continueLearningCourses.length > 1 && (
                 <span className="text-[10px] text-slate-400 font-mono font-bold">
@@ -484,32 +480,33 @@ export default function DashboardPage() {
             </div>
 
             {continueLearningCourses.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-4 space-y-2">
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
                 <span className="text-2xl">🎓</span>
-                <div className="text-xs font-bold text-slate-900">No courses in progress</div>
-                <p className="text-[11px] text-slate-500 max-w-xs">
+                <div className="text-xs font-bold text-slate-800">No courses in progress</div>
+                <p className="text-[10px] text-slate-400 max-w-xs">
                   Subscribe to a language curriculum to start coding.
                 </p>
                 <button 
-                  onClick={() => router.push("/dashboard")}
-                  className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors cursor-pointer shadow-md"
+                  onClick={() => router.push("/courses")}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors"
                 >
                   Browse Catalog
                 </button>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col justify-between min-h-0 pt-2.5 relative">
+              <div className="flex-1 flex flex-col justify-between min-h-0 pt-3 relative">
+                {/* Manual Navigation Edge Buttons */}
                 {continueLearningCourses.length > 1 && (
                   <>
                     <button 
                       onClick={() => triggerManualLearnSelect((currentLearnIndex - 1 + continueLearningCourses.length) % continueLearningCourses.length)}
-                      className="absolute left-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
+                      className="absolute left-0 top-[35%] -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-slate-600 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
                     >
                       <ChevronLeft size={14} />
                     </button>
                     <button 
                       onClick={() => triggerManualLearnSelect((currentLearnIndex + 1) % continueLearningCourses.length)}
-                      className="absolute right-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
+                      className="absolute right-0 top-[35%] -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-slate-600 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
                     >
                       <ChevronRight size={14} />
                     </button>
@@ -519,30 +516,32 @@ export default function DashboardPage() {
                 {continueLearningCourses.map((course: CourseSlide, idx: number) => {
                   if (idx !== currentLearnIndex) return null;
                   return (
-                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-2 px-1">
-                      <div className="flex gap-3 items-center">
+                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-3.5 animate-fade-in px-4">
+                      {/* Metadata row */}
+                      <div className="flex gap-4">
                         <img 
                           src={course.courseThumbnail} 
                           alt={course.courseTitle}
-                          className="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm shrink-0"
+                          className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm shrink-0"
                         />
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <h4 className="text-xs sm:text-sm font-black text-slate-900 truncate leading-snug">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <h4 className="text-sm font-extrabold text-slate-800 truncate leading-tight">
                             {course.courseTitle}
                           </h4>
-                          <div className="text-xs text-slate-700 font-extrabold truncate">
+                          <div className="text-[10px] text-slate-500 font-bold leading-normal truncate">
                             {course.currentChapter?.title || "Overview"}
                           </div>
-                          <div className="text-[11px] text-slate-500 font-medium truncate">
+                          <div className="text-[9px] text-slate-400 font-medium leading-none">
                             Chapter {course.currentChapter?.orderNumber ?? 1} • {course.currentChapter?.description || "Concept overview"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[11px] font-bold text-slate-600">
-                          <span>Course Progress</span>
-                          <span className="font-mono text-[#4F46E5] font-black">{course.progressPercent}%</span>
+                      {/* Progression bar */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-[9px] text-slate-500">
+                          <span className="font-semibold">Course Progress</span>
+                          <span className="font-mono font-bold text-[#4F46E5]">{course.progressPercent}%</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div 
@@ -552,16 +551,17 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
+                      {/* Actions */}
                       <div className="flex items-center gap-2 pt-0.5">
                         <button 
                           onClick={() => router.push(`/courses/${course.courseLanguage}/chapter/${course.currentChapter?.orderNumber ?? 1}`)}
-                          className="flex-1 py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors text-center cursor-pointer shadow-sm shadow-indigo-500/10"
+                          className="flex-1 py-2 rounded-xl text-[10px] font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors text-center cursor-pointer shadow-sm shadow-indigo-500/10"
                         >
                           Continue Learning
                         </button>
                         <button 
                           onClick={() => router.push(`/courses/${course.courseLanguage}/curriculum`)}
-                          className="px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                          className="px-3 py-2 rounded-xl text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
                         >
                           View Curriculum
                         </button>
@@ -570,14 +570,15 @@ export default function DashboardPage() {
                   );
                 })}
 
+                {/* Pagination dots */}
                 {continueLearningCourses.length > 1 && (
-                  <div className="flex justify-center items-center gap-1.5 pt-1.5">
+                  <div className="flex justify-center items-center gap-1.5 pt-3">
                     {continueLearningCourses.map((_course: CourseSlide, dIdx: number) => (
                       <button
                         key={dIdx}
                         onClick={() => triggerManualLearnSelect(dIdx)}
-                        className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                          dIdx === currentLearnIndex ? "bg-[#4F46E5] w-3" : "bg-slate-200 w-1.5"
+                        className={`w-1.5 h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                          dIdx === currentLearnIndex ? "bg-[#4F46E5] w-3" : "bg-slate-200"
                         }`}
                       />
                     ))}
@@ -587,11 +588,11 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Course Metric */}
-          <div className="lg:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative h-full">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                <Award size={14} className="text-[#4F46E5]" /> Course Metric
+          {/* Course Completion Carousel */}
+          <div className="xl:col-span-1 p-5 rounded-3xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
+              <h3 className="text-xs font-black text-slate-800 flex items-center gap-2">
+                <Award size={12} className="text-[#4F46E5]" /> Course Metric
               </h3>
               {continueLearningCourses.length > 1 && (
                 <span className="text-[10px] text-slate-400 font-mono font-bold">
@@ -601,23 +602,24 @@ export default function DashboardPage() {
             </div>
 
             {continueLearningCourses.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-3">
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
                 <span className="text-xl">🏆</span>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">Zero active courses.</p>
+                <p className="text-[9px] text-slate-400 mt-2">Zero active courses.</p>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col justify-between min-h-0 pt-2.5 relative">
+              <div className="flex-1 flex flex-col justify-between min-h-0 pt-3 relative">
+                {/* Edge control buttons */}
                 {continueLearningCourses.length > 1 && (
                   <>
                     <button 
                       onClick={() => triggerManualCompleteSelect((currentCompleteIndex - 1 + continueLearningCourses.length) % continueLearningCourses.length)}
-                      className="absolute left-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
+                      className="absolute left-0 top-[35%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-slate-600 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
                     >
                       <ChevronLeft size={12} />
                     </button>
                     <button 
                       onClick={() => triggerManualCompleteSelect((currentCompleteIndex + 1) % continueLearningCourses.length)}
-                      className="absolute right-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
+                      className="absolute right-0 top-[35%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center text-slate-600 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
                     >
                       <ChevronRight size={12} />
                     </button>
@@ -627,27 +629,28 @@ export default function DashboardPage() {
                 {continueLearningCourses.map((course: CourseSlide, idx: number) => {
                   if (idx !== currentCompleteIndex) return null;
                   return (
-                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-2 px-1">
-                      <div className="flex flex-col items-center text-center space-y-1">
+                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-2.5 animate-fade-in px-2">
+                      <div className="flex flex-col items-center text-center space-y-1.5">
                         <img 
                           src={course.courseThumbnail} 
                           alt={course.courseTitle}
-                          className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm"
+                          className="w-10 h-10 rounded-xl object-cover border border-slate-100 shadow-sm"
                         />
-                        <h4 className="text-xs font-black text-slate-900 line-clamp-2">
+                        <h4 className="text-xs font-extrabold text-slate-800 line-clamp-1">
                           {course.courseTitle}
                         </h4>
-                        <span className="text-[10px] text-slate-500 font-mono font-bold uppercase">
+                        <span className="text-[8px] text-slate-400 font-mono font-bold uppercase">
                           {course.courseLanguage} TRACK
                         </span>
                       </div>
 
+                      {/* Course progress */}
                       <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[11px] font-extrabold text-slate-600">
+                        <div className="flex justify-between items-center text-[8px] text-slate-500 font-bold">
                           <span>Timeline Completion</span>
-                          <span className="font-mono text-[#4F46E5]">{course.progressPercent}%</span>
+                          <span>{course.progressPercent}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-1 rounded-full bg-slate-100 overflow-hidden">
                           <div 
                             className="h-full bg-emerald-500 rounded-full"
                             style={{ width: `${course.progressPercent}%` }}
@@ -657,7 +660,7 @@ export default function DashboardPage() {
 
                       <button 
                         onClick={() => router.push(`/courses/${course.courseLanguage}/chapter/${course.currentChapter?.orderNumber ?? 1}`)}
-                        className="w-full py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors text-center cursor-pointer shadow-sm"
+                        className="w-full py-1.5 rounded-xl text-[9px] font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors text-center cursor-pointer shadow-sm shadow-indigo-500/10"
                       >
                         Continue Learning
                       </button>
@@ -665,14 +668,15 @@ export default function DashboardPage() {
                   );
                 })}
 
+                {/* Pagination indicators */}
                 {continueLearningCourses.length > 1 && (
-                  <div className="flex justify-center items-center gap-1 pt-1">
+                  <div className="flex justify-center items-center gap-1.5 pt-2">
                     {continueLearningCourses.map((_course: CourseSlide, dIdx: number) => (
                       <button
                         key={dIdx}
                         onClick={() => triggerManualCompleteSelect(dIdx)}
-                        className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
-                          dIdx === currentCompleteIndex ? "bg-[#4F46E5] w-2.5" : "bg-slate-200 w-1"
+                        className={`w-1 h-1 rounded-full transition-all duration-300 cursor-pointer ${
+                          dIdx === currentCompleteIndex ? "bg-[#4F46E5] w-2" : "bg-slate-200"
                         }`}
                       />
                     ))}
@@ -683,50 +687,51 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Teacher */}
-          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm h-full">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
+          <div className="xl:col-span-2 p-5 rounded-3xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm">
+            {/* Chat header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
-                  <Bot size={16} />
+                <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
+                  <Bot size={13} />
                 </div>
-                <span className="text-xs sm:text-sm font-black text-slate-900">AI Teacher</span>
+                <span className="text-xs font-black text-slate-800">AI Teacher</span>
               </div>
-              <span className="text-[11px] text-emerald-600 font-mono font-bold flex items-center gap-1">
+              <span className="text-[9px] text-emerald-500 font-mono font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Online
               </span>
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto my-2 space-y-2 p-1 scrollbar-thin text-xs leading-relaxed min-h-0">
+            <div className="flex-1 overflow-y-auto my-2.5 space-y-2.5 p-1 scrollbar-thin text-[11px] leading-relaxed min-h-0">
               {chatMessages.map((msg, idx) => (
                 <div 
                   key={idx} 
-                  className={`flex gap-2 max-w-[88%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                  className={`flex gap-2 max-w-[85%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
                 >
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                    msg.sender === "user" ? "bg-indigo-50 text-[#4F46E5] border border-indigo-100" : "bg-slate-100 text-slate-700 border border-slate-200"
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${
+                    msg.sender === "user" ? "bg-indigo-50 text-[#4F46E5] border border-indigo-100" : "bg-slate-100 text-slate-600 border border-slate-200"
                   }`}>
                     {msg.sender === "user" ? "👤" : "🤖"}
                   </div>
                   <div className={`p-2.5 rounded-2xl border ${
                     msg.sender === "user" 
-                      ? "bg-indigo-50/70 border-indigo-100 text-[#4F46E5]" 
-                      : "bg-slate-50 border-slate-150 text-slate-800"
+                      ? "bg-indigo-50/50 border-indigo-100/50 text-[#4F46E5]" 
+                      : "bg-slate-50 border-slate-100 text-slate-700"
                   }`}>
-                    <p className="whitespace-pre-line font-medium text-xs">{msg.text}</p>
+                    <p className="whitespace-pre-line font-medium">{msg.text}</p>
                   </div>
                 </div>
               ))}
               {chatLoading && (
-                <div className="flex gap-2 max-w-[88%] mr-auto items-center">
-                  <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs">
+                <div className="flex gap-2 max-w-[85%] mr-auto items-center">
+                  <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">
                     🤖
                   </div>
                   <div className="flex gap-1 py-2 px-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="w-1.5 h-1.5 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="w-1 h-1 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1 h-1 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1 h-1 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                 </div>
               )}
@@ -734,51 +739,51 @@ export default function DashboardPage() {
             </div>
 
             {/* Controls */}
-            <div className="space-y-1.5 flex-shrink-0 pt-1.5 border-t border-slate-100">
+            <div className="space-y-2 flex-shrink-0">
               <form 
                 onSubmit={(e) => { e.preventDefault(); handleSendChat(chatInput); }}
-                className="flex items-center gap-2 border border-slate-200 rounded-xl bg-slate-50 px-3 py-1.5 shadow-inner"
+                className="flex items-center gap-2 border border-slate-200/80 rounded-2xl bg-slate-50 px-3 py-1.5"
               >
                 <input 
                   type="text" 
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Type your question here..." 
-                  className="bg-transparent border-none outline-none text-xs text-slate-800 w-full placeholder-slate-400 font-medium"
+                  className="bg-transparent border-none outline-none text-xs text-slate-700 w-full placeholder-slate-400 font-medium"
                   disabled={chatLoading}
                 />
                 <button 
                   type="submit"
                   disabled={chatLoading || !chatInput.trim()}
-                  className="p-1.5 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] text-white transition-colors disabled:opacity-40 cursor-pointer shrink-0"
+                  className="p-1.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white transition-colors disabled:opacity-40 cursor-pointer shrink-0"
                 >
-                  <Send size={12} />
+                  <Send size={11} />
                 </button>
               </form>
 
               {/* Action grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs font-extrabold">
+              <div className="grid grid-cols-4 gap-1 text-[8.5px] font-black uppercase tracking-wider">
                 <button 
                   onClick={() => handleSendChat("", "explain")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
+                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 hover:bg-slate-50/50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
                 >
                   💡 Explain
                 </button>
                 <button 
                   onClick={() => handleSendChat("", "quiz")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
+                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 hover:bg-slate-50/50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
                 >
                   🎯 Quiz
                 </button>
                 <button 
                   onClick={() => handleSendChat("", "debug")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
+                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 hover:bg-slate-50/50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
                 >
                   💻 Debug
                 </button>
                 <button 
                   onClick={() => handleSendChat("", "summarize")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
+                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 hover:bg-slate-50/50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
                 >
                   📝 Summarize
                 </button>
@@ -788,75 +793,78 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Row: Donut Chart, Goals, Heatmap */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 flex-shrink-0 h-[20vh] min-h-[140px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[24vh] flex-shrink-0">
           
           {/* Learning Progress Donut */}
-          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
-            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-100 flex-shrink-0">
               Learning Progress
             </h3>
             
-            <div className="flex items-center gap-3 py-0.5 flex-1 min-h-0">
-              <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+            <div className="flex items-center gap-4 py-1.5 flex-1 min-h-0">
+              <div className="relative w-18 h-18 shrink-0 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="32" cy="32" r="24" className="stroke-slate-100 fill-none" strokeWidth="6" />
-                  <circle cx="32" cy="32" r="24" className="stroke-slate-300 fill-none" strokeWidth="6" 
-                    strokeDasharray={2 * Math.PI * 24}
-                    strokeDashoffset={2 * Math.PI * 24 - (100 / 100) * (2 * Math.PI * 24)}
+                  <circle cx="36" cy="36" r="28" className="stroke-slate-100 fill-none" strokeWidth="6" />
+                  {/* Remaining */}
+                  <circle cx="36" cy="36" r="28" className="stroke-slate-300 fill-none" strokeWidth="6" 
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 - (100 / 100) * (2 * Math.PI * 28)}
                   />
-                  <circle cx="32" cy="32" r="24" className="stroke-[#7C3AED] fill-none" strokeWidth="6" 
-                    strokeDasharray={2 * Math.PI * 24}
-                    strokeDashoffset={2 * Math.PI * 24 - ((learningProgress?.completedPercentage + learningProgress?.inProgressPercentage) / 100) * (2 * Math.PI * 24)}
+                  {/* In Progress */}
+                  <circle cx="36" cy="36" r="28" className="stroke-[#7C3AED] fill-none" strokeWidth="6" 
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 - ((learningProgress?.completedPercentage + learningProgress?.inProgressPercentage) / 100) * (2 * Math.PI * 28)}
                   />
-                  <circle cx="32" cy="32" r="24" className="stroke-emerald-500 fill-none" strokeWidth="6" 
-                    strokeDasharray={2 * Math.PI * 24}
-                    strokeDashoffset={2 * Math.PI * 24 - (learningProgress?.completedPercentage / 100) * (2 * Math.PI * 24)}
+                  {/* Completed */}
+                  <circle cx="36" cy="36" r="28" className="stroke-emerald-500 fill-none" strokeWidth="6" 
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={2 * Math.PI * 28 - (learningProgress?.completedPercentage / 100) * (2 * Math.PI * 28)}
                   />
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-[11px] font-black text-slate-900 leading-none font-mono">{learningProgress?.overallProgressPercent ?? 0}%</span>
-                  <span className="text-[8px] text-slate-400 font-extrabold uppercase tracking-wide mt-0.5">Overall</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center scale-90">
+                  <span className="text-xs font-black text-slate-800 leading-none font-mono">{learningProgress?.overallProgressPercent ?? 0}%</span>
+                  <span className="text-[6.5px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Overall</span>
                 </div>
               </div>
 
               {/* Legends list */}
-              <div className="flex-1 space-y-1 text-xs text-slate-700 font-bold">
+              <div className="flex-1 space-y-1 text-[10px] text-slate-600 font-semibold">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span>Completed</span>
                   </div>
-                  <span className="font-mono font-black text-slate-900">{learningProgress?.completedCount} ({learningProgress?.completedPercentage}%)</span>
+                  <span className="font-mono font-bold text-slate-800">{learningProgress?.completedCount} ({learningProgress?.completedPercentage}%)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#7C3AED]" />
                     <span>In Progress</span>
                   </div>
-                  <span className="font-mono font-black text-slate-900">{learningProgress?.inProgressCount} ({learningProgress?.inProgressPercentage}%)</span>
+                  <span className="font-mono font-bold text-slate-800">{learningProgress?.inProgressCount} ({learningProgress?.inProgressPercentage}%)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-slate-300" />
                     <span>Remaining</span>
                   </div>
-                  <span className="font-mono font-black text-slate-900">{learningProgress?.remainingCount} ({learningProgress?.remainingPercentage}%)</span>
+                  <span className="font-mono font-bold text-slate-800">{learningProgress?.remainingCount} ({learningProgress?.remainingPercentage}%)</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Goals */}
-          <div className="lg:col-span-2 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
-            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-100 flex-shrink-0">
               This Week&apos;s Goals
             </h3>
             
-            <div className="space-y-2 py-1 flex-1 flex flex-col justify-center text-xs text-slate-700 font-extrabold">
+            <div className="space-y-2 py-1 flex-1 flex flex-col justify-center min-h-0 text-[10px] text-slate-600 font-bold">
               <div className="space-y-1">
                 <div className="flex justify-between items-center leading-none">
                   <span className="flex items-center gap-1">🟢 Complete {weeklyGoals?.chapters?.target ?? 2} Chapters</span>
-                  <span className="font-mono text-slate-500 font-bold">{weeklyGoals?.chapters?.current ?? 0}/{weeklyGoals?.chapters?.target ?? 2}</span>
+                  <span className="font-mono text-slate-400">{weeklyGoals?.chapters?.current ?? 0}/{weeklyGoals?.chapters?.target ?? 2}</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div 
@@ -869,7 +877,7 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <div className="flex justify-between items-center leading-none">
                   <span className="flex items-center gap-1">🎯 Solve {weeklyGoals?.quizzes?.target ?? 10} Quiz Questions</span>
-                  <span className="font-mono text-slate-500 font-bold">{weeklyGoals?.quizzes?.current ?? 0}/{weeklyGoals?.quizzes?.target ?? 10}</span>
+                  <span className="font-mono text-slate-400">{weeklyGoals?.quizzes?.current ?? 0}/{weeklyGoals?.quizzes?.target ?? 10}</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div 
@@ -882,7 +890,7 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <div className="flex justify-between items-center leading-none">
                   <span className="flex items-center gap-1">🤖 AI Practice &amp; Chats</span>
-                  <span className="font-mono text-slate-500 font-bold">{weeklyGoals?.aiSessions?.current ?? 0}/{weeklyGoals?.aiSessions?.target ?? 5}</span>
+                  <span className="font-mono text-slate-400">{weeklyGoals?.aiSessions?.current ?? 0}/{weeklyGoals?.aiSessions?.target ?? 5}</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div 
@@ -894,49 +902,47 @@ export default function DashboardPage() {
             </div>
 
             <div className="text-center pt-1 border-t border-slate-100 flex-shrink-0">
-              <a href="#goals" className="text-xs font-black text-[#4F46E5] hover:underline">View All Goals</a>
+              <a href="#goals" className="text-[10px] font-black text-[#4F46E5] hover:underline">View All Goals</a>
             </div>
           </div>
 
           {/* Heatmap */}
-          <div className="lg:col-span-1 p-3 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
+          <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-100 flex-shrink-0">
               Editor Activity
             </h3>
             
-            <div className="flex flex-col justify-between flex-1 min-h-0 pt-1 space-y-1.5">
-              <div className="flex justify-center items-center h-full">
-                <div className="flex gap-1 p-1 bg-slate-50/50 rounded-lg border border-slate-100/60">
-                  {heatmap.map((week: any, wIdx: number) => (
-                    <div key={wIdx} className="flex flex-col gap-1">
-                      {week.days.map((day: any, dIdx: number) => (
-                        <div 
-                          key={dIdx}
-                          title={`${day.date}: ${day.count} editor activities`}
-                          className={`w-3 h-3 rounded-[3px] transition-all duration-300 hover:scale-125 cursor-pointer shrink-0 ${
-                            day.intensity === 0 ? "bg-slate-100" :
-                            day.intensity === 1 ? "bg-indigo-100 border border-indigo-200/30" :
-                            day.intensity === 2 ? "bg-indigo-300 border border-indigo-400/30" :
-                            "bg-[#4F46E5] shadow-sm shadow-[#4F46E5]/15"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
+            <div className="flex flex-col justify-between flex-1 min-h-0 pt-1.5 space-y-2">
+              <div className="flex gap-1.5 justify-center">
+                {heatmap.map((week: any, wIdx: number) => (
+                  <div key={wIdx} className="flex flex-col gap-1">
+                    {week.days.map((day: any, dIdx: number) => (
+                      <div 
+                        key={dIdx}
+                        title={`${day.date}: ${day.count} editor activities`}
+                        className={`w-2.5 h-2.5 rounded-sm transition-all duration-300 hover:scale-110 cursor-pointer ${
+                          day.intensity === 0 ? "bg-slate-100" :
+                          day.intensity === 1 ? "bg-indigo-100 border border-indigo-200/30" :
+                          day.intensity === 2 ? "bg-indigo-300 border border-indigo-400/30" :
+                          "bg-[#4F46E5] shadow-sm shadow-[#4F46E5]/15"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
 
               {/* Heatmap Legend Swatches */}
-              <div className="flex items-center justify-between text-[8px] text-slate-400 font-mono font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-[7px] text-slate-400 font-mono font-bold uppercase tracking-wider">
                 <span>Less</span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-sm bg-indigo-100" />
                     <span>Hints</span>
                   </div>
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-sm bg-indigo-300" />
-                    <span>Sugg</span>
+                    <span>Suggestions</span>
                   </div>
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-sm bg-[#4F46E5]" />
@@ -946,6 +952,60 @@ export default function DashboardPage() {
                 <span>More</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Recommended for You Row */}
+        <div className="p-4 rounded-3xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden h-[13vh] flex-shrink-0 select-none">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 flex-shrink-0">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">
+              Recommended for You
+            </h3>
+            <span className="text-[8px] text-slate-400 font-bold uppercase">Based on progress</span>
+          </div>
+          
+          <div className="flex-1 flex items-center gap-3 overflow-x-auto py-1 scrollbar-thin min-h-0 flex-shrink-0 relative">
+            {recommended.length === 0 ? (
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wide">All courses fully enrolled! Outstanding progress!</span>
+            ) : (
+              recommended.map((course: any) => (
+                <div 
+                  key={course.id}
+                  onClick={() => {
+                    if (course.badge === "Review Required") {
+                      router.push(`/courses/${course.language}/curriculum`);
+                    } else {
+                      router.push("/courses");
+                    }
+                  }}
+                  className="flex-shrink-0 w-60 p-2 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100/50 hover:border-[#4F46E5]/40 flex gap-2.5 items-center cursor-pointer transition-all hover:scale-101 group"
+                >
+                  <img 
+                    src={course.thumbnail} 
+                    alt={course.title}
+                    className="w-8 h-8 rounded-xl object-cover border border-slate-200 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="flex items-center justify-between gap-1 leading-none">
+                      <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded border leading-none ${
+                        course.badge === "Review Required" 
+                          ? "bg-red-50 border-red-200 text-red-600" 
+                          : "bg-indigo-50 border-indigo-100 text-[#4F46E5]"
+                      }`}>
+                        {course.badge}
+                      </span>
+                      <div className="flex items-center gap-0.5 text-[9px] text-amber-500 font-bold shrink-0">
+                        <Star size={9} className="fill-amber-400 text-amber-500" />
+                        <span>{course.rating}</span>
+                      </div>
+                    </div>
+                    <h4 className="text-[10px] font-black text-slate-800 truncate group-hover:text-[#4F46E5] transition-colors">
+                      {course.title}
+                    </h4>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

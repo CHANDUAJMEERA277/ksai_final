@@ -29,48 +29,23 @@ export default function CourseCurriculumPage() {
   const router = useRouter();
   const params = useParams();
   const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
-
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
-  const isPending = sessionData?.isPending ?? false;
-
-  // Resolve defaults based on course slug
-  const getCourseDefaults = () => {
-    switch (courseSlug.toLowerCase()) {
-      case "c":
-        return {
-          title: "C Language Mastery & System Programming",
-          price: 1499,
-          firstChapter: 0,
-        };
-      case "cpp":
-        return {
-          title: "C++ Object-Oriented & STL Masterclass",
-          price: 1999,
-          firstChapter: 1,
-        };
-      case "java":
-        return {
-          title: "Java Enterprise & Object-Oriented Architecture",
-          price: 1999,
-          firstChapter: 1,
-        };
-      default:
-        return {
-          title: "Python AI & Data Structures Architecture",
-          price: 2499,
-          firstChapter: 0,
-        };
-    }
-  };
-
-  const defaults = getCourseDefaults();
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState(defaults.title);
+  const [courseTitle, setCourseTitle] = useState(
+    courseSlug === "c"
+      ? "C Language Mastery & System Programming"
+      : courseSlug === "cpp"
+      ? "C++ Object-Oriented & STL Masterclass"
+      : courseSlug === "java"
+      ? "Java Enterprise & Object-Oriented Architecture"
+      : "Python AI & Data Structures Architecture"
+  );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(defaults.price);
+  const [coursePrice, setCoursePrice] = useState(
+    courseSlug === "c" ? 1499 : (courseSlug === "cpp" || courseSlug === "java") ? 1999 : 2499
+  );
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [buying, setBuying] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -94,7 +69,8 @@ export default function CourseCurriculumPage() {
   const loadCurriculumData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/courses/${courseSlug}/chapters/${defaults.firstChapter}`);
+      const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
+      const res = await fetch(`/api/courses/${courseSlug}/chapters/${firstChapterOrder}`);
       const data = await res.json();
 
       if (res.ok && data.success) {
@@ -217,7 +193,8 @@ export default function CourseCurriculumPage() {
 
   // Lock State Logic
   const isChapterUnlocked = (order: number) => {
-    if (order === defaults.firstChapter) return true; // first chapter is always unlocked
+    const firstChapterOrder = (courseSlug === "cpp" || courseSlug === "java") ? 1 : 0;
+    if (order === firstChapterOrder) return true; // first chapter is always unlocked
     
     // Check previous chapter completion state
     const prevChapter = chapters.find((c) => c.orderNumber === order - 1);
@@ -226,16 +203,25 @@ export default function CourseCurriculumPage() {
     const prevProgress = progresses.find((p) => p.chapterId === prevChapter.id);
     const prevCompleted = !!prevProgress?.isCompleted;
 
-    // Check if enrolled for chapters > firstChapter
-    if (order > defaults.firstChapter && !isEnrolled) return false;
+    const freeLimit = courseSlug === "python" ? 0 : 1;
+    // Check if enrolled for chapters > freeLimit
+    if (order > freeLimit && !isEnrolled) return false;
 
     return prevCompleted;
   };
 
   // Progress summary
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 11;
+  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : courseSlug === "c" ? 6 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
+
+  const isC = courseSlug === "c";
+  const startsAtOne = courseSlug === "cpp" || courseSlug === "java";
+  const activeChapterOrder = startsAtOne
+    ? completedChaptersCount + 1
+    : isC
+    ? completedChaptersCount + 1
+    : completedChaptersCount;
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
@@ -247,12 +233,12 @@ export default function CourseCurriculumPage() {
           </div>
           <div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {courseSlug.toUpperCase()} Course</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button
-             onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/dashboard")}
             className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <ArrowLeft size={14} /> Back to Dashboard
@@ -316,11 +302,11 @@ export default function CourseCurriculumPage() {
                   Curriculum Syllabus
                 </h1>
                 <p className="text-xs text-slate-400 mt-1">
-                  {courseSlug.toUpperCase()} Course &bull; {completedChaptersCount} of {totalChaptersCount} Chapters Passed ({progressPercentage}%)
+                  {courseSlug === "cpp" ? "C++ Course" : courseSlug === "java" ? "Java Course" : isC ? "C Course" : "Python AI Course"} &bull; {completedChaptersCount} of {totalChaptersCount} Chapters Passed ({progressPercentage}%)
                 </p>
               </div>
 
-              {/* Circular Mini Progress Ring / Buy banner */}
+              {/* Purchase banner */}
               {!isEnrolled && (
                 <button
                   onClick={handleBuyCourse}
@@ -338,7 +324,7 @@ export default function CourseCurriculumPage() {
               {chapters.map((chapter) => {
                 const unlocked = isChapterUnlocked(chapter.orderNumber);
                 const isCompleted = !!progresses.find((p) => p.chapterId === chapter.id)?.isCompleted;
-                const active = chapter.orderNumber === completedChaptersCount + (defaults.firstChapter === 1 ? 1 : 0);
+                const active = chapter.orderNumber === activeChapterOrder;
 
                 let cardStyle = "glass-panel border-white/10 bg-[#09090D] hover:border-cyan-500/50 hover:bg-white/5";
                 let lockIcon = <Unlock size={16} className="text-cyan-400" />;
@@ -352,7 +338,8 @@ export default function CourseCurriculumPage() {
                   cardStyle = "bg-white/5 border-white/5 opacity-60 cursor-not-allowed";
                   lockIcon = <Lock size={16} className="text-slate-500" />;
                   
-                  if (!isEnrolled && chapter.orderNumber > defaults.firstChapter) {
+                  const freeLimit = courseSlug === "python" ? 0 : 1;
+                  if (!isEnrolled && chapter.orderNumber > freeLimit) {
                     statusLabel = "Locked: Subscribe to unlock all remaining chapters";
                   } else {
                     statusLabel = `Locked: Complete Chapter ${chapter.orderNumber - 1} to unlock`;
@@ -362,21 +349,22 @@ export default function CourseCurriculumPage() {
                 // Determine metadata
                 const lessonCount = "1 Lesson Notes";
                 let assesmentLabel = "No Assessment";
-                if (courseSlug.toLowerCase() === "python" || courseSlug.toLowerCase() === "c") {
+                if (isC) {
+                  assesmentLabel = "10 Quiz Questions";
+                } else {
                   if (chapter.orderNumber === 0) assesmentLabel = "12 Quiz Questions";
                   else if (chapter.orderNumber === 1) assesmentLabel = "14 Quiz Questions";
                   else if (chapter.orderNumber >= 2) assesmentLabel = "15 Quiz Questions";
-                } else {
-                  assesmentLabel = "15 Quiz Questions";
                 }
 
                 return (
                   <div
                     key={chapter.id}
                     onClick={() => {
+                      const freeLimit = courseSlug === "python" ? 0 : 1;
                       if (unlocked) {
                         router.push(`/courses/${courseSlug}/chapter/${chapter.orderNumber}`);
-                      } else if (!isEnrolled && chapter.orderNumber > defaults.firstChapter) {
+                      } else if (!isEnrolled && chapter.orderNumber > freeLimit) {
                         alert("🔒 This chapter is locked. Please subscribe to unlock access.");
                       } else {
                         alert(`🔒 This chapter is locked. Complete Chapter ${chapter.orderNumber - 1} quiz to unlock.`);

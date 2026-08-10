@@ -30,63 +30,23 @@ export default function CourseOverviewPage() {
   const router = useRouter();
   const params = useParams();
   const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
-  
-  const sessionData = useSession();
-  const session = (sessionData?.data as any) ?? null;
-
-  // Resolve defaults based on course slug
-  const getCourseDefaults = () => {
-    switch (courseSlug.toLowerCase()) {
-      case "c":
-        return {
-          title: "C Language Mastery & System Programming",
-          price: 1499,
-          badge: "System Programming &bull; C Language",
-          difficulty: "Beginner",
-          time: "20 Hours Access",
-          desc: "Learn C programming from scratch: pointers, memory allocation, structs, file I/O, and low-level system design. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations.",
-          firstChapter: 0,
-        };
-      case "cpp":
-        return {
-          title: "C++ Object-Oriented & STL Masterclass",
-          price: 1999,
-          badge: "OOP & Performance &bull; C++",
-          difficulty: "Intermediate",
-          time: "25 Hours Access",
-          desc: "Master modern C++17/C++20: OOP design, smart pointers, Standard Template Library (STL), and performance optimization. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations.",
-          firstChapter: 1,
-        };
-      case "java":
-        return {
-          title: "Java Enterprise & Object-Oriented Architecture",
-          price: 1999,
-          badge: "Enterprise & OOP &bull; Java",
-          difficulty: "Intermediate",
-          time: "28 Hours Access",
-          desc: "Master Core Java, Multithreading, JVM Memory Management, Collections, Streams API, and Spring Boot foundations. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations.",
-          firstChapter: 1,
-        };
-      default:
-        return {
-          title: "Python AI & Data Structures Architecture",
-          price: 2499,
-          badge: "Premium Path &bull; Python AI",
-          difficulty: "Beginner to Advanced",
-          time: "30 Hours Access",
-          desc: "Master modern Python programming from syntax fundamentals to advanced object-oriented design and AI model integrations. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations.",
-          firstChapter: 0,
-        };
-    }
-  };
-
-  const defaults = getCourseDefaults();
+  const { data: session, isPending } = useSession();
 
   // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState(defaults.title);
+  const [courseTitle, setCourseTitle] = useState(
+    courseSlug === "c"
+      ? "C Language Mastery & System Programming"
+      : courseSlug === "cpp"
+      ? "C++ Object-Oriented & STL Masterclass"
+      : courseSlug === "java"
+      ? "Java Enterprise & Object-Oriented Architecture"
+      : "Python AI & Data Structures Architecture"
+  );
   const [courseId, setCourseId] = useState("");
-  const [coursePrice, setCoursePrice] = useState(defaults.price);
+  const [coursePrice, setCoursePrice] = useState(
+    courseSlug === "c" ? 1499 : (courseSlug === "cpp" || courseSlug === "java") ? 1999 : 2499
+  );
   const [isEnrolled, setIsEnrolled] = useState(true);
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [progresses, setProgresses] = useState<ProgressItem[]>([]);
@@ -95,21 +55,22 @@ export default function CourseOverviewPage() {
 
   // User resolution
   useEffect(() => {
-    if (session?.user) {
+    if (!isPending && session?.user) {
       setUser({
         name: session.user.name ?? "Student",
         email: session.user.email ?? "",
         role: (session.user as any).role ?? "Student",
       });
     }
-  }, [session]);
+  }, [session, isPending]);
 
   // Fetch course metadata
   useEffect(() => {
     const fetchOverviewData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/courses/${courseSlug}/chapters/${defaults.firstChapter}`);
+        const firstChapter = (courseSlug === "cpp" || courseSlug === "java") ? "1" : "0";
+        const res = await fetch(`/api/courses/${courseSlug}/chapters/${firstChapter}`);
         const data = await res.json();
 
         if (res.ok && data.success) {
@@ -119,11 +80,6 @@ export default function CourseOverviewPage() {
           setIsEnrolled(data.isEnrolled);
           setChapters(data.chapters);
           setProgresses(data.progresses);
-
-          if (!data.isEnrolled) {
-            router.push(`/courses/${courseSlug}/curriculum`);
-            return;
-          }
         } else {
           setError(data.error || "Failed to load course details.");
         }
@@ -140,7 +96,7 @@ export default function CourseOverviewPage() {
 
   // Calculate Progress Stats
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || 11;
+  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : courseSlug === "c" ? 6 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   // Continue Learning Logic
@@ -154,9 +110,11 @@ export default function CourseOverviewPage() {
     if (nextChapter) {
       router.push(`/courses/${courseSlug}/chapter/${nextChapter.orderNumber}`);
     } else {
-      router.push(`/courses/${courseSlug}/chapter/${defaults.firstChapter}`);
+      router.push(`/courses/${courseSlug}/chapter/${(courseSlug === "cpp" || courseSlug === "java") ? "1" : "0"}`);
     }
   };
+
+  const isC = courseSlug === "c";
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
@@ -168,7 +126,7 @@ export default function CourseOverviewPage() {
           </div>
           <div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
-            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {courseSlug.toUpperCase()} Course</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; {courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : isC ? "C" : "Python"} Course</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -192,7 +150,7 @@ export default function CourseOverviewPage() {
             My Courses
           </button>
           <span>&bull;</span>
-          <span className="text-cyan-400 font-mono">{courseSlug.toUpperCase()} Course Overview</span>
+          <span className="text-cyan-400 font-mono">{courseSlug === "cpp" ? "C++" : courseSlug === "java" ? "Java" : isC ? "C" : "Python"} Course Overview</span>
         </div>
 
         {loading ? (
@@ -219,13 +177,15 @@ export default function CourseOverviewPage() {
               
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-cyan-300 text-[10px] font-semibold border border-blue-500/20">
-                  <Sparkles size={11} className="text-cyan-400" /> <span dangerouslySetInnerHTML={{ __html: defaults.badge }} />
+                  <Sparkles size={11} className="text-cyan-400" /> Premium Path &bull; {isC ? "C Mastery" : "Python AI"}
                 </div>
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   {courseTitle}
                 </h1>
                 <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
-                  {defaults.desc}
+                  {isC
+                    ? "Master C programming from scratch: pointers, memory allocation (malloc/free), structs, file I/O, and low-level system design. Includes comprehensive hands-on practice and AI Voice explanations."
+                    : "Master modern Python programming from syntax fundamentals to advanced object-oriented design and AI model integrations. Includes comprehensive hands-on practice, coding challenges, and AI Voice explanations."}
                 </p>
               </div>
 
@@ -233,13 +193,13 @@ export default function CourseOverviewPage() {
                 <div className="space-y-0.5">
                   <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Difficulty</div>
                   <div className="text-xs font-bold text-cyan-300 flex items-center gap-1">
-                    <BarChart3 size={12} /> {defaults.difficulty}
+                    <BarChart3 size={12} /> {isC ? "Beginner" : "Beginner to Advanced"}
                   </div>
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Estimated Time</div>
                   <div className="text-xs font-bold text-purple-300 flex items-center gap-1">
-                    <Clock size={12} /> {defaults.time}
+                    <Clock size={12} /> {isC ? "20 Hours Access" : "30 Hours Access"}
                   </div>
                 </div>
                 <div className="space-y-0.5">

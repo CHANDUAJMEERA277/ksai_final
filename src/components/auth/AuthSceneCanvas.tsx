@@ -8,23 +8,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Sparkles, ShieldCheck, Cpu, Code2, Users } from "lucide-react";
 
 const AUTH_TECH_STACK = [
-  { name: "React", color: "#38BDF8", icon: "⚛️" },
-  { name: "Next.js", color: "#F8FAFC", icon: "▲" },
-  { name: "Java", color: "#93C5FD", icon: "☕" },
-  { name: "Python", color: "#60A5FA", icon: "🐍" },
+  { name: "React", color: "#06B6D4", icon: "⚛️" },
+  { name: "Next.js", color: "#FFFFFF", icon: "▲" },
+  { name: "Java", color: "#F97316", icon: "☕" },
+  { name: "Python", color: "#38BDF8", icon: "🐍" },
   { name: "Docker", color: "#3B82F6", icon: "🐳" },
-  { name: "Linux", color: "#38BDF8", icon: "🐧" },
-  { name: "AI", color: "#818CF8", icon: "🤖" },
+  { name: "Linux", color: "#FACC15", icon: "🐧" },
+  { name: "AI", color: "#A855F7", icon: "🤖" },
   { name: "Cloud", color: "#60A5FA", icon: "☁️" },
-  { name: "Git", color: "#F87171", icon: "🌿" },
+  { name: "Git", color: "#EF4444", icon: "🌿" },
 ];
 
 const HIGHLIGHTS = [
   { text: "AI Coding Mentor", icon: Code2, color: "#3B82F6" },
-  { text: "Smart Learning", icon: Sparkles, color: "#38BDF8" },
-  { text: "Workforce Management", icon: Cpu, color: "#818CF8" },
+  { text: "Smart Learning", icon: Sparkles, color: "#06B6D4" },
+  { text: "Workforce Management", icon: Cpu, color: "#7C3AED" },
   { text: "Real-Time Collaboration", icon: Users, color: "#10B981" },
-  { text: "Secure Authentication", icon: ShieldCheck, color: "#60A5FA" },
+  { text: "Secure Authentication", icon: ShieldCheck, color: "#EC4899" },
 ];
 
 function CoreSphere() {
@@ -53,12 +53,12 @@ function CoreSphere() {
   });
 
   return (
-    <group scale={0.95}>
+    <group scale={1.38}>
       <mesh ref={meshRef}>
-        <icosahedronGeometry args={[1.2, 2]} />
+        <icosahedronGeometry args={[1.4, 2]} />
         <meshStandardMaterial
           color="#3B82F6"
-          emissive="#1E40AF"
+          emissive="#1D4ED8"
           emissiveIntensity={2.0}
           wireframe
           transparent
@@ -67,10 +67,10 @@ function CoreSphere() {
       </mesh>
 
       <mesh ref={outerRef}>
-        <sphereGeometry args={[1.6, 16, 16]} />
+        <sphereGeometry args={[1.9, 16, 16]} />
         <meshStandardMaterial
-          color="#60A5FA"
-          emissive="#2563EB"
+          color="#A855F7"
+          emissive="#7C3AED"
           emissiveIntensity={1.2}
           wireframe
           transparent
@@ -79,13 +79,13 @@ function CoreSphere() {
       </mesh>
 
       <mesh ref={ring1Ref} rotation={[Math.PI / 4, 0, 0]}>
-        <torusGeometry args={[2.0, 0.025, 16, 100]} />
-        <meshStandardMaterial color="#38BDF8" emissive="#0284C7" emissiveIntensity={2.5} />
+        <torusGeometry args={[2.4, 0.03, 16, 100]} />
+        <meshStandardMaterial color="#06B6D4" emissive="#06B6D4" emissiveIntensity={2.5} />
       </mesh>
 
       <mesh ref={ring2Ref} rotation={[-Math.PI / 3, Math.PI / 6, 0]}>
-        <torusGeometry args={[2.4, 0.025, 16, 100]} />
-        <meshStandardMaterial color="#818CF8" emissive="#4F46E5" emissiveIntensity={2.5} />
+        <torusGeometry args={[2.8, 0.03, 16, 100]} />
+        <meshStandardMaterial color="#A855F7" emissive="#9333EA" emissiveIntensity={2.5} />
       </mesh>
     </group>
   );
@@ -104,23 +104,23 @@ function OrbitingBadges() {
     <group ref={groupRef}>
       {AUTH_TECH_STACK.map((tech, index) => {
         const angle = (index / AUTH_TECH_STACK.length) * Math.PI * 2;
-        const radius = 3.0;
-        const height = Math.sin(index * 1.8) * 0.8;
+        const radius = 3.8;
+        const height = Math.sin(index * 1.8) * 1.0;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
         return (
           <group key={tech.name} position={[x, height, z]}>
             <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.5}>
-              <Html center distanceFactor={10.5}>
+              <Html center distanceFactor={11}>
                 <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0B0F19]/90 backdrop-blur-xl border text-xs font-bold whitespace-nowrap shadow-xl select-none"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full glass-panel border border-white/20 text-[8.5px] font-semibold whitespace-nowrap shadow-lg select-none"
                   style={{
-                    boxShadow: `0 0 14px ${tech.color}35`,
-                    borderColor: `${tech.color}45`,
+                    boxShadow: `0 0 12px ${tech.color}35`,
+                    borderColor: `${tech.color}55`,
                   }}
                 >
-                  <span className="text-xs">{tech.icon}</span>
+                  <span>{tech.icon}</span>
                   <span style={{ color: tech.color }}>{tech.name}</span>
                 </div>
               </Html>
@@ -146,22 +146,22 @@ export function AuthSceneCanvas() {
   const Icon = activeHighlight.icon;
 
   return (
-    <div className="w-full h-full relative flex flex-col justify-between p-4 sm:p-6 lg:p-8 pt-16 z-10 overflow-hidden">
+    <div className="w-full h-full relative flex flex-col justify-between p-4 sm:p-6 lg:p-8 z-10 overflow-hidden">
       {/* Ambient Radial Lighting */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/4 left-1/3 w-[350px] h-[350px] bg-cyan-600/15 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/3 w-[350px] h-[350px] bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Top Header Logo */}
-      <div className="flex items-center gap-3 z-20 pt-8 pl-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-blue-400 p-[1px] shadow-lg shadow-blue-500/30">
+      <div className="flex items-center gap-3 z-20">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/30">
           <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
-            <Sparkles size={18} className="text-cyan-400" />
+            <Sparkles size={20} className="text-cyan-400" />
           </div>
         </div>
         <div>
-          <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
+          <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
             Knowledge<span className="text-blue-500">Stream</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-cyan-300 font-mono border border-cyan-500/30">
+            <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-cyan-300 font-mono border border-cyan-500/30">
               AI OS
             </span>
           </span>
@@ -169,11 +169,11 @@ export function AuthSceneCanvas() {
       </div>
 
       {/* Center 3D Three.js AI Core Canvas */}
-      <div className="w-full h-[360px] sm:h-[450px] relative my-auto overflow-visible">
-        <Canvas camera={{ position: [0, 0, 8.5], fov: 46 }} gl={{ alpha: true }}>
+      <div className="w-full h-[380px] sm:h-[480px] relative my-auto">
+        <Canvas camera={{ position: [0, 0, 7.5], fov: 50 }} gl={{ alpha: true }}>
           <ambientLight intensity={0.8} />
           <directionalLight position={[10, 10, 5]} intensity={1.5} color="#3B82F6" />
-          <pointLight position={[-8, -5, -5]} intensity={1.5} color="#06B6D4" />
+          <pointLight position={[-8, -5, -5]} intensity={1.5} color="#A855F7" />
 
           <CoreSphere />
           <OrbitingBadges />
@@ -190,7 +190,7 @@ export function AuthSceneCanvas() {
       </div>
 
       {/* Bottom Text & Auto-Rotating Feature Checklist */}
-      <div className="space-y-2.5 z-20 max-w-xl pb-2 pl-2">
+      <div className="space-y-2.5 z-20 max-w-xl">
         <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
           Where Learning Meets <span className="gradient-text-hero">Intelligence.</span>
         </h1>

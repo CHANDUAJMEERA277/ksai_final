@@ -53,15 +53,8 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
 
   const forgotPasswordState = useMemo(() => validatePassword(forgotPassword), [forgotPassword]);
 
-  const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
-    if (e) e.preventDefault();
-
-    if (submitting) return;
-
-    if (!email.trim() || !password) {
-      setError("Please enter both email address and password.");
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     setError(null);
     setSubmitting(true);
@@ -70,13 +63,13 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        setError(data.error || "Login failed. Please check your credentials.");
+        setError(data.error || "Login failed.");
         setSubmitting(false);
         return;
       }
@@ -89,28 +82,20 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
     }
   };
 
-  const handleKeyDownEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      void handleSubmit(e);
-    }
-  };
+const handleGoogleSignIn = async () => {
+  setError(null);
+  setSuccessMessage(null);
 
-  const handleGoogleSignIn = async () => {
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard",
-      });
-    } catch (err) {
-      console.error("Google Sign-In Error:", err);
-      setError("Google Sign-In failed. Please try again.");
-    }
-  };
-
+  try {
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+    });
+  } catch (err) {
+    console.error("Google Sign-In Error:", err);
+    setError("Google Sign-In failed. Please try again.");
+  }
+};
   const handleForgotOtpSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
@@ -254,16 +239,16 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
   const renderForgotPasswordFlow = () => {
     if (forgotStep === "email") {
       return (
-        <form onSubmit={handleForgotOtpSend} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-200 block">Email Address</label>
+        <form onSubmit={handleForgotOtpSend} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#a0a0b0] block">Email Address</label>
             <div className="relative">
-              <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-cyan-400" />
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400/70" />
               <input
                 type="email"
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#161626] border border-white/15 text-sm text-white placeholder-[#6b7280] focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40"
+                className="w-full pl-9 pr-3 py-[clamp(0.35rem,0.9vh,0.5rem)] rounded-xl bg-[#1a1a2e] border border-white/10 text-white placeholder-[#6b7280] text-xs focus:outline-none focus:border-cyan-400"
                 placeholder="you@company.com"
               />
             </div>
@@ -272,12 +257,12 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
           <button
             type="submit"
             disabled={forgotSendingOtp || !forgotEmail.trim()}
-            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg"
+            className="w-full py-[clamp(0.45rem,1.1vh,0.65rem)] rounded-xl font-bold text-white text-[11px] bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {forgotSendingOtp ? "Sending reset code..." : "Send OTP"}
-            {forgotSendingOtp ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+            {forgotSendingOtp ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
           </button>
-          <button type="button" onClick={() => setForgotStep("login")} className="text-xs text-cyan-400 font-semibold hover:underline">
+          <button type="button" onClick={() => setForgotStep("login")} className="text-[11px] text-cyan-400 hover:underline">
             Back to login
           </button>
         </form>
@@ -286,9 +271,9 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
 
     if (forgotStep === "otp") {
       return (
-        <form onSubmit={handleForgotOtpVerify} className="space-y-4">
-          <div className="text-center text-xs text-slate-300">
-            Enter the 6-digit code sent to <span className="text-cyan-300 font-mono font-bold">{forgotEmail}</span>.
+        <form onSubmit={handleForgotOtpVerify} className="space-y-3">
+          <div className="text-center text-[11px] text-slate-400">
+            Enter the 6-digit code sent to <span className="text-cyan-300">{forgotEmail}</span>.
           </div>
           <div className="flex items-center justify-center gap-2" onPaste={handleForgotOtpPaste}>
             {forgotOtpDigits.map((digit, index) => (
@@ -303,23 +288,23 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
                 value={digit}
                 onChange={(event) => handleForgotOtpChange(index, event.target.value)}
                 onKeyDown={(event) => handleForgotOtpKeyDown(index, event)}
-                className="h-12 w-10 rounded-xl border border-purple-500/40 bg-[#161626] text-center text-base font-bold text-white focus:outline-none focus:border-cyan-400"
+                className="h-10 w-8 rounded-lg border border-purple-500/30 bg-[#1a1a2e] text-center text-sm font-semibold text-white"
               />
             ))}
           </div>
           <button
             type="submit"
             disabled={forgotVerifyingOtp || forgotOtpDigits.join("").length !== 6}
-            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg"
+            className="w-full py-[clamp(0.45rem,1.1vh,0.65rem)] rounded-xl font-bold text-white text-[11px] bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {forgotVerifyingOtp ? "Verifying..." : "Verify OTP"}
-            {forgotVerifyingOtp ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+            {forgotVerifyingOtp ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
           </button>
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <button type="button" onClick={() => handleForgotOtpSend()} className="text-cyan-400 hover:underline flex items-center gap-1 font-semibold" disabled={forgotSendingOtp || forgotCountdown > 0}>
-              <RotateCcw size={14} /> {forgotSendingOtp ? "Sending..." : forgotCountdown > 0 ? `Resend in ${forgotCountdown}s` : "Resend OTP"}
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <button type="button" onClick={() => handleForgotOtpSend()} className="text-cyan-400 hover:underline flex items-center gap-1" disabled={forgotSendingOtp || forgotCountdown > 0}>
+              <RotateCcw size={12} /> {forgotSendingOtp ? "Sending..." : forgotCountdown > 0 ? `Resend in ${forgotCountdown}s` : "Resend OTP"}
             </button>
-            <button type="button" onClick={() => setForgotStep("email")} className="hover:text-white font-semibold">
+            <button type="button" onClick={() => setForgotStep("email")} className="hover:text-white">
               Change email
             </button>
           </div>
@@ -329,41 +314,41 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
 
     if (forgotStep === "password") {
       return (
-        <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-200 block">New Password</label>
+        <form onSubmit={handleForgotPasswordSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#a0a0b0] block">New Password</label>
             <div className="relative">
-              <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400" />
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400/70" />
               <input
                 type={showForgotPassword ? "text" : "password"}
                 value={forgotPassword}
                 onChange={(e) => setForgotPassword(e.target.value)}
-                className="w-full pl-11 pr-10 py-3 rounded-2xl bg-[#161626] border border-white/15 text-sm text-white placeholder-[#6b7280] focus:outline-none focus:border-cyan-400"
+                className="w-full pl-9 pr-8 py-[clamp(0.35rem,0.9vh,0.5rem)] rounded-xl bg-[#1a1a2e] border border-white/10 text-white placeholder-[#6b7280] text-xs focus:outline-none focus:border-cyan-400"
                 placeholder="••••••••"
               />
-              <button type="button" onClick={() => setShowForgotPassword(!showForgotPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280]">
-                {showForgotPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              <button type="button" onClick={() => setShowForgotPassword(!showForgotPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280]">
+                {showForgotPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-200 block">Confirm Password</label>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#a0a0b0] block">Confirm Password</label>
             <div className="relative">
-              <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400" />
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400/70" />
               <input
                 type={showForgotConfirmPassword ? "text" : "password"}
                 value={forgotConfirmPassword}
                 onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                className="w-full pl-11 pr-10 py-3 rounded-2xl bg-[#161626] border border-white/15 text-sm text-white placeholder-[#6b7280] focus:outline-none focus:border-cyan-400"
+                className="w-full pl-9 pr-8 py-[clamp(0.35rem,0.9vh,0.5rem)] rounded-xl bg-[#1a1a2e] border border-white/10 text-white placeholder-[#6b7280] text-xs focus:outline-none focus:border-cyan-400"
                 placeholder="••••••••"
               />
-              <button type="button" onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280]">
-                {showForgotConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              <button type="button" onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280]">
+                {showForgotConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
           {forgotPassword.length > 0 && !forgotPasswordState.passed && (
-            <ul className="ml-4 text-xs text-slate-400 list-disc space-y-1">
+            <ul className="ml-4 text-[10px] text-slate-400 list-disc space-y-1">
               {forgotPasswordState.checks.map((check) => (
                 <li key={check.label}>{check.label}</li>
               ))}
@@ -372,12 +357,12 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
           <button
             type="submit"
             disabled={forgotSubmitting || !forgotPasswordState.passed || forgotPassword !== forgotConfirmPassword}
-            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg"
+            className="w-full py-[clamp(0.45rem,1.1vh,0.65rem)] rounded-xl font-bold text-white text-[11px] bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {forgotSubmitting ? "Updating password..." : "Update Password"}
-            {forgotSubmitting ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+            {forgotSubmitting ? <Loader2 size={12} className="animate-spin" /> : <ArrowRight size={12} />}
           </button>
-          <button type="button" onClick={() => setForgotStep("login")} className="text-xs text-cyan-400 font-semibold hover:underline">
+          <button type="button" onClick={() => setForgotStep("login")} className="text-[11px] text-cyan-400 hover:underline">
             Back to login
           </button>
         </form>
@@ -388,18 +373,18 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col justify-between">
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+    <div className="flex-1 min-h-0 flex flex-col justify-between">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-[clamp(0.35rem,1vh,0.75rem)] pr-1.5">
         {error && (
-          <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs sm:text-sm flex items-center gap-2">
-            <AlertCircle size={18} className="shrink-0 text-red-400" />
+          <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-[10px] flex items-center gap-1.5">
+            <AlertCircle size={14} className="shrink-0 text-red-400" />
             <span>{error}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm flex items-center gap-2">
-            <CheckCircle2 size={18} className="shrink-0 text-emerald-400" />
+          <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] flex items-center gap-1.5">
+            <CheckCircle2 size={14} className="shrink-0 text-emerald-400" />
             <span>{successMessage}</span>
           </div>
         )}
@@ -408,59 +393,53 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
           renderForgotPasswordFlow()
         ) : (
           <>
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200 block">
-                Email Address
-              </label>
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#a0a0b0] block">Email Address</label>
               <div className="relative">
-                <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-cyan-400" />
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400/70" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={handleKeyDownEnter}
                   placeholder="developer@knowledgestream.ai"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-[#161626] border border-white/15 text-sm sm:text-base text-white placeholder-slate-400 font-medium focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40 transition-all shadow-inner"
+                  className="w-full pl-9 pr-3 py-[clamp(0.35rem,0.9vh,0.5rem)] rounded-xl bg-[#1a1a2e] border border-white/10 text-white placeholder-[#6b7280] text-xs focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-0.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200">
-                  Password
-                </label>
-                <button type="button" onClick={() => setForgotStep("email")} className="text-xs text-cyan-400 font-semibold hover:underline">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#a0a0b0]">Password</label>
+                <button type="button" onClick={() => setForgotStep("email")} className="text-[10px] text-cyan-400/80 hover:text-cyan-400 hover:underline">
                   Forgot Password?
                 </button>
               </div>
               <div className="relative">
-                <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400" />
+                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400/70" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={handleKeyDownEnter}
                   placeholder="••••••••••••"
-                  className="w-full pl-11 pr-11 py-3.5 rounded-2xl bg-[#161626] border border-white/15 text-sm sm:text-base text-white placeholder-slate-400 font-medium focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40 transition-all shadow-inner"
+                  className="w-full pl-9 pr-8 py-[clamp(0.35rem,0.9vh,0.5rem)] rounded-xl bg-[#1a1a2e] border border-white/10 text-white placeholder-[#6b7280] text-xs focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 cursor-pointer">
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-cyan-400 cursor-pointer">
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 pt-1">
+            <div className="flex items-center gap-2 pt-0.5">
               <input
                 type="checkbox"
                 id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-purple-500/40 bg-[#161626] text-cyan-400 focus:ring-cyan-400 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                className="rounded border-purple-500/30 bg-[#1a1a2e] text-cyan-400 focus:ring-cyan-400 focus:ring-offset-0 w-3 h-3 cursor-pointer"
               />
-              <label htmlFor="remember" className="text-xs sm:text-sm text-slate-300 font-medium cursor-pointer select-none">
+              <label htmlFor="remember" className="text-[10px] text-[#a0a0b0] cursor-pointer select-none">
                 Remember me on this device
               </label>
             </div>
@@ -468,23 +447,24 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
         )}
       </div>
 
-      <div className="flex-shrink-0 pt-3 space-y-3">
+      <div className="flex-shrink-0 pt-2 space-y-2">
         {forgotStep === "login" ? (
           <>
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={submitting}
-              className="w-full py-3.5 sm:py-4 rounded-2xl font-black text-white text-sm sm:text-base bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2.5 group shadow-[0_0_20px_rgba(34,211,238,0.3),0_0_40px_rgba(139,92,246,0.2)] disabled:opacity-60 transition-all cursor-pointer"
+              className="w-full py-[clamp(0.45rem,1.1vh,0.65rem)] rounded-xl font-bold text-white text-[11px] bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center gap-2 group shadow-[0_0_20px_rgba(34,211,238,0.3),0_0_40px_rgba(139,92,246,0.2)] disabled:opacity-60 transition-all cursor-pointer"
             >
               {submitting ? "Signing in..." : "Login to AI Workspace"}
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
-            <div className="relative my-3 text-center">
+            <div className="relative my-2 text-center">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/15" />
+                <div className="w-full border-t border-white/10" />
               </div>
-              <span className="relative px-3 bg-[#0C0C14] text-[10px] sm:text-xs uppercase font-extrabold text-slate-400 tracking-wider">
+              <span className="relative px-2 bg-[#0a0a0f] text-[9px] uppercase font-bold text-[#6b7280] tracking-wider">
                 OR CONTINUE WITH
               </span>
             </div>
@@ -493,22 +473,22 @@ export function LoginForm({ onSubmitSuccess, onSwitchToSignUp, onGooglePrefill }
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full py-3 rounded-2xl bg-white/5 border border-white/15 hover:border-cyan-500/50 text-xs sm:text-sm font-bold text-slate-200 hover:text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                className="w-full py-1.5 rounded-xl bg-[#1a1a2e] border border-white/10 hover:border-cyan-500/40 text-[10px] font-semibold text-[#e2e8f0] hover:text-white flex items-center justify-center gap-1 transition-all cursor-pointer"
               >
-                <span className="text-base">🌐</span>
-                <span>Continue with Google</span>
+                <span>🌐</span>
+                <span>Google</span>
               </button>
             </div>
 
-            <div className="text-center pt-2 text-xs sm:text-sm text-slate-300 font-medium">
+            <div className="text-center pt-1 text-[11px] text-[#a0a0b0]">
               Don&apos;t have an account?{" "}
-              <button type="button" onClick={onSwitchToSignUp} className="text-cyan-400 font-extrabold hover:underline cursor-pointer ml-1">
+              <button type="button" onClick={onSwitchToSignUp} className="text-cyan-400 font-bold hover:underline cursor-pointer">
                 Create Account &rarr;
               </button>
             </div>
           </>
         ) : null}
       </div>
-    </form>
+    </div>
   );
 }

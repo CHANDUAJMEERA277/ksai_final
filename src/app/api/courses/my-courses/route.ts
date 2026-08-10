@@ -14,10 +14,6 @@ export async function GET(req: Request) {
     }
 
     if (!user) {
-      user = await db.user.findFirst();
-    }
-
-    if (!user) {
       return NextResponse.json({ success: true, enrollments: [] });
     }
 

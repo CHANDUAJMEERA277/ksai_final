@@ -85,17 +85,17 @@ function DarkSelect({ value, onChange, options, placeholder, hasError, onBlur }:
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex w-full items-center justify-between rounded-xl border px-3.5 py-2.5 text-left text-xs sm:text-sm font-medium focus:outline-none focus:border-cyan-400 ${
-          hasError ? "border-red-500/70 focus:border-red-400" : "border-white/15"
-        } ${value ? "text-white" : "text-slate-400"}`}
-        style={{ backgroundColor: "#161626" }}
+        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-xs focus:outline-none focus:border-cyan-400 ${
+          hasError ? "border-red-500/70 focus:border-red-400" : "border-white/10"
+        } ${value ? "text-white" : "text-slate-500"}`}
+        style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
       >
         <span className="truncate">{selectedLabel}</span>
-        <span className="ml-2 text-slate-400">▾</span>
+        <span className="ml-3 text-slate-400">▾</span>
       </button>
 
       {isOpen && (
-        <div className="absolute z-30 mt-1.5 w-full rounded-xl border border-white/15 bg-[#0C0C14]/95 p-1.5 shadow-2xl backdrop-blur-xl max-h-48 overflow-y-auto custom-scrollbar">
+        <div className="absolute z-30 mt-1.5 w-full rounded-xl border border-white/10 bg-[#0C0C14]/95 p-1.5 shadow-2xl backdrop-blur-xl max-h-48 overflow-y-auto custom-scrollbar">
           {options.map((option) => (
             <button
               key={option}
@@ -105,8 +105,8 @@ function DarkSelect({ value, onChange, options, placeholder, hasError, onBlur }:
                 onChange(option);
                 setIsOpen(false);
               }}
-              className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-xs sm:text-sm transition-colors ${
-                value === option ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-slate-200 hover:bg-white/10 hover:text-white"
+              className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-xs transition-colors ${
+                value === option ? "bg-cyan-500/15 text-cyan-300" : "text-slate-200 hover:bg-white/10 hover:text-white"
               }`}
             >
               {option}
@@ -272,7 +272,7 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
 
       setOtpDigits(Array(6).fill(""));
       setOtpCountdown(600);
-      setSuccessMessage("Verification code sent successfully. We have sent a verification code to your email.");
+      setSuccessMessage("Verification code sent successfully. We have sent a verification code to your email. Please check your inbox.");
       setStep("otp");
     } catch (err) {
       console.error(err);
@@ -347,7 +347,7 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
     const formErrors = [nameError, emailError, phoneError, collegeError, departmentError, yearError, passwordError, confirmError, termsError].filter(Boolean);
 
     if (formErrors.length > 0) {
-      setError("Please complete all required fields before continuing.");
+      setError("Please complete all highlighted required fields before continuing.");
       return;
     }
 
@@ -419,67 +419,72 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
   };
 
   const inputClassName = (hasError: boolean) =>
-    `w-full px-3.5 py-2.5 rounded-xl bg-[#161626] border text-white placeholder-slate-400 text-xs sm:text-sm font-medium focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40 ${
-      hasError ? "border-red-500/70 focus:border-red-400" : "border-white/15"
+    `w-full px-3 py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 ${
+      hasError ? "border-red-500/70 focus:border-red-400" : "border-white/10"
     }`;
 
-  const fieldLabelClassName = "text-xs font-bold uppercase tracking-wider text-slate-200 block mb-1";
+  const fieldLabelClassName = "text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300 block";
 
   return (
-    <div className="w-full">
+    <div className="flex h-full flex-col min-h-0">
       {error && (
-        <div className="p-2.5 mb-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+        <div className="p-3 mb-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2 shrink-0">
           <AlertCircle size={16} className="shrink-0 text-red-400" />
           <span>{error}</span>
         </div>
       )}
 
       {successMessage && (
-        <div className="p-2.5 mb-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between font-medium">
-          <span className="flex items-center gap-1.5 font-bold">
-            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" /> {successMessage}
-          </span>
+        <div className="p-3 mb-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 shrink-0">
+          <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+          <span>{successMessage}</span>
         </div>
       )}
 
       {step === "email" && (
-        <form onSubmit={handleSendOtp} className="space-y-4">
-          <div className="text-center space-y-1.5 py-2">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto text-cyan-400 mb-2 shadow-lg">
-              <ShieldCheck size={26} />
-            </div>
-            <h3 className="text-xl font-bold text-white">Verify Your Email First</h3>
-            <p className="text-xs text-slate-300 font-medium max-w-sm mx-auto">
-              Enter your email address below to receive a secure 6-digit verification code.
-            </p>
-          </div>
-
-          <div className="space-y-1.5 max-w-md mx-auto">
-            <label className={fieldLabelClassName}>Email Address</label>
-            <div className="relative">
-              <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-cyan-400" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                placeholder="alex@tech.com"
-                className={`pl-11 pr-4 ${inputClassName(false)}`}
-              />
+        <form onSubmit={handleSendOtp} className="flex h-full flex-col min-h-0 overflow-hidden">
+          <div className="shrink-0">
+            <div className="text-center space-y-1 py-2">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto text-cyan-400 mb-2">
+                <ShieldCheck size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-white">Verify Your Email First</h3>
+              <p className="text-xs text-slate-400">
+                Enter your email address below to receive a secure 6-digit verification code before starting registration.
+              </p>
             </div>
           </div>
 
-          <div className="pt-2 space-y-3 max-w-md mx-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-3">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className={fieldLabelClassName}>Email Address</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                    placeholder="alex@tech.com"
+                    className={`pl-9 pr-3 py-2.5 ${inputClassName(false)}`}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 pt-4 space-y-3 border-t border-white/10 mt-3">
             <button
               type="submit"
               disabled={sendingOtp || !email.trim()}
-              className="w-full py-3 rounded-xl font-extrabold text-white text-xs sm:text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl"
+              className="w-full py-3 rounded-xl font-bold text-white text-xs bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {sendingOtp ? "Sending OTP Code..." : "Verify Email & Send OTP"}
-              {sendingOtp ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+              {sendingOtp ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
             </button>
 
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-300 font-medium">
+            <div className="flex items-center justify-center gap-4 text-[11px] text-slate-400">
               <span>Already have an account?</span>
               <button type="button" onClick={onSwitchToLogin} className="text-cyan-400 font-bold hover:underline">
                 Login &rarr;
@@ -490,67 +495,73 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
       )}
 
       {step === "otp" && (
-        <form onSubmit={handleVerifyOtp} className="space-y-4">
-          <div className="text-center space-y-1.5 py-1">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto text-purple-400 mb-2 shadow-lg">
-              <KeyRound size={26} />
-            </div>
-            <h3 className="text-xl font-bold text-white">Verify Your Email</h3>
-            <p className="text-xs text-slate-300 font-medium">
-              We sent a 6-digit code to <strong className="text-cyan-300 font-mono">{email}</strong>.
-            </p>
-          </div>
-
-          <div className="space-y-1.5 max-w-md mx-auto">
-            <div className="flex items-center justify-between">
-              <label className={fieldLabelClassName}>Verification Code</label>
-              <button type="button" onClick={() => setStep("email")} className="text-xs text-cyan-400 hover:underline flex items-center gap-1 font-semibold">
-                <Edit2 size={12} /> Change email
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
-              {otpDigits.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(node) => {
-                    otpInputRefs.current[index] = node;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  autoFocus={index === 0}
-                  maxLength={1}
-                  value={digit}
-                  onChange={(event) => handleOtpChange(index, event.target.value)}
-                  onKeyDown={(event) => handleOtpKeyDown(index, event)}
-                  className="h-11 w-10 rounded-xl border border-purple-500/40 bg-[#161626] text-center text-base font-bold text-white outline-none focus:border-cyan-400"
-                />
-              ))}
+        <form onSubmit={handleVerifyOtp} className="flex h-full flex-col min-h-0 overflow-hidden">
+          <div className="shrink-0">
+            <div className="text-center space-y-1 py-1">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto text-purple-400 mb-2">
+                <KeyRound size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-white">Verify Your Email</h3>
+              <p className="text-xs text-slate-400">
+                We sent a 6-digit code to <strong className="text-cyan-300 font-mono">{email}</strong>. It expires in 10 minutes.
+              </p>
             </div>
           </div>
 
-          <div className="pt-2 space-y-3 max-w-md mx-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-3">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className={fieldLabelClassName}>Verification Code</label>
+                  <button type="button" onClick={() => setStep("email")} className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1">
+                    <Edit2 size={10} /> Change email
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(node) => {
+                        otpInputRefs.current[index] = node;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      autoFocus={index === 0}
+                      maxLength={1}
+                      value={digit}
+                      onChange={(event) => handleOtpChange(index, event.target.value)}
+                      onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                      className="h-12 w-11 rounded-xl border border-purple-500/30 bg-white/5 text-center text-base font-semibold text-white outline-none focus:border-cyan-400"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 pt-4 space-y-3 border-t border-white/10 mt-3">
             <button
               type="submit"
               disabled={verifyingOtp || otpCode.length !== 6}
-              className="w-full py-3 rounded-xl font-extrabold text-white text-xs sm:text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl"
+              className="w-full py-3 rounded-xl font-bold text-white text-xs bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {verifyingOtp ? "Verifying..." : "Verify OTP Code & Proceed"}
-              {verifyingOtp ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+              {verifyingOtp ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
             </button>
 
-            <div className="flex items-center justify-between text-xs text-slate-300 px-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
               <button
                 type="button"
                 onClick={() => handleSendOtp()}
                 disabled={sendingOtp || otpCountdown > 0}
                 className="text-cyan-400 hover:underline flex items-center gap-1 font-bold disabled:text-slate-500"
               >
-                <RotateCcw size={14} /> {sendingOtp ? "Resending..." : otpCountdown > 0 ? `Resend in ${otpCountdown}s` : "Resend OTP"}
+                <RotateCcw size={12} /> {sendingOtp ? "Resending..." : otpCountdown > 0 ? `Resend in ${otpCountdown}s` : "Resend OTP"}
               </button>
 
-              <button type="button" onClick={onSwitchToLogin} className="text-slate-300 hover:text-white font-medium">
+              <button type="button" onClick={onSwitchToLogin} className="text-slate-400 hover:text-white">
                 Back to Login
               </button>
             </div>
@@ -559,18 +570,8 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
       )}
 
       {step === "profile" && (
-        <form onSubmit={handleSubmitProfile} className="space-y-3.5">
-          {/* Email Verified Badge Bar */}
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between font-medium">
-            <span className="flex items-center gap-1.5 font-bold">
-              <CheckCircle2 size={15} className="text-emerald-400 shrink-0" /> Verified Email
-            </span>
-            <span className="font-mono text-cyan-300 text-xs font-semibold">{email}</span>
-          </div>
-
-          {/* Clean 2-Column Responsive Grid (No Scrolling Needed!) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Row 1: Full Name & Phone Number */}
+        <form onSubmit={handleSubmitProfile} className="flex flex-col h-full min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-2 space-y-3.5 custom-scrollbar">
             <div className="space-y-1">
               <label className={fieldLabelClassName}>Full Name</label>
               <div className="relative">
@@ -581,132 +582,166 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
                   onChange={(e) => setName(e.target.value)}
                   onBlur={() => setTouched((prev) => ({ ...prev, name: true }))}
                   placeholder="Alex Rivera"
-                  className={`pl-9 ${inputClassName(Boolean(validationErrors.name))}`}
+                  className={`pl-9 pr-3 py-2.5 ${inputClassName(Boolean(validationErrors.name))}`}
                 />
               </div>
-              {validationErrors.name && <p className="text-[11px] text-red-300">{validationErrors.name}</p>}
+              {validationErrors.name && <p className="text-[10px] text-red-300">{validationErrors.name}</p>}
             </div>
 
-            <div className="space-y-1">
-              <label className={fieldLabelClassName}>Phone Number</label>
-              <div className="relative">
-                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  onBlur={() => setTouched((prev) => ({ ...prev, phone: true }))}
-                  placeholder="9876543210"
-                  className={`pl-9 ${inputClassName(Boolean(validationErrors.phone))}`}
-                />
-              </div>
-              {validationErrors.phone && <p className="text-[11px] text-red-300">{validationErrors.phone}</p>}
-            </div>
-
-            {/* Row 2: College Name & Department */}
-            <div className="space-y-1">
-              <label className={fieldLabelClassName}>College Name</label>
-              <input
-                type="text"
-                value={collegeName}
-                onChange={(e) => setCollegeName(e.target.value)}
-                onBlur={() => setTouched((prev) => ({ ...prev, collegeName: true }))}
-                placeholder="Enter College Name"
-                className={inputClassName(Boolean(validationErrors.collegeName))}
-              />
-              {validationErrors.collegeName && <p className="text-[11px] text-red-300">{validationErrors.collegeName}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <label className={fieldLabelClassName}>Department</label>
-              <DarkSelect
-                value={department}
-                onChange={(value) => {
-                  setDepartment(value);
-                  setTouched((prev) => ({ ...prev, department: true }));
-                }}
-                options={DEPARTMENT_OPTIONS}
-                placeholder="Select Department"
-                hasError={Boolean(validationErrors.department)}
-                onBlur={() => setTouched((prev) => ({ ...prev, department: true }))}
-              />
-              {validationErrors.department && <p className="text-[11px] text-red-300">{validationErrors.department}</p>}
-            </div>
-
-            {/* Row 3: Current Studying Year & Custom Dept (if applicable) */}
-            <div className="space-y-1">
-              <label className={fieldLabelClassName}>Current Studying Year</label>
-              <DarkSelect
-                value={currentYear}
-                onChange={(value) => {
-                  setCurrentYear(value);
-                  setTouched((prev) => ({ ...prev, currentYear: true }));
-                }}
-                options={YEAR_OPTIONS}
-                placeholder="Select Year"
-                hasError={Boolean(validationErrors.currentYear)}
-                onBlur={() => setTouched((prev) => ({ ...prev, currentYear: true }))}
-              />
-              {validationErrors.currentYear && <p className="text-[11px] text-red-300">{validationErrors.currentYear}</p>}
-            </div>
-
-            {department === "Other" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className={fieldLabelClassName}>Custom Department</label>
+                <div className="flex items-center justify-between">
+                  <label className={fieldLabelClassName}>Email</label>
+                  <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-0.5">
+                    <CheckCircle2 size={10} /> Verified
+                  </span>
+                </div>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    readOnly
+                    className="pl-9 pr-3 py-2.5 w-full rounded-xl bg-white/10 border border-emerald-500/40 text-emerald-300 font-mono text-xs cursor-not-allowed opacity-90"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className={fieldLabelClassName}>Phone Number</label>
+                <div className="relative">
+                  <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    onBlur={() => setTouched((prev) => ({ ...prev, phone: true }))}
+                    placeholder="9876543210"
+                    className={`pl-9 pr-3 py-2.5 ${inputClassName(Boolean(validationErrors.phone))}`}
+                  />
+                </div>
+                {validationErrors.phone && <p className="text-[10px] text-red-300">{validationErrors.phone}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="space-y-1">
+                <label className={fieldLabelClassName}>College Name</label>
                 <input
                   type="text"
-                  value={customDepartment}
-                  onChange={(e) => setCustomDepartment(e.target.value)}
-                  placeholder="Enter Department"
-                  className={inputClassName(false)}
+                  value={collegeName}
+                  onChange={(e) => setCollegeName(e.target.value)}
+                  onBlur={() => setTouched((prev) => ({ ...prev, collegeName: true }))}
+                  placeholder="Enter College Name"
+                  className={inputClassName(Boolean(validationErrors.collegeName))}
                 />
+                {validationErrors.collegeName && <p className="text-[10px] text-red-300">{validationErrors.collegeName}</p>}
               </div>
-            ) : null}
 
-            {/* Row 4: Password & Confirm Password */}
-            <div className="space-y-1">
-              <label className={fieldLabelClassName}>Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-                  placeholder="••••••••"
-                  className={`pl-9 pr-8 ${inputClassName(Boolean(validationErrors.password))}`}
+              <div className="space-y-1">
+                <label className={fieldLabelClassName}>Department</label>
+                <DarkSelect
+                  value={department}
+                  onChange={(value) => {
+                    setDepartment(value);
+                    setTouched((prev) => ({ ...prev, department: true }));
+                  }}
+                  options={DEPARTMENT_OPTIONS}
+                  placeholder="Select Department"
+                  hasError={Boolean(validationErrors.department)}
+                  onBlur={() => setTouched((prev) => ({ ...prev, department: true }))}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                {validationErrors.department && <p className="text-[10px] text-red-300">{validationErrors.department}</p>}
               </div>
-              {validationErrors.password && <p className="text-[11px] text-red-300">{validationErrors.password}</p>}
+
+              {department === "Other" && (
+                <div className="space-y-1">
+                  <label className={fieldLabelClassName}>Custom Department</label>
+                  <input
+                    type="text"
+                    value={customDepartment}
+                    onChange={(e) => setCustomDepartment(e.target.value)}
+                    placeholder="Enter Department"
+                    className={inputClassName(false)}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className={fieldLabelClassName}>Current Studying Year</label>
+                <DarkSelect
+                  value={currentYear}
+                  onChange={(value) => {
+                    setCurrentYear(value);
+                    setTouched((prev) => ({ ...prev, currentYear: true }));
+                  }}
+                  options={YEAR_OPTIONS}
+                  placeholder="Select Year"
+                  hasError={Boolean(validationErrors.currentYear)}
+                  onBlur={() => setTouched((prev) => ({ ...prev, currentYear: true }))}
+                />
+                {validationErrors.currentYear && <p className="text-[10px] text-red-300">{validationErrors.currentYear}</p>}
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label className={fieldLabelClassName}>Confirm Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  onBlur={() => setTouched((prev) => ({ ...prev, confirmPassword: true }))}
-                  placeholder="••••••••"
-                  className={`pl-9 pr-8 ${inputClassName(Boolean(validationErrors.confirmPassword))}`}
-                />
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className={fieldLabelClassName}>Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
+                    placeholder="••••••••"
+                    className={`pl-9 pr-8 py-2.5 ${inputClassName(Boolean(validationErrors.password))}`}
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+                {validationErrors.password && <p className="text-[10px] text-red-300">{validationErrors.password}</p>}
+                {password.length > 0 && !passwordState.passed && (
+                  <div className="text-[10px] text-amber-300/90 space-y-1">
+                    <div className="flex items-center gap-1">
+                      <AlertCircle size={12} className="text-amber-400" />
+                      <span>Password requirements:</span>
+                    </div>
+                    <ul className="ml-4 list-disc space-y-0.5 text-slate-400">
+                      {passwordState.checks.map((check) => (
+                        <li key={check.label}>{check.label}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {password.length > 0 && passwordState.passed && <p className="text-[10px] text-emerald-400">✓ Strong password</p>}
               </div>
-              {validationErrors.confirmPassword && <p className="text-[11px] text-red-300">{validationErrors.confirmPassword}</p>}
+
+              <div className="space-y-1">
+                <label className={fieldLabelClassName}>Confirm Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onBlur={() => setTouched((prev) => ({ ...prev, confirmPassword: true }))}
+                    placeholder="••••••••"
+                    className={`pl-9 pr-3 py-2.5 ${inputClassName(Boolean(validationErrors.confirmPassword))}`}
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+                {validationErrors.confirmPassword && <p className="text-[10px] text-red-300">{validationErrors.confirmPassword}</p>}
+              </div>
             </div>
           </div>
 
-          {/* Bottom Actions & Terms */}
-          <div className="pt-2 border-t border-white/15 space-y-2.5">
-            <div className="flex items-center gap-2">
+          <div className="mt-3 border-t border-white/10 pt-3 space-y-2.5 bg-[#0C0C14]/80 backdrop-blur shrink-0">
+            <div className="flex items-start gap-2">
               <input
                 type="checkbox"
                 id="terms"
@@ -715,29 +750,29 @@ export function SignUpForm({ onSubmitSuccess, onSwitchToLogin, googlePrefill }: 
                   setAcceptTerms(e.target.checked);
                   setTouched((prev) => ({ ...prev, acceptTerms: true }));
                 }}
-                className="rounded border-white/20 bg-white/5 text-cyan-500 w-4 h-4 cursor-pointer"
+                className="mt-0.5 rounded border-white/20 bg-white/5 text-cyan-500"
               />
-              <label htmlFor="terms" className="text-xs text-slate-300 cursor-pointer font-medium">
-                I agree to KnowledgeStream AI <a href="#" onClick={(e) => e.preventDefault()} className="text-cyan-400 underline font-semibold">Terms of Service</a> &amp; <a href="#" onClick={(e) => e.preventDefault()} className="text-cyan-400 underline font-semibold">Privacy Policy</a>
+              <label htmlFor="terms" className="text-[11px] leading-5 text-slate-300 cursor-pointer">
+                I agree to KnowledgeStream AI <a href="#" onClick={(e) => e.preventDefault()} className="text-cyan-400 underline">Terms of Service</a> &amp; <a href="#" onClick={(e) => e.preventDefault()} className="text-cyan-400 underline">Privacy Policy</a>
               </label>
             </div>
-            {validationErrors.acceptTerms && <p className="text-xs text-red-300">{validationErrors.acceptTerms}</p>}
+            {validationErrors.acceptTerms && <p className="text-[10px] text-red-300">{validationErrors.acceptTerms}</p>}
 
             <button
               type="submit"
               disabled={submitting || !acceptTerms || !passwordState.passed || password !== confirmPassword}
-              className="w-full py-3 rounded-xl font-extrabold text-white text-sm bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 group disabled:opacity-50 shadow-xl"
+              className="w-full py-3 rounded-xl font-bold text-white text-xs bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 glow-btn flex items-center justify-center gap-2 group disabled:opacity-50"
             >
               {submitting ? "Creating Account..." : "Create Account & Start"}
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
+          </div>
 
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-300 font-medium">
-              <span>Already have an account?</span>
-              <button type="button" onClick={onSwitchToLogin} className="text-cyan-400 font-bold hover:underline">
-                Login &rarr;
-              </button>
-            </div>
+          <div className="flex items-center justify-center gap-4 text-[11px] text-slate-400 pt-2 shrink-0">
+            <span>Already have an account?</span>
+            <button type="button" onClick={onSwitchToLogin} className="text-cyan-400 font-bold hover:underline">
+              Login &rarr;
+            </button>
           </div>
         </form>
       )}

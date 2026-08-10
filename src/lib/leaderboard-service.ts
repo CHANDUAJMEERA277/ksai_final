@@ -83,19 +83,18 @@ export async function lockWeekSnapshot(weekStart: Date, weekEnd: Date) {
     return true; // Already locked
   }
 
-  // Compute final top 10 rankings for the week window
-  const topRankings = await computeLeaderboardData({
+  // Compute final rankings for ALL participants who earned XP in the week window
+  const allRankings = await computeLeaderboardData({
     scope: "global",
     window: "weekly",
     dateStart: weekStart,
     dateEnd: weekEnd,
-    limit: 10,
   });
 
-  // Write top rankings into WeeklyLeaderboardSnapshot
-  if (topRankings.entries.length > 0) {
+  // Write all rankings into WeeklyLeaderboardSnapshot
+  if (allRankings.entries.length > 0) {
     await db.weeklyLeaderboardSnapshot.createMany({
-      data: topRankings.entries.map((entry) => ({
+      data: allRankings.entries.map((entry) => ({
         weekStart,
         weekEnd,
         userId: entry.userId,
@@ -359,6 +358,13 @@ export async function getLeaderboardData({
         }
       }
 
+      const totalParticipants = await db.weeklyLeaderboardSnapshot.count({
+        where: {
+          weekStart: { equals: dateStart! },
+          locked: true,
+        },
+      });
+
       return {
         success: true,
         scope,
@@ -369,7 +375,7 @@ export async function getLeaderboardData({
         period: { start: dateStart, end: dateEnd },
         top10,
         currentUser: currentUserEntry,
-        totalParticipants: snapshots.length,
+        totalParticipants,
       };
     }
   }

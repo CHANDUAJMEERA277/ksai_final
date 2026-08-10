@@ -3,7 +3,6 @@ import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
-import { calculateUserLevelAndXp } from "@/lib/xp-service";
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +34,7 @@ export async function GET(req: Request) {
     }
 
     if (!user) {
-      // Fallback for local development testing/mock support if no active user session
-      user = await db.user.findFirst();
-      if (!user) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     // --- Dynamic Computations ---
@@ -433,21 +428,11 @@ export async function GET(req: Request) {
     }
 
     // K. Profile Widget Progress
-    const levelAndXp = await calculateUserLevelAndXp(user.id);
-
-    // Sync database caches if mismatch exists
-    const dbUser = await db.user.findUnique({ where: { id: user.id } });
-    if (dbUser && (dbUser.level !== levelAndXp.level || dbUser.xp !== levelAndXp.xp)) {
-      await db.user.update({
-        where: { id: user.id },
-        data: {
-          level: levelAndXp.level,
-          xp: levelAndXp.xp,
-        },
-      });
-      user = { ...user, level: levelAndXp.level, xp: levelAndXp.xp };
-    } else if (dbUser) {
-      user = dbUser;
+    let targetXp = 1000;
+    if (user.level >= 10) {
+      targetXp = 5000;
+    } else if (user.level >= 5) {
+      targetXp = 2500;
     }
 
     return NextResponse.json({
@@ -458,9 +443,9 @@ export async function GET(req: Request) {
         email: user.email,
         role: user.role,
         country: user.country,
-        level: levelAndXp.level,
-        xp: levelAndXp.xp,
-        targetXp: levelAndXp.targetXp
+        level: user.level,
+        xp: user.xp,
+        targetXp
       },
       stats: {
         coursesCount,

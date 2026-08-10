@@ -10,14 +10,11 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function AuthPage() {
   const [authUser, setAuthUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
 
-  React.useEffect(() => {
-    if (authUser) {
-      const timer = setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [authUser]);
+  const handleAuthSuccess = (user: { name?: string; email?: string; role?: string }) => {
+    setAuthUser(user);
+    const destination = user.role === "Admin" ? "/admin" : "/dashboard";
+    window.location.href = destination;
+  };
 
   return (
     <main className="relative min-h-screen bg-[#09090B] text-white overflow-hidden flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
@@ -46,7 +43,7 @@ export default function AuthPage() {
         <div className="lg:col-span-5 w-full min-h-screen flex items-center justify-center p-4 sm:p-8 lg:p-12 py-6 relative z-20">
           <AnimatePresence mode="wait">
             {!authUser ? (
-              <AuthGlassCard onAuthSuccess={(user) => setAuthUser(user)} />
+              <AuthGlassCard onAuthSuccess={handleAuthSuccess} />
             ) : (
               <motion.div
                 key="success"
@@ -73,10 +70,10 @@ export default function AuthPage() {
                 </div>
 
                 <a
-                  href="/dashboard"
+                  href={authUser.role === "Admin" ? "/admin" : "/dashboard"}
                   className="inline-block px-8 py-3.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 glow-btn"
                 >
-                  Enter OS Dashboard &rarr;
+                  {authUser.role === "Admin" ? "Enter Admin Dashboard →" : "Enter OS Dashboard →"}
                 </a>
               </motion.div>
             )}

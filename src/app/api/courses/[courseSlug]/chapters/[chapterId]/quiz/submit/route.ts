@@ -39,11 +39,7 @@ export async function POST(
     }
 
     if (!user) {
-      // Fallback for local development testing/mock support if no active user session
-      user = await db.user.findFirst();
-      if (!user) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     // Find course by slug

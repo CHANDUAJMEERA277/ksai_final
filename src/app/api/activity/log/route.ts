@@ -3,8 +3,6 @@ import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
-import { calculateUserLevelAndXp } from "@/lib/xp-service";
-import { XpSourceType } from "@/lib/xp-config";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +39,7 @@ export async function POST(req: Request) {
     }
 
     if (!user) {
-      user = await db.user.findFirst();
-      if (!user) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     // 2. Log activity in database
@@ -67,35 +62,33 @@ export async function POST(req: Request) {
     if (xpToAdd > 0) {
       const dbUser = await db.user.findUnique({ where: { id: user.id } });
       if (dbUser) {
-        await db.xpTransaction.create({
-          data: {
-            userId: user.id,
-            amount: xpToAdd,
-            source: "editor_practice",
-            createdAt: new Date(),
-          },
-        });
+        let currentXp = dbUser.xp + xpToAdd;
+        let currentLevel = dbUser.level;
+        
+        // Handle level up boundary checks
+        let targetXp = 1000;
+        if (currentLevel >= 10) targetXp = 5000;
+        else if (currentLevel >= 5) targetXp = 2500;
 
-        const levelAndXp = await calculateUserLevelAndXp(user.id);
-
-        if (levelAndXp.level > dbUser.level) {
-          for (let lvl = dbUser.level + 1; lvl <= levelAndXp.level; lvl++) {
-            await db.notification.create({
-              data: {
-                userId: user.id,
-                title: "Level Up! 🎉",
-                message: `Congratulations! You've reached Level ${lvl} through code editor practice!`,
-                read: false,
-              },
-            });
-          }
+        if (currentXp >= targetXp) {
+          currentXp -= targetXp;
+          currentLevel += 1;
+          
+          await db.notification.create({
+            data: {
+              userId: user.id,
+              title: "Level Up! 🎉",
+              message: `Congratulations! You've reached Level ${currentLevel} through code editor practice!`,
+              read: false,
+            },
+          });
         }
 
         await db.user.update({
           where: { id: user.id },
           data: {
-            xp: levelAndXp.xp,
-            level: levelAndXp.level,
+            xp: currentXp,
+            level: currentLevel,
           },
         });
       }
