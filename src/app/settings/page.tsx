@@ -329,22 +329,27 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Full Name */}
+                  {/* Full Name (Non-editable) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-700">Full Name</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-700">Full Name</label>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">🔒 Signup Field</span>
+                    </div>
                     <input
                       type="text"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      placeholder="e.g. Ajmeera Chandu"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#4F46E5] focus:bg-white transition-all"
+                      disabled
+                      title="Name provided at registration is non-editable"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-500 cursor-not-allowed"
                     />
                   </div>
 
-                  {/* Email Address (Read-only) */}
+                  {/* Email Address (Non-editable) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-700">Email Address (Account ID)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-700">Email Address (Account ID)</label>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">🔒 Signup Field</span>
+                    </div>
                     <input
                       type="email"
                       value={email}
@@ -353,7 +358,7 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  {/* Phone Number */}
+                  {/* Phone Number (Editable) */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-black text-slate-700">Phone Number</label>
                     <input
@@ -365,7 +370,7 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  {/* Country */}
+                  {/* Country (Editable) */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-black text-slate-700">Country / Region</label>
                     <input
@@ -377,27 +382,33 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  {/* College / Institution */}
+                  {/* College / Institution (Non-editable) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-700">College / Institution</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-700">College / Institution</label>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">🔒 Registered College</span>
+                    </div>
                     <input
                       type="text"
                       value={college}
-                      onChange={(e) => setCollege(e.target.value)}
-                      placeholder="e.g. JNTU Hyderabad"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#4F46E5] focus:bg-white transition-all"
+                      disabled
+                      title="College name provided at signup is non-editable"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-500 cursor-not-allowed"
                     />
                   </div>
 
-                  {/* Department */}
+                  {/* Department / Branch (Non-editable) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-700">Department / Major</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-700">Department / Branch</label>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">🔒 Registered Branch</span>
+                    </div>
                     <input
                       type="text"
                       value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      placeholder="Computer Science & Engineering"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#4F46E5] focus:bg-white transition-all"
+                      disabled
+                      title="Branch provided at signup is non-editable"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-500 cursor-not-allowed"
                     />
                   </div>
 

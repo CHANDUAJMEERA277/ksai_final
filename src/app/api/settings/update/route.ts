@@ -33,15 +33,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, phone, college, department, currentYear, country } = body;
+    const { phone, currentYear, country } = body;
 
+    // Only allow updating editable fields (Phone, Current Year, Country)
     const updatedUser = await db.user.update({
       where: { id: userId },
       data: {
-        ...(name && { name: name.trim() }),
         ...(phone !== undefined && { phone: phone ? phone.trim() : null }),
-        ...(college !== undefined && { college: college ? college.trim() : null }),
-        ...(department !== undefined && { department: department ? department.trim() : null }),
         ...(currentYear !== undefined && { currentYear: currentYear ? currentYear.trim() : null }),
         ...(country !== undefined && { country: country ? country.trim() : null }),
       },
