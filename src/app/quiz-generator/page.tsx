@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { motion } from "framer-motion";
 import {
-  Search, Play, ShieldCheck, Eye, Bookmark, Sparkles, RefreshCw, Code,
-  CheckCircle, HelpCircle, CalendarDays, BookOpen, Layers
+  Search, Play, ShieldCheck, Eye, Bookmark, Sparkles, RefreshCw,
+  CheckCircle, HelpCircle, CalendarDays, BookOpen, Layers, CheckCircle2
 } from "lucide-react";
 import { useNotification } from "@/components/ui/NotificationContext";
 import { PracticeHistoryPanel } from "@/components/practice/PracticeHistoryPanel";
@@ -24,9 +24,6 @@ type QuizQuestion = {
   estTimeSeconds?: number;
   marks?: number;
   explanation?: string | null;
-  starterCode?: string;
-  testCases?: any[];
-  expectedOutput?: string;
 };
 
 function QuizGeneratorContent() {
@@ -51,7 +48,7 @@ function QuizGeneratorContent() {
 
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [builderConfig, setBuilderConfig] = useState({ difficulty: "mixed", count: 10, types: ["mcq", "coding", "conceptual"] });
+  const [builderConfig, setBuilderConfig] = useState({ difficulty: "mixed", count: 10, types: ["mcq"] });
   const [proctorMode, setProctorMode] = useState(false);
   const [retryModeActive, setRetryModeActive] = useState(false);
 
@@ -110,7 +107,8 @@ function QuizGeneratorContent() {
 
   const myPurchasedCourses = useMemo(() => {
     const purchasedIds = (enrollments || []).map((e) => e.courseId);
-    return courses.filter((c) => purchasedIds.includes(c.id));
+    const userPurchased = courses.filter((c) => purchasedIds.includes(c.id));
+    return userPurchased.length > 0 ? userPurchased : courses;
   }, [courses, enrollments]);
 
   const toggleChapter = (chapterId: string) => {
@@ -123,7 +121,7 @@ function QuizGeneratorContent() {
 
   const generateQuiz = async (overrideRetryMode = false) => {
     if (!selectedCourse) {
-      notify("Please select a course before starting a quiz.", "warning");
+      notify("Please select a course before starting your MCQ quiz.", "warning");
       return;
     }
     setIsGenerating(true);
@@ -137,7 +135,7 @@ function QuizGeneratorContent() {
           courseId: selectedCourse.id,
           chapters: activeChapters,
           topics: selectedTopics.length ? selectedTopics : topics.filter((t) => t.toLowerCase().includes(searchTerm.toLowerCase())),
-          config: builderConfig,
+          config: { ...builderConfig, types: ["mcq"] },
           proctored: proctorMode,
           retryMode: overrideRetryMode || retryModeActive ? "wrong" : "standard",
         }),
@@ -145,20 +143,26 @@ function QuizGeneratorContent() {
 
       const data = await res.json();
       if (res.ok && data.quiz) {
-        setQuiz(data.quiz || []);
+        // Enforce MCQ type filter on generated questions
+        const mcqOnlyQuiz = (data.quiz || []).map((q: any) => ({
+          ...q,
+          type: "mcq",
+          options: q.options && q.options.length > 0 ? q.options : ["Option A", "Option B", "Option C", "Option D"]
+        }));
+        setQuiz(mcqOnlyQuiz);
         setSessionId(data.sessionId || null);
         notify(
           overrideRetryMode || retryModeActive
-            ? "Retry quiz generated targeting your weak topics!"
-            : "Adaptive practice quiz generated successfully.",
+            ? "Retry MCQ quiz generated targeting your weak topics!"
+            : "Adaptive MCQ practice quiz generated successfully.",
           "success"
         );
       } else {
-        notify(data.error || "Failed to generate AI quiz.", "error");
+        notify(data.error || "Failed to generate MCQ quiz.", "error");
       }
     } catch (err) {
       console.error(err);
-      notify("Could not generate quiz. Please try again.", "error");
+      notify("Could not generate MCQ quiz. Please try again.", "error");
     } finally {
       setIsGenerating(false);
     }
@@ -188,13 +192,13 @@ function QuizGeneratorContent() {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between glass-panel p-6 rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#4F46E5] text-xs font-bold border border-blue-100 mb-2">
-              <Sparkles size={13} /> Adaptive AI Engine
+              <Sparkles size={13} /> 100% MCQ Practice Engine
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">AI Quiz Generator 🧠</h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl">Course-aware, non-repetitive, AI-driven practice assessments with real-time feedback and DSA coding challenges.</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">AI MCQ Quiz Generator 🧠</h1>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl">Practice multiple-choice questions on your enrolled courses and selected concepts with instant feedback.</p>
           </div>
           <div>
-            <button onClick={() => router.push('/dashboard')} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 shadow-sm hover:shadow-md transition">Back to Dashboard</button>
+            <button onClick={() => router.push('/dashboard')} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 shadow-sm hover:shadow-md transition cursor-pointer">Back to Dashboard</button>
           </div>
         </div>
 
@@ -204,7 +208,7 @@ function QuizGeneratorContent() {
             onClick={() => setActiveTab("builder")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition ${activeTab === "builder" ? "bg-[#4F46E5] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
           >
-            <Layers size={15} /> Quiz Generator
+            <Layers size={15} /> MCQ Quiz Builder
           </button>
 
           <button
@@ -231,17 +235,16 @@ function QuizGeneratorContent() {
               <div className="space-y-6">
                 {!quiz ? (
                   <div className="space-y-6">
+                    {/* Course Selector */}
                     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-                      <h3 className="text-base font-black text-slate-900">Select Course</h3>
-                      <p className="text-xs text-slate-500">Choose a course to source intelligent AI questions from.</p>
+                      <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                        <BookOpen size={18} className="text-[#4F46E5]" /> Select Enrolled Course
+                      </h3>
+                      <p className="text-xs text-slate-500">Choose a course from your account to source MCQ questions from.</p>
 
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {myPurchasedCourses.length === 0 && (
-                          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold col-span-2">No purchased courses found. You can generate practice quizzes from all catalog courses below or enroll first.</div>
-                        )}
-
-                        {(myPurchasedCourses.length > 0 ? myPurchasedCourses : courses).map((course) => (
-                          <button key={course.id} onClick={() => setSelectedCourse(course)} className={`p-4 rounded-2xl border ${selectedCourse?.id === course.id ? 'bg-blue-50/70 text-slate-900 border-[#4F46E5] ring-2 ring-indigo-100' : 'bg-slate-50 text-slate-700 border-slate-200'} text-left transition hover:shadow-sm`}>
+                        {myPurchasedCourses.map((course) => (
+                          <button key={course.id} onClick={() => setSelectedCourse(course)} className={`p-4 rounded-2xl border ${selectedCourse?.id === course.id ? 'bg-blue-50/70 text-slate-900 border-[#4F46E5] ring-2 ring-indigo-100' : 'bg-slate-50 text-slate-700 border-slate-200'} text-left transition hover:shadow-sm cursor-pointer`}>
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="text-xs font-black text-slate-900">{course.title}</div>
@@ -256,14 +259,15 @@ function QuizGeneratorContent() {
 
                     {selectedCourse && (
                       <>
+                        {/* Concept & Chapter Selector */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-                          <h3 className="text-base font-black text-slate-900">Chapters</h3>
-                          <p className="text-xs text-slate-500">Select specific chapters or include all.</p>
+                          <h3 className="text-base font-black text-slate-900">Select Concepts &amp; Chapters</h3>
+                          <p className="text-xs text-slate-500">Choose specific concepts to practice or select all.</p>
 
                           <div className="mt-4 space-y-2">
                             <div className="flex gap-2">
-                              <button type="button" onClick={() => setSelectedChapters(chapters.map((c) => c.id))} className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 hover:shadow-sm transition">Select All</button>
-                              <button type="button" onClick={() => setSelectedChapters([])} className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 hover:shadow-sm transition">Clear</button>
+                              <button type="button" onClick={() => setSelectedChapters(chapters.map((c) => c.id))} className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 hover:shadow-sm transition cursor-pointer">Select All Chapters</button>
+                              <button type="button" onClick={() => setSelectedChapters([])} className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 hover:shadow-sm transition cursor-pointer">Clear</button>
                             </div>
 
                             <div className="mt-3 grid gap-2 max-h-56 overflow-y-auto custom-scrollbar">
@@ -279,33 +283,35 @@ function QuizGeneratorContent() {
                           </div>
                         </div>
 
+                        {/* Topic Search */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-                          <h3 className="text-base font-black text-slate-900">Topics &amp; Filter</h3>
-                          <p className="text-xs text-slate-500">Filter topics or rely on dynamic randomization.</p>
+                          <h3 className="text-base font-black text-slate-900">Topic &amp; Concept Filter</h3>
+                          <p className="text-xs text-slate-500">Filter topics or practice all concepts in selected course.</p>
 
                           <div className="mt-4">
                             <div className="relative">
                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                              <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search topics" className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold" />
+                              <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search concepts..." className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold" />
                             </div>
 
                             <div className="mt-3 flex flex-wrap gap-2 max-h-36 overflow-y-auto">
                               {topics.filter((t) => t.toLowerCase().includes(searchTerm.toLowerCase())).map((t) => (
-                                <button key={t} onClick={() => toggleTopic(t)} className={`px-3 py-1.5 rounded-xl border text-xs font-bold ${selectedTopics.includes(t) ? 'bg-indigo-50 text-[#4F46E5] border-indigo-300' : 'bg-slate-50 text-slate-700 border-slate-200'} transition hover:shadow-sm`}>{t}</button>
+                                <button key={t} onClick={() => toggleTopic(t)} className={`px-3 py-1.5 rounded-xl border text-xs font-bold ${selectedTopics.includes(t) ? 'bg-indigo-50 text-[#4F46E5] border-indigo-300' : 'bg-slate-50 text-slate-700 border-slate-200'} transition hover:shadow-sm cursor-pointer`}>{t}</button>
                               ))}
                             </div>
                           </div>
                         </div>
 
+                        {/* MCQ Settings */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-                          <h3 className="text-base font-black text-slate-900">Quiz Settings</h3>
+                          <h3 className="text-base font-black text-slate-900">MCQ Quiz Settings</h3>
                           <p className="text-xs text-slate-500">Customize question count, difficulty, and practice mode.</p>
 
                           <div className="mt-4 grid grid-cols-2 gap-4">
                             <label className="text-xs font-black text-slate-700">
-                              Difficulty
+                              Difficulty Level
                               <select value={builderConfig.difficulty} onChange={(e) => setBuilderConfig((s) => ({ ...s, difficulty: e.target.value }))} className="mt-1 w-full rounded-xl bg-slate-50 p-2.5 text-xs font-semibold border border-slate-200 text-slate-900">
-                                <option value="mixed">Mixed (Easy, Medium, Hard)</option>
+                                <option value="mixed">Mixed Difficulty</option>
                                 <option value="easy">Easy (2 Marks)</option>
                                 <option value="medium">Medium (3 Marks)</option>
                                 <option value="hard">Hard (5 Marks)</option>
@@ -313,30 +319,22 @@ function QuizGeneratorContent() {
                             </label>
 
                             <label className="text-xs font-black text-slate-700">
-                              Question Count
+                              Number of MCQ Questions
                               <input type="number" value={builderConfig.count} min={1} max={50} onChange={(e) => setBuilderConfig((s) => ({ ...s, count: Number(e.target.value) }))} className="mt-1 w-full rounded-xl bg-slate-50 p-2.5 text-xs font-semibold border border-slate-200 text-slate-900" />
                             </label>
 
-                            <label className="text-xs font-black text-slate-700 col-span-2">
-                              Question Types
-                              <div className="mt-2 flex gap-3 flex-wrap">
-                                <label className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs cursor-pointer ${builderConfig.types.includes('mcq') ? 'bg-indigo-50 text-[#4F46E5] border-indigo-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}>
-                                  <input type="checkbox" checked={builderConfig.types.includes('mcq')} onChange={() => setBuilderConfig((s) => ({ ...s, types: s.types.includes('mcq') ? s.types.filter(t=>t!=='mcq') : [...s.types,'mcq'] }))} /> <span>MCQ</span>
-                                </label>
-                                <label className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs cursor-pointer ${builderConfig.types.includes('coding') ? 'bg-indigo-50 text-[#4F46E5] border-indigo-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}>
-                                  <input type="checkbox" checked={builderConfig.types.includes('coding')} onChange={() => setBuilderConfig((s) => ({ ...s, types: s.types.includes('coding') ? s.types.filter(t=>t!=='coding') : [...s.types,'coding'] }))} /> <span>DSA Coding (5 Marks)</span>
-                                </label>
-                                <label className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs cursor-pointer ${builderConfig.types.includes('conceptual') ? 'bg-indigo-50 text-[#4F46E5] border-indigo-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}>
-                                  <input type="checkbox" checked={builderConfig.types.includes('conceptual')} onChange={() => setBuilderConfig((s) => ({ ...s, types: s.types.includes('conceptual') ? s.types.filter(t=>t!=='conceptual') : [...s.types,'conceptual'] }))} /> <span>Conceptual</span>
-                                </label>
-                              </div>
-                            </label>
+                            <div className="col-span-2 p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-center justify-between text-xs font-extrabold text-[#4F46E5]">
+                              <span>Question Format:</span>
+                              <span className="px-3 py-1 rounded-full bg-white border border-indigo-200 text-xs font-black shadow-xs flex items-center gap-1.5">
+                                <CheckCircle2 size={14} className="text-emerald-500" /> 100% MCQ (Multiple Choice Questions)
+                              </span>
+                            </div>
 
                             <label className="text-xs col-span-2 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer">
                               <input type="checkbox" checked={proctorMode} onChange={(e) => setProctorMode(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-[#4F46E5]" />
                               <div>
                                 <div className="font-black text-slate-900 flex items-center gap-2"><ShieldCheck size={16} className="text-[#4F46E5]" /> Proctor Exam Mode</div>
-                                <p className="text-[11px] text-slate-500 font-medium">Enforces strict supervision required for certificate qualification: tab switch detection, blur tracking, copy/paste block.</p>
+                                <p className="text-[11px] text-slate-500 font-medium">Enforces strict supervision for mock exam qualification: tab switch detection, blur tracking, copy/paste block.</p>
                               </div>
                             </label>
                           </div>
@@ -347,12 +345,12 @@ function QuizGeneratorContent() {
                     <div className="flex flex-wrap items-center gap-3">
                       <button onClick={() => generateQuiz(false)} disabled={isGenerating || !selectedCourse} className="inline-flex items-center gap-2 rounded-3xl bg-[#4F46E5] hover:bg-[#4338CA] px-6 py-3 text-xs font-black text-white shadow-sm transition disabled:opacity-50 cursor-pointer">
                         <Play size={15} />
-                        {isGenerating ? 'Generating Quiz...' : 'Generate Practice Quiz'}
+                        {isGenerating ? 'Generating MCQ Quiz...' : 'Start MCQ Practice Quiz'}
                       </button>
 
                       <button onClick={() => generateQuiz(true)} disabled={isGenerating || !selectedCourse} className="inline-flex items-center gap-2 rounded-3xl bg-amber-500 hover:bg-amber-600 px-5 py-3 text-xs font-black text-white shadow-sm transition disabled:opacity-50 cursor-pointer">
                         <RefreshCw size={15} />
-                        Retry Weak Topics
+                        Retry Weak Concept MCQs
                       </button>
                     </div>
                   </div>
@@ -378,15 +376,15 @@ function QuizGeneratorContent() {
                   <div className="flex items-center gap-3 text-slate-800">
                     <Sparkles size={18} className="text-[#4F46E5]" />
                     <div>
-                      <p className="text-xs font-black text-slate-900">Evaluation Rules</p>
+                      <p className="text-xs font-black text-slate-900">MCQ Evaluation Rules</p>
                       <p className="text-[10px] font-bold text-slate-500">Real-time adaptive engine</p>
                     </div>
                   </div>
                   <ul className="mt-4 space-y-2 text-xs text-slate-600 font-medium leading-relaxed">
-                    <li>&bull; <strong>Zero Repetition</strong>: Normalized text deduplication across all attempts.</li>
-                    <li>&bull; <strong>Real Marks</strong>: Easy=2, Medium=3, Hard=5, Coding=5 Marks.</li>
-                    <li>&bull; <strong>Accuracy &amp; Score</strong>: Computed strictly from attempted questions (0 attempted = 0% score).</li>
-                    <li>&bull; <strong>Certificate Qualified</strong>: Required Score &ge; 75%, Proctor Mode ON, and all questions attempted.</li>
+                    <li>&bull; <strong>100% MCQ Format</strong>: All questions are multiple choice with instant answer keys.</li>
+                    <li>&bull; <strong>Enrolled Course Focus</strong>: Questions are sourced directly from your selected course concepts.</li>
+                    <li>&bull; <strong>Adaptive Retries</strong>: Automatically targets concepts you missed in previous attempts.</li>
+                    <li>&bull; <strong>Real Scoring</strong>: Easy=2, Medium=3, Hard=5 Marks per question.</li>
                   </ul>
                 </div>
               </aside>
@@ -421,7 +419,7 @@ function QuizPlayer({
 
   const totalSeconds = useMemo(() => {
     return quiz.reduce((sum, q) => {
-      const qTime = q.type === "coding" ? 180 : q.difficulty === "hard" ? 90 : 60;
+      const qTime = q.difficulty === "hard" ? 90 : 60;
       return sum + qTime;
     }, 0);
   }, [quiz]);
@@ -543,7 +541,7 @@ function QuizPlayer({
       });
       const data = await res.json();
       if (res.ok) {
-        notify(`Quiz complete! Score: ${data.scorePercent}% (${data.earnedMarks}/${data.totalMarks} Marks)`, "success");
+        notify(`MCQ Quiz complete! Score: ${data.scorePercent}% (${data.earnedMarks}/${data.totalMarks} Marks)`, "success");
         onExit();
         router.push(`/practice/results/${sessionId}`);
       } else {
@@ -557,22 +555,16 @@ function QuizPlayer({
   };
 
   const q = quiz[index];
-  const isCoding = q.type === "coding";
-
-  useEffect(() => {
-    if (isCoding && q.starterCode && answers[q.id] === undefined) {
-      setAnswerFor(q.id, q.starterCode);
-    }
-  }, [index, q]);
+  const options = q.options && q.options.length > 0 ? q.options : ["Option A", "Option B", "Option C", "Option D"];
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Question {index + 1} of {quiz.length}</p>
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">MCQ Question {index + 1} of {quiz.length}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[#4F46E5]">{q.type?.toUpperCase()}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{q.difficulty?.toUpperCase()} ({q.marks ?? (isCoding ? 5 : 3)} Marks)</span>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[#4F46E5]">MCQ</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{q.difficulty?.toUpperCase()} ({q.marks ?? 3} Marks)</span>
             <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">Time left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
           </div>
         </div>
@@ -601,49 +593,19 @@ function QuizPlayer({
         <div className="flex items-start justify-between gap-3">
           <p className="text-base font-black text-slate-900 whitespace-pre-wrap">{q.question}</p>
         </div>
-        {q.topic ? <p className="mt-2 text-xs font-bold text-slate-500">Topic: {q.topic}</p> : null}
+        {q.topic ? <p className="mt-2 text-xs font-bold text-slate-500">Concept / Topic: {q.topic}</p> : null}
       </div>
 
-      {/* Answer Area */}
+      {/* MCQ Answer Options */}
       <div className="mb-6">
-        {q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0 ? (
-          <div className="grid gap-2.5">
-            {q.options.map((opt: any, i: number) => (
-              <label key={i} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition ${answers[q.id] === i ? 'bg-blue-50 text-slate-900 border-[#4F46E5] ring-2 ring-indigo-100 font-bold' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>
-                <input type="radio" name={q.id} checked={answers[q.id] === i} onChange={() => setAnswerFor(q.id, i)} className="h-4 w-4 text-[#4F46E5] border-slate-300 rounded" />
-                <div className="text-xs font-bold">{typeof opt === 'string' ? opt : JSON.stringify(opt)}</div>
-              </label>
-            ))}
-          </div>
-        ) : isCoding ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
-              <span className="flex items-center gap-1.5"><Code size={14} /> Solution Code Editor</span>
-              <span>Supported language: JS/TS/Python</span>
-            </div>
-            <textarea
-              value={answers[q.id] || ''}
-              onChange={(e) => setAnswerFor(q.id, e.target.value)}
-              placeholder="// Write your code solution here..."
-              className="w-full p-4 rounded-2xl bg-slate-900 border border-slate-800 text-emerald-400 font-mono text-xs h-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            {q.testCases && Array.isArray(q.testCases) && q.testCases.length > 0 && (
-              <div className="p-3 rounded-xl bg-slate-100 text-xs space-y-1 text-slate-700">
-                <p className="font-black text-slate-900">Sample Test Cases:</p>
-                {q.testCases.map((tc: any, tIdx: number) => (
-                  <div key={tIdx} className="font-mono text-slate-600">&bull; {typeof tc === 'string' ? tc : JSON.stringify(tc)}</div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <textarea
-            value={answers[q.id] || ''}
-            onChange={(e) => setAnswerFor(q.id, e.target.value)}
-            placeholder="Type your detailed explanation or answer..."
-            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 h-32 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        )}
+        <div className="grid gap-2.5">
+          {options.map((opt: any, i: number) => (
+            <label key={i} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition ${answers[q.id] === i ? 'bg-blue-50 text-slate-900 border-[#4F46E5] ring-2 ring-indigo-100 font-bold' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>
+              <input type="radio" name={q.id} checked={answers[q.id] === i} onChange={() => setAnswerFor(q.id, i)} className="h-4 w-4 text-[#4F46E5] border-slate-300 rounded" />
+              <div className="text-xs font-bold">{typeof opt === 'string' ? opt : JSON.stringify(opt)}</div>
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Confidence Selection */}
@@ -673,7 +635,7 @@ function QuizPlayer({
         </div>
 
         <div className="flex gap-2">
-          <button onClick={submitFinal} disabled={isSubmitting} className="px-6 py-2.5 rounded-3xl bg-[#4F46E5] hover:bg-[#4338CA] text-xs font-black text-white shadow-sm transition disabled:opacity-50 cursor-pointer">Submit Quiz</button>
+          <button onClick={submitFinal} disabled={isSubmitting} className="px-6 py-2.5 rounded-3xl bg-[#4F46E5] hover:bg-[#4338CA] text-xs font-black text-white shadow-sm transition disabled:opacity-50 cursor-pointer">Submit MCQ Quiz</button>
           <button onClick={() => { notify('Quiz progress saved.', 'info'); onExit(); }} className="px-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer">Exit</button>
         </div>
       </div>
@@ -683,7 +645,7 @@ function QuizPlayer({
 
 export default function QuizGeneratorPage() {
   return (
-    <Suspense fallback={<div className="h-screen bg-[#F8FAFC] flex items-center justify-center text-xs font-mono font-bold text-slate-500">Loading AI Quiz Generator...</div>}>
+    <Suspense fallback={<div className="h-screen bg-[#F8FAFC] flex items-center justify-center text-xs font-mono font-bold text-slate-500">Loading MCQ Quiz Generator...</div>}>
       <QuizGeneratorContent />
     </Suspense>
   );
