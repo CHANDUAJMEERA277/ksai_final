@@ -69,6 +69,7 @@ function EditorLayout() {
           else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
           else if (tab === "Editor" || tab === "Workspace") router.push("/editor");
           else if (tab === "Certificates") router.push("/certificates");
+          else if (tab === "Interview Prep") router.push("/interview");
           else if (tab === "Settings") router.push("/settings");
         }}
         fullHeight={true}
