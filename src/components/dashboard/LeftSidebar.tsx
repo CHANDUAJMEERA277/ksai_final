@@ -261,23 +261,19 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
               isActive = true;
             } else if (item.id === "Resume Builder" && pathname.startsWith("/resume-builder")) {
               isActive = true;
-            } else if (item.id === "Interview Prep" && pathname.startsWith("/interview-prep")) {
+            } else if (item.id === "Interview Prep" && pathname.startsWith("/interview")) {
               isActive = true;
             } else if (item.id === "Settings" && pathname.startsWith("/settings")) {
               isActive = true;
             }
           }
 
-          const isLocked = !isPro && (item.id === "Resume Builder" || item.id === "Interview Prep");
+          const isLocked = false;
 
           return (
             <button
               key={item.id}
               onClick={() => {
-                if (isLocked) {
-                  alert("🔒 This feature is premium. Please upgrade to Pro Developer to unlock!");
-                  return;
-                }
                 onTabChange(item.id);
                 
                 if (item.id === "Explore Courses") {
@@ -297,7 +293,7 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
                 } else if (item.id === "Resume Builder") {
                   router.push("/resume-builder");
                 } else if (item.id === "Interview Prep") {
-                  router.push("/interview-prep");
+                  router.push("/interview");
                 } else if (item.id === "Settings") {
                   router.push("/settings");
                 }
