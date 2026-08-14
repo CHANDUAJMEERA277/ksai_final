@@ -7,10 +7,12 @@ import { useTabs } from "./tabs/TabContext";
 import { useTerminal } from "./terminal/TerminalContext";
 
 import { useEditor } from "./EditorContext";
+import { useLanguage } from "./languages/LanguageContext";
 import { parseJavaCompilerError } from "./monaco/ErrorParser";
 
 export default function RunButton() {
   const { activeTab } = useTabs();
+  const { language } = useLanguage();
   const { setDiagnostics } = useEditor();
 
   const {
@@ -33,7 +35,7 @@ export default function RunButton() {
         },
         body: JSON.stringify({
           code: activeTab?.content,
-          language: "java",
+          language: activeTab?.language || language?.id || "java",
         }),
       });
 
