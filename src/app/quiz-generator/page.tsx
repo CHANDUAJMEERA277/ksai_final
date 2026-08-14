@@ -72,15 +72,12 @@ function QuizGeneratorContent() {
   useEffect(() => {
     if (selectedCourse) {
       setChapters(selectedCourse.chapters || []);
-      // Auto-select all chapters by default for best user experience
-      const allChapterIds = (selectedCourse.chapters || []).map((ch: any) => ch.id);
-      setSelectedChapters(allChapterIds);
+      setSelectedChapters([]);
     } else if (courses.length > 0) {
-      // Auto select first course if none selected
       const firstCourse = courses[0];
       setSelectedCourse(firstCourse);
       setChapters(firstCourse.chapters || []);
-      setSelectedChapters((firstCourse.chapters || []).map((ch: any) => ch.id));
+      setSelectedChapters([]);
     }
   }, [selectedCourse, courses]);
 

@@ -71,13 +71,12 @@ function PracticeContent() {
   useEffect(() => {
     if (selectedCourse) {
       setChapters(selectedCourse.chapters || []);
-      const allChapterIds = (selectedCourse.chapters || []).map((ch: any) => ch.id);
-      setSelectedChapters(allChapterIds);
+      setSelectedChapters([]);
     } else if (courses.length > 0) {
       const firstCourse = courses[0];
       setSelectedCourse(firstCourse);
       setChapters(firstCourse.chapters || []);
-      setSelectedChapters((firstCourse.chapters || []).map((ch: any) => ch.id));
+      setSelectedChapters([]);
     }
   }, [selectedCourse, courses]);
 
