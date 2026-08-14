@@ -2569,7 +2569,7 @@ console.log(
 
   return (
 
-    <div className="min-h-screen bg-[#050507] text-white">
+    <div className="h-screen bg-[#050507] text-white flex flex-col overflow-hidden font-sans">
 
       {proctorWarning && (
   <div className="fixed top-20 right-5 z-[100] w-[320px] rounded-2xl border border-amber-500/30 bg-[#15120A] p-4 shadow-2xl">
