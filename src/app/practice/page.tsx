@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { motion } from "framer-motion";
@@ -25,7 +25,7 @@ type QuizQuestion = {
   expectedOutput?: string;
 };
 
-export default function PracticePage() {
+function PracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { notify } = useNotification();
@@ -654,5 +654,13 @@ function QuizPlayer({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PracticePage() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-[#F8FAFC] flex items-center justify-center text-xs font-mono font-bold text-slate-500">Loading Practice Workspace...</div>}>
+      <PracticeContent />
+    </Suspense>
   );
 }
