@@ -68,13 +68,6 @@ const MENU_ITEMS = [
   },
 
   {
-    id: "AI Mentor",
-    label: "CodexAI",
-    icon: Code2,
-    category: "AI Tools",
-  },
-
-  {
     id: "AI Quiz Generator",
     label: "AI Quiz Generator",
     icon: Brain,
@@ -82,9 +75,9 @@ const MENU_ITEMS = [
   },
 
   {
-    id: "Workspace",
+    id: "Editor",
     label: "Editor",
-    icon: LayoutGrid,
+    icon: Code2,
     category: "Main",
   },
 

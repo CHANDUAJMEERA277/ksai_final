@@ -378,9 +378,8 @@ export default function DashboardPage() {
           if (tab === "Explore Courses") router.push("/courses/catalog");
           else if (tab === "Courses") router.push("/courses");
           else if (tab === "Leaderboard") router.push("/leaderboard");
-          else if (tab === "AI Mentor") router.push("/codexai");
           else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
-          else if (tab === "Workspace") router.push("/workspace");
+          else if (tab === "Editor" || tab === "Workspace") router.push("/editor");
           else if (tab === "Certificates") router.push("/certificates");
           else if (tab === "Settings") router.push("/settings");
         }} 
