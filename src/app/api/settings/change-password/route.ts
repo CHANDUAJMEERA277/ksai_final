@@ -75,9 +75,16 @@ export async function POST(req: Request) {
 
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
 
+    // Update User table password hash
     await db.user.update({
       where: { id: userId },
       data: { passwordHash: newPasswordHash },
+    });
+
+    // Synchronize Account table password for Better Auth credential adapter
+    await db.account.updateMany({
+      where: { userId },
+      data: { password: newPasswordHash },
     });
 
     return NextResponse.json({

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
@@ -15,9 +16,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const cleanEmail = email.toLowerCase().trim();
+
     // Find user by email in local database
     const user = await db.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: cleanEmail },
     });
 
     if (!user) {
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify password hash
+    // Verify password hash against User.passwordHash
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -47,6 +50,12 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+
+    // Sync Account table password hash for Better Auth compatibility
+    await db.account.updateMany({
+      where: { userId: user.id },
+      data: { password: user.passwordHash },
+    });
 
     const response = NextResponse.json({
       success: true,
@@ -60,6 +69,9 @@ export async function POST(req: Request) {
       },
     });
 
+    let sessionCreated = false;
+
+    // Try Better Auth native signInEmail
     try {
       const sessionResponse = await auth.api.signInEmail({
         body: {
@@ -71,23 +83,56 @@ export async function POST(req: Request) {
         headers: req.headers,
       });
 
-      // Extract set-cookie headers securely across Node/Next versions
       if (sessionResponse && sessionResponse.headers) {
         const getSetCookieFn = (sessionResponse.headers as any).getSetCookie;
         if (typeof getSetCookieFn === "function") {
-          const cookies = sessionResponse.headers.getSetCookie();
-          cookies.forEach((c) => {
-            response.headers.append("set-cookie", c);
-          });
+          const cookiesArr = sessionResponse.headers.getSetCookie();
+          if (cookiesArr.length > 0) {
+            cookiesArr.forEach((c) => {
+              response.headers.append("set-cookie", c);
+            });
+            sessionCreated = true;
+          }
         } else {
           const setCookieHeader = sessionResponse.headers.get("set-cookie");
           if (setCookieHeader) {
             response.headers.set("set-cookie", setCookieHeader);
+            sessionCreated = true;
           }
         }
       }
     } catch (authErr) {
-      console.warn("Better-auth session creation warning:", authErr);
+      console.warn("Better Auth signInEmail warning, applying fallback session generation:", authErr);
+    }
+
+    // Fallback Session Generation if Better Auth didn't emit cookies
+    if (!sessionCreated) {
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      await db.session.create({
+        data: {
+          userId: user.id,
+          token,
+          expiresAt,
+        },
+      });
+
+      response.cookies.set("better-auth.session_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        expires: expiresAt,
+      });
+
+      response.cookies.set("sessionToken", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        expires: expiresAt,
+      });
     }
 
     return response;
