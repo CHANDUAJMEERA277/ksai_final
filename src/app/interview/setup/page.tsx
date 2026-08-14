@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Layers,
   Award,
-  Timer,
 } from "lucide-react";
 
 type InterviewType = "technical" | "coding" | "hr" | "mock";
@@ -64,7 +63,7 @@ const difficulties = [
 
 export default function InterviewSetupPage() {
   return (
-    <Suspense fallback={<div className="h-screen bg-[#07070A] text-white flex items-center justify-center font-mono text-xs">Loading Interview Configurator...</div>}>
+    <Suspense fallback={<div className="h-screen bg-[#F8FAFC] text-slate-900 flex items-center justify-center font-mono text-xs">Loading Interview Configurator...</div>}>
       <InterviewSetupContent />
     </Suspense>
   );
@@ -95,7 +94,7 @@ function InterviewSetupContent() {
   };
 
   return (
-    <div className="flex h-screen bg-[#07070A] text-white overflow-hidden font-sans antialiased">
+    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden font-sans antialiased">
       {/* Unified Left Sidebar */}
       <LeftSidebar
         activeTab="Interview Prep"
@@ -113,49 +112,49 @@ function InterviewSetupContent() {
         fullHeight={true}
       />
 
-      {/* Main 100vh Non-Scrollable Content */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#09090D] p-5 lg:p-6 gap-5">
+      {/* Main 100vh Non-Scrollable Light Content Area */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#F8FAFC] p-5 lg:p-6 gap-5">
         {/* Top Header & Step Navigation Ribbon */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4 shrink-0">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/interview")}
-              className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition"
+              className="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-xs transition"
             >
               <ArrowLeft size={16} />
             </button>
             <div>
-              <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                Configure Your <span className="text-cyan-400">AI Interview</span>
+              <h1 className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+                Configure Your <span className="text-blue-600">AI Interview</span>
               </h1>
-              <p className="text-xs text-slate-400">Customize target role, language, and difficulty level</p>
+              <p className="text-xs text-slate-500">Customize target role, language, and difficulty level</p>
             </div>
           </div>
 
           {/* 3 Step Wizard Controls */}
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 p-1.5 rounded-2xl">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 p-1.5 rounded-2xl shadow-xs">
             <button
               onClick={() => setActiveStep(1)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeStep === 1 ? "bg-cyan-500 text-white shadow-xs" : "text-slate-400 hover:text-white"
+                activeStep === 1 ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <Layers size={13} /> 1. Track & Role
             </button>
-            <ChevronRight size={14} className="text-slate-600" />
+            <ChevronRight size={14} className="text-slate-400" />
             <button
               onClick={() => setActiveStep(2)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeStep === 2 ? "bg-cyan-500 text-white shadow-xs" : "text-slate-400 hover:text-white"
+                activeStep === 2 ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <Code2 size={13} /> 2. Tech & Experience
             </button>
-            <ChevronRight size={14} className="text-slate-600" />
+            <ChevronRight size={14} className="text-slate-400" />
             <button
               onClick={() => setActiveStep(3)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeStep === 3 ? "bg-cyan-500 text-white shadow-xs" : "text-slate-400 hover:text-white"
+                activeStep === 3 ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <Award size={13} /> 3. Difficulty & Launch
@@ -163,12 +162,12 @@ function InterviewSetupContent() {
           </div>
         </div>
 
-        {/* Dynamic Wizard Body */}
-        <div className="flex-1 rounded-3xl border border-white/10 bg-white/[0.025] p-6 flex flex-col justify-between min-h-0 overflow-hidden relative">
+        {/* Dynamic Wizard Body Card */}
+        <div className="flex-1 rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between min-h-0 overflow-hidden shadow-xs relative">
           {activeStep === 1 && (
             <div className="flex-1 flex flex-col min-h-0 gap-6 overflow-y-auto pr-1">
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-cyan-400 mb-3">Step 1: Select Interview Type</h2>
+                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 1: Select Interview Type</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {interviewTypes.map((item) => {
                     const Icon = item.icon;
@@ -178,13 +177,13 @@ function InterviewSetupContent() {
                         onClick={() => setSelectedType(item.id)}
                         className={`p-4 rounded-2xl border text-left transition-all ${
                           selectedType === item.id
-                            ? "bg-cyan-500/20 border-cyan-500 text-white shadow-lg shadow-cyan-500/10"
-                            : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                            ? "bg-blue-50 border-blue-600 text-blue-950 shadow-md"
+                            : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                         }`}
                       >
-                        <Icon size={20} className={selectedType === item.id ? "text-cyan-400" : "text-slate-400"} />
-                        <h3 className="text-xs font-bold text-white mt-3">{item.title}</h3>
-                        <p className="text-[11px] text-slate-400 mt-1">{item.desc}</p>
+                        <Icon size={20} className={selectedType === item.id ? "text-blue-600" : "text-slate-500"} />
+                        <h3 className="text-xs font-black text-slate-900 mt-3">{item.title}</h3>
+                        <p className="text-[11px] text-slate-500 mt-1">{item.desc}</p>
                       </button>
                     );
                   })}
@@ -192,7 +191,7 @@ function InterviewSetupContent() {
               </div>
 
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-cyan-400 mb-3">Step 2: Select Target Role</h2>
+                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 2: Select Target Role</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {roles.map((role) => (
                     <button
@@ -200,8 +199,8 @@ function InterviewSetupContent() {
                       onClick={() => setSelectedRole(role)}
                       className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
                         selectedRole === role
-                          ? "bg-purple-600/30 border-purple-500 text-white shadow-xs"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                          ? "bg-indigo-50 border-indigo-600 text-indigo-950 shadow-xs"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
                       {role}
@@ -215,7 +214,7 @@ function InterviewSetupContent() {
           {activeStep === 2 && (
             <div className="flex-1 flex flex-col min-h-0 gap-6 overflow-y-auto pr-1">
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-cyan-400 mb-3">Step 1: Select Primary Technology</h2>
+                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 1: Select Primary Technology</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {technologies.map((tech) => (
                     <button
@@ -223,8 +222,8 @@ function InterviewSetupContent() {
                       onClick={() => setSelectedTech(tech)}
                       className={`p-4 rounded-2xl border text-xs font-bold text-center transition ${
                         selectedTech === tech
-                          ? "bg-cyan-500/20 border-cyan-500 text-white shadow-xs"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                          ? "bg-blue-50 border-blue-600 text-blue-950 shadow-xs"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
                       {tech}
@@ -234,7 +233,7 @@ function InterviewSetupContent() {
               </div>
 
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-cyan-400 mb-3">Step 2: Select Experience Level</h2>
+                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 2: Select Experience Level</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {experienceLevels.map((exp) => (
                     <button
@@ -242,12 +241,12 @@ function InterviewSetupContent() {
                       onClick={() => setSelectedExp(exp.id)}
                       className={`p-4 rounded-2xl border text-left transition ${
                         selectedExp === exp.id
-                          ? "bg-blue-600/30 border-blue-500 text-white shadow-xs"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                          ? "bg-indigo-50 border-indigo-600 text-indigo-950 shadow-xs"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      <h3 className="text-xs font-bold text-white">{exp.title}</h3>
-                      <p className="text-[10px] text-slate-400 mt-1">{exp.label}</p>
+                      <h3 className="text-xs font-bold text-slate-900">{exp.title}</h3>
+                      <p className="text-[10px] text-slate-500 mt-1">{exp.label}</p>
                     </button>
                   ))}
                 </div>
@@ -258,7 +257,7 @@ function InterviewSetupContent() {
           {activeStep === 3 && (
             <div className="flex-1 flex flex-col min-h-0 gap-6 justify-center max-w-3xl mx-auto w-full">
               <div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-cyan-400 mb-3 text-center">Select Difficulty Level</h2>
+                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3 text-center">Select Difficulty Level</h2>
                 <div className="grid grid-cols-3 gap-4">
                   {difficulties.map((diff) => (
                     <button
@@ -266,24 +265,24 @@ function InterviewSetupContent() {
                       onClick={() => setSelectedDifficulty(diff.id)}
                       className={`p-5 rounded-2xl border text-center transition ${
                         selectedDifficulty === diff.id
-                          ? "bg-cyan-500/20 border-cyan-500 text-white shadow-lg shadow-cyan-500/10"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                          ? "bg-blue-50 border-blue-600 text-blue-950 shadow-md"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      <h3 className="text-sm font-bold text-white capitalize">{diff.title}</h3>
-                      <p className="text-xs text-slate-400 mt-1">{diff.desc}</p>
+                      <h3 className="text-sm font-bold text-slate-900 capitalize">{diff.title}</h3>
+                      <p className="text-xs text-slate-500 mt-1">{diff.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Selected Config Summary */}
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-slate-400">Selected Config:</span>
-                  <span className="font-black text-white ml-2">{selectedRole} • {selectedTech} • {selectedDifficulty}</span>
+                  <span className="text-slate-600 font-medium">Selected Config:</span>
+                  <span className="font-black text-slate-900 ml-2">{selectedRole} • {selectedTech} • {selectedDifficulty}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                <div className="flex items-center gap-1.5 text-blue-600 font-bold">
                   <CheckCircle2 size={15} /> Ready to launch
                 </div>
               </div>
@@ -291,20 +290,20 @@ function InterviewSetupContent() {
           )}
 
           {/* Sticky Bottom Action Ribbon */}
-          <div className="pt-4 border-t border-white/10 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span>Track: <strong className="text-white capitalize">{selectedType}</strong></span>
+          <div className="pt-4 border-t border-slate-200 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span>Track: <strong className="text-slate-900 capitalize">{selectedType}</strong></span>
               <span>•</span>
-              <span>Role: <strong className="text-white">{selectedRole}</strong></span>
+              <span>Role: <strong className="text-slate-900">{selectedRole}</strong></span>
               <span>•</span>
-              <span>Tech: <strong className="text-cyan-400">{selectedTech}</strong></span>
+              <span>Tech: <strong className="text-blue-600">{selectedTech}</strong></span>
             </div>
 
             <div className="flex items-center gap-3">
               {activeStep > 1 && (
                 <button
                   onClick={() => setActiveStep((prev) => (prev - 1) as any)}
-                  className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs transition"
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs transition"
                 >
                   Previous Step
                 </button>
@@ -313,14 +312,14 @@ function InterviewSetupContent() {
               {activeStep < 3 ? (
                 <button
                   onClick={() => setActiveStep((prev) => (prev + 1) as any)}
-                  className="px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-black text-xs transition flex items-center gap-1.5"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition flex items-center gap-1.5 shadow-sm"
                 >
                   Next Step →
                 </button>
               ) : (
                 <button
                   onClick={handleStartSession}
-                  className="px-8 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center gap-2 hover:scale-105"
+                  className="px-8 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 hover:scale-105"
                 >
                   <Play size={16} fill="white" /> Launch Live AI Interview
                 </button>
