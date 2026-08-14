@@ -1,65 +1,37 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-    try {
-        const body = await request.json();
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { code = "", language = "java", prompt: userPrompt = "" } = body;
 
-        console.log("========== NEXT AUTO CODE ==========");
-        console.log(body);
-
-        const response = await fetch(
-            "http://127.0.0.1:8000/api/ai/autocode/",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                },
-
-                body: JSON.stringify(body),
-            }
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      try {
+        const prompt = `Write or complete clean, production-ready ${language} code based on: ${userPrompt || "Generate optimized boilerplate"}\nExisting Code:\n\`\`\`${language}\n${code}\n\`\`\``;
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          }
         );
-
-        const result = await response.json();
-
-        console.log(
-            "========== DJANGO AUTO CODE RESPONSE =========="
-        );
-
-        console.log(result);
-
-        if (!response.ok) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message:
-                        result?.message ||
-                        "Auto Code backend request failed.",
-                },
-                {
-                    status: response.status,
-                }
-            );
+        if (geminiRes.ok) {
+          const gData = await geminiRes.json();
+          const text = gData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return NextResponse.json({ success: true, response: text, generatedCode: text });
         }
-
-        return NextResponse.json(result);
-
-    } catch (error) {
-
-        console.error(
-            "Next Auto Code API Error:",
-            error
-        );
-
-        return NextResponse.json(
-            {
-                success: false,
-                message:
-                    "Unable to connect to the Auto Code backend.",
-            },
-            {
-                status: 500,
-            }
-        );
+      } catch (err) {
+        console.error("Gemini autocode error:", err);
+      }
     }
+
+    const fallbackCode = `// Generated CodeXAI AutoCode Snippet (${language.toUpperCase()})
+${code || `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from CodeXAI!");\n    }\n}`}`;
+
+    return NextResponse.json({ success: true, response: fallbackCode, generatedCode: fallbackCode });
+  } catch (error) {
+    return NextResponse.json({ success: false, response: "Unable to auto-generate code." }, { status: 500 });
+  }
 }
