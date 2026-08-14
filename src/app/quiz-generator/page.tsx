@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   Play, ShieldCheck, Eye, Bookmark, Sparkles, RefreshCw,
   CheckCircle, HelpCircle, CalendarDays, BookOpen, Layers, CheckCircle2,
-  CheckSquare, Square
+  CheckSquare, Square, ChevronRight
 } from "lucide-react";
 import { useNotification } from "@/components/ui/NotificationContext";
 import { PracticeHistoryPanel } from "@/components/practice/PracticeHistoryPanel";
@@ -75,11 +75,14 @@ function QuizGeneratorContent() {
       // Auto-select all chapters by default for best user experience
       const allChapterIds = (selectedCourse.chapters || []).map((ch: any) => ch.id);
       setSelectedChapters(allChapterIds);
-    } else {
-      setChapters([]);
-      setSelectedChapters([]);
+    } else if (courses.length > 0) {
+      // Auto select first course if none selected
+      const firstCourse = courses[0];
+      setSelectedCourse(firstCourse);
+      setChapters(firstCourse.chapters || []);
+      setSelectedChapters((firstCourse.chapters || []).map((ch: any) => ch.id));
     }
-  }, [selectedCourse]);
+  }, [selectedCourse, courses]);
 
   // Handle URL query retry param
   useEffect(() => {
@@ -174,275 +177,249 @@ function QuizGeneratorContent() {
         fullHeight={true}
       />
 
-      {/* Main Content Workspace */}
-      <main className="flex-1 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 w-full max-w-[1600px] mx-auto custom-scrollbar">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between glass-panel p-6 rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#4F46E5] text-xs font-bold border border-blue-100 mb-2">
-              <Sparkles size={13} /> 100% MCQ Practice Engine
+      {/* Main Content Workspace - FIXED 100vh SCREEN (NO PAGE SCROLL) */}
+      <main className="flex-1 h-full overflow-hidden p-4 sm:p-5 flex flex-col gap-3.5 w-full max-w-[1600px] mx-auto">
+        {/* Top Header Row */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#4F46E5]">
+              <Sparkles size={18} />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">AI MCQ Quiz Generator 🧠</h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-2xl">Practice multiple-choice questions on your enrolled courses and selected concepts with instant feedback.</p>
+            <div>
+              <h1 className="text-lg font-black text-slate-900 leading-tight">AI MCQ Quiz Generator 🧠</h1>
+              <p className="text-[11px] text-slate-500 font-medium">Practice multiple-choice questions on your enrolled course concepts.</p>
+            </div>
           </div>
-          <div>
-            <button onClick={() => router.push('/dashboard')} className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-black text-slate-700 shadow-sm hover:shadow-md transition cursor-pointer">Back to Dashboard</button>
+
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+              <button
+                onClick={() => setActiveTab("builder")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${activeTab === "builder" ? "bg-[#4F46E5] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                MCQ Builder
+              </button>
+              <button
+                onClick={() => setActiveTab("history")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${activeTab === "history" ? "bg-[#4F46E5] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                History ({history.length})
+              </button>
+            </div>
+
+            <button onClick={() => router.push('/dashboard')} className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-black text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer">
+              Dashboard
+            </button>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex rounded-2xl bg-white p-1.5 border border-slate-200 shadow-sm max-w-md">
-          <button
-            onClick={() => setActiveTab("builder")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition ${activeTab === "builder" ? "bg-[#4F46E5] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-          >
-            <Layers size={15} /> MCQ Quiz Builder
-          </button>
-
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition ${activeTab === "history" ? "bg-[#4F46E5] text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
-          >
-            <CalendarDays size={15} /> Practice History ({history.length})
-          </button>
-        </div>
-
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {activeTab === "history" ? (
-            <PracticeHistoryPanel
-              history={history}
-              onDelete={(id) => {
-                fetch(`/api/practice/history?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
-                  .then((res) => res.json())
-                  .then(() => setHistory((current) => current.filter((item) => item.id !== id)))
-                  .catch(() => notify('Unable to delete history item.', 'error'));
-              }}
-            />
-          ) : (
-            <div className="space-y-6">
-              {!quiz ? (
-                <div className="space-y-6">
-                  {/* Step 1: Course Selector */}
-                  <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#4F46E5]">Step 1</span>
-                        <h3 className="text-lg font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                          <BookOpen size={20} className="text-[#4F46E5]" /> Select Enrolled Course
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">Choose a course from your account to source MCQ questions from.</p>
-                      </div>
-                    </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <PracticeHistoryPanel
+                history={history}
+                onDelete={(id) => {
+                  fetch(`/api/practice/history?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+                    .then((res) => res.json())
+                    .then(() => setHistory((current) => current.filter((item) => item.id !== id)))
+                    .catch(() => notify('Unable to delete history item.', 'error'));
+                }}
+              />
+            </div>
+          ) : !quiz ? (
+            <div className="flex-1 flex flex-col gap-3.5 min-h-0 overflow-hidden">
+              {/* Step 1: Course Selector Bar (Horizontal Compact Row) */}
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-[10px] font-black text-[#4F46E5]">
+                    STEP 1
+                  </span>
+                  <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    <BookOpen size={16} className="text-[#4F46E5]" /> Select Enrolled Course:
+                  </span>
+                </div>
 
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {myPurchasedCourses.map((course) => (
-                        <button
-                          key={course.id}
-                          onClick={() => setSelectedCourse(course)}
-                          className={`p-5 rounded-2xl border ${selectedCourse?.id === course.id ? 'bg-indigo-50/80 text-slate-900 border-[#4F46E5] ring-2 ring-indigo-200 shadow-md' : 'bg-slate-50/70 text-slate-700 border-slate-200 hover:bg-slate-100/80'} text-left transition duration-200 cursor-pointer flex flex-col justify-between space-y-4`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <span className="inline-block px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-extrabold text-[#4F46E5] uppercase tracking-wider mb-2">
-                                {course.language || course.category || "Course"}
-                              </span>
-                              <div className="text-sm font-black text-slate-900 leading-snug">{course.title}</div>
-                            </div>
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-black ${selectedCourse?.id === course.id ? 'bg-[#4F46E5] text-white' : 'bg-slate-200 text-slate-400'}`}>
-                              ✓
-                            </div>
-                          </div>
+                <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar flex-1 justify-start sm:justify-end">
+                  {myPurchasedCourses.map((course) => {
+                    const isSelected = selectedCourse?.id === course.id;
+                    return (
+                      <button
+                        key={course.id}
+                        onClick={() => setSelectedCourse(course)}
+                        className={`px-3.5 py-1.5 rounded-xl border text-xs font-black transition cursor-pointer whitespace-nowrap flex items-center gap-2 shrink-0 ${
+                          isSelected
+                            ? "bg-[#4F46E5] text-white border-[#4F46E5] shadow-xs"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span>{course.title}</span>
+                        {isSelected && <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-extrabold">Selected</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-                          <div className="flex items-center justify-between text-xs font-bold text-slate-500 pt-3 border-t border-slate-200/60">
-                            <span>{(course.chapters || []).length} Chapters</span>
-                            <span className="text-[#4F46E5]">{course.level || 'All Levels'}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+              {/* Step 2 & 3 Combined Workspace - Vertical Stack List (Below Below Only) & Integrated Action Panel */}
+              <div className="flex-1 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col min-h-0 overflow-hidden">
+                {/* List Header Control Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <span className="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-[10px] font-black text-[#4F46E5]">
+                      STEP 2
+                    </span>
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <Layers size={17} className="text-[#4F46E5]" /> Select Concepts &amp; Chapters
+                    </h3>
+                    <span className="text-[11px] font-extrabold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      {selectedChapters.length} of {chapters.length} Selected
+                    </span>
                   </div>
 
-                  {selectedCourse && (
-                    <>
-                      {/* Step 2: Select Concepts & Chapters - BIG & PROFESSIONAL */}
-                      <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition space-y-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-                          <div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#4F46E5]">Step 2</span>
-                            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2.5 mt-0.5">
-                              <Layers size={22} className="text-[#4F46E5]" /> Select Concepts &amp; Chapters
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-1">
-                              Select specific chapters to generate targeted MCQs, or include all for a complete assessment.
-                            </p>
-                          </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedChapters(chapters.map((c) => c.id))}
+                      className="px-3 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-xs font-black text-[#4F46E5] hover:bg-indigo-100 transition cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedChapters([])}
+                      className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
 
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-extrabold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl">
-                              {selectedChapters.length} of {chapters.length} Selected
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedChapters(chapters.map((c) => c.id))}
-                              className="px-3.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-black text-[#4F46E5] hover:bg-indigo-100 transition cursor-pointer"
-                            >
-                              Select All
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedChapters([])}
-                              className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                            >
-                              Clear
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* BIG PROFESSIONAL CHAPTER CARDS GRID */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {chapters.map((ch: any, idx: number) => {
-                            const isSelected = selectedChapters.includes(ch.id);
-                            return (
-                              <div
-                                key={ch.id}
-                                onClick={() => toggleChapter(ch.id)}
-                                className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-4 ${
-                                  isSelected
-                                    ? "bg-gradient-to-br from-indigo-50/90 via-white to-blue-50/40 border-[#4F46E5] ring-2 ring-indigo-200 shadow-md"
-                                    : "bg-slate-50/60 border-slate-200 hover:bg-slate-100/70 hover:border-slate-300"
-                                }`}
-                              >
-                                <div className="flex items-start gap-3.5">
-                                  <div className="mt-0.5">
-                                    {isSelected ? (
-                                      <CheckSquare size={20} className="text-[#4F46E5]" />
-                                    ) : (
-                                      <Square size={20} className="text-slate-400" />
-                                    )}
-                                  </div>
-                                  <div className="flex-1">
-                                    <span className="inline-block px-2 py-0.5 rounded-md bg-white/80 border border-slate-200/80 text-[10px] font-black text-[#4F46E5] tracking-wide mb-1.5">
-                                      Chapter {String(idx + 1).padStart(2, "0")}
-                                    </span>
-                                    <h4 className="text-sm font-black text-slate-900 leading-snug">
-                                      {ch.title}
-                                    </h4>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 pt-3 border-t border-slate-200/60">
-                                  <span className="flex items-center gap-1">
-                                    <CheckCircle2 size={13} className={isSelected ? "text-emerald-500" : "text-slate-400"} />
-                                    {isSelected ? "Active for Quiz" : "Excluded"}
-                                  </span>
-                                  <span className="text-xs font-black text-[#4F46E5]">MCQ Practice</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Step 3: MCQ Settings */}
-                      <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition space-y-6">
-                        <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#4F46E5]">Step 3</span>
-                          <h3 className="text-lg font-black text-slate-900 mt-0.5">MCQ Quiz Settings</h3>
-                          <p className="text-xs text-slate-500 mt-1">Customize question count, difficulty level, and proctor exam mode.</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <label className="text-xs font-black text-slate-700 space-y-1.5">
-                            <span>Difficulty Level</span>
-                            <select
-                              value={builderConfig.difficulty}
-                              onChange={(e) => setBuilderConfig((s) => ({ ...s, difficulty: e.target.value }))}
-                              className="w-full rounded-2xl bg-slate-50 p-3 text-xs font-extrabold border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
-                            >
-                              <option value="mixed">Mixed Difficulty (Easy, Medium, Hard)</option>
-                              <option value="easy">Easy (2 Marks per question)</option>
-                              <option value="medium">Medium (3 Marks per question)</option>
-                              <option value="hard">Hard (5 Marks per question)</option>
-                            </select>
-                          </label>
-
-                          <label className="text-xs font-black text-slate-700 space-y-1.5">
-                            <span>Number of MCQ Questions</span>
-                            <input
-                              type="number"
-                              value={builderConfig.count}
-                              min={1}
-                              max={50}
-                              onChange={(e) => setBuilderConfig((s) => ({ ...s, count: Number(e.target.value) }))}
-                              className="w-full rounded-2xl bg-slate-50 p-3 text-xs font-extrabold border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
-                            />
-                          </label>
-
-                          <div className="sm:col-span-2 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-extrabold text-[#4F46E5]">
-                            <span className="flex items-center gap-2">
-                              <Sparkles size={16} className="text-[#4F46E5]" /> Question Format:
-                            </span>
-                            <span className="px-4 py-1.5 rounded-full bg-white border border-indigo-200 text-xs font-black shadow-xs flex items-center gap-2">
-                              <CheckCircle2 size={15} className="text-emerald-500" /> 100% MCQ (Multiple Choice Questions)
-                            </span>
-                          </div>
-
-                          <label className="sm:col-span-2 flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/80 transition">
+                {/* STACKED VERTICAL LIST (BELOW BELOW ONLY) - FITS IN VIEWPORT WITH SLIM INNER SCROLL */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2 py-3 min-h-0">
+                  {chapters.length === 0 ? (
+                    <div className="p-8 text-center text-xs font-semibold text-slate-400">Loading course chapters...</div>
+                  ) : (
+                    chapters.map((ch: any, idx: number) => {
+                      const isSelected = selectedChapters.includes(ch.id);
+                      return (
+                        <div
+                          key={ch.id}
+                          onClick={() => toggleChapter(ch.id)}
+                          className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-all duration-150 flex items-center justify-between gap-3 ${
+                            isSelected
+                              ? "bg-indigo-50/90 border-[#4F46E5] ring-1 ring-indigo-200 shadow-2xs"
+                              : "bg-slate-50/70 border-slate-200 hover:bg-slate-100/80"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
                             <input
                               type="checkbox"
-                              checked={proctorMode}
-                              onChange={(e) => setProctorMode(e.target.checked)}
-                              className="h-5 w-5 rounded border-slate-300 text-[#4F46E5] focus:ring-[#4F46E5]"
+                              checked={isSelected}
+                              readOnly
+                              className="h-4 w-4 text-[#4F46E5] rounded border-slate-300 focus:ring-[#4F46E5] cursor-pointer shrink-0"
                             />
-                            <div>
-                              <div className="font-black text-slate-900 text-xs flex items-center gap-2">
-                                <ShieldCheck size={16} className="text-[#4F46E5]" /> Proctor Exam Mode
-                              </div>
-                              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                                Enforces strict supervision for mock exam qualification: tab switch detection, blur tracking, copy/paste block.
-                              </p>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                            <span className="px-2 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-black text-[#4F46E5] shrink-0">
+                              Chapter {String(idx + 1).padStart(2, "0")}
+                            </span>
+                            <span className="text-xs sm:text-sm font-black text-slate-900 truncate">
+                              {ch.title}
+                            </span>
+                          </div>
 
-                  <div className="flex flex-wrap items-center gap-4 pt-2">
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                                isSelected ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"
+                              }`}
+                            >
+                              {isSelected ? "✓ Active for Quiz" : "Excluded"}
+                            </span>
+                            <span className="text-xs font-bold text-[#4F46E5]">MCQ Practice</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Bottom MCQ Quiz Controls Bar */}
+                <div className="pt-3 border-t border-slate-100 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-black text-slate-700">
+                    <label className="flex items-center gap-2">
+                      <span>Difficulty:</span>
+                      <select
+                        value={builderConfig.difficulty}
+                        onChange={(e) => setBuilderConfig((s) => ({ ...s, difficulty: e.target.value }))}
+                        className="rounded-xl bg-slate-50 p-2 text-xs font-bold border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
+                      >
+                        <option value="mixed">Mixed Difficulty</option>
+                        <option value="easy">Easy (2 Marks)</option>
+                        <option value="medium">Medium (3 Marks)</option>
+                        <option value="hard">Hard (5 Marks)</option>
+                      </select>
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <span>MCQ Count:</span>
+                      <input
+                        type="number"
+                        value={builderConfig.count}
+                        min={1}
+                        max={50}
+                        onChange={(e) => setBuilderConfig((s) => ({ ...s, count: Number(e.target.value) }))}
+                        className="w-16 rounded-xl bg-slate-50 p-2 text-xs font-bold border border-slate-200 text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={proctorMode}
+                        onChange={(e) => setProctorMode(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-[#4F46E5]"
+                      />
+                      <span className="flex items-center gap-1.5 text-slate-900">
+                        <ShieldCheck size={14} className="text-[#4F46E5]" /> Proctor Mode
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
                     <button
                       onClick={() => generateQuiz(false)}
                       disabled={isGenerating || !selectedCourse || selectedChapters.length === 0}
-                      className="inline-flex items-center gap-2 rounded-3xl bg-[#4F46E5] hover:bg-[#4338CA] px-8 py-4 text-xs font-black text-white shadow-md hover:shadow-lg transition duration-200 disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#4F46E5] hover:bg-[#4338CA] px-6 py-2.5 text-xs font-black text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
                     >
-                      <Play size={16} />
-                      {isGenerating ? "Generating MCQ Quiz..." : "Start MCQ Practice Quiz"}
+                      <Play size={14} />
+                      {isGenerating ? "Generating..." : "Start MCQ Quiz"}
                     </button>
 
                     <button
                       onClick={() => generateQuiz(true)}
                       disabled={isGenerating || !selectedCourse || selectedChapters.length === 0}
-                      className="inline-flex items-center gap-2 rounded-3xl bg-amber-500 hover:bg-amber-600 px-6 py-4 text-xs font-black text-white shadow-md hover:shadow-lg transition duration-200 disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-4 py-2.5 text-xs font-black text-white shadow-xs transition disabled:opacity-50 cursor-pointer"
                     >
-                      <RefreshCw size={16} />
-                      Retry Weak Concept MCQs
+                      <RefreshCw size={14} />
+                      Retry Weak MCQs
                     </button>
                   </div>
                 </div>
-              ) : (
-                <QuizPlayer
-                  quiz={quiz}
-                  sessionId={sessionId}
-                  proctorMode={proctorMode}
-                  onExit={() => {
-                    setQuiz(null);
-                    setSessionId(null);
-                    fetch(`/api/practice/history`)
-                      .then((r) => r.json())
-                      .then((d) => setHistory(d.history || []))
-                      .catch(() => {});
-                  }}
-                />
-              )}
+              </div>
             </div>
+          ) : (
+            <QuizPlayer
+              quiz={quiz}
+              sessionId={sessionId}
+              proctorMode={proctorMode}
+              onExit={() => {
+                setQuiz(null);
+                setSessionId(null);
+                fetch(`/api/practice/history`)
+                  .then((r) => r.json())
+                  .then((d) => setHistory(d.history || []))
+                  .catch(() => {});
+              }}
+            />
           )}
         </motion.div>
       </main>
@@ -612,14 +589,14 @@ function QuizPlayer({
   const options = q.options && q.options.length > 0 ? q.options : ["Option A", "Option B", "Option C", "Option D"];
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm hover:shadow-md transition max-w-4xl mx-auto">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-4">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs max-w-4xl mx-auto flex flex-col gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-slate-500">MCQ Question {index + 1} of {quiz.length}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[#4F46E5]">MCQ</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">{q.difficulty?.toUpperCase()} ({q.marks ?? 3} Marks)</span>
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">Time left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-blue-50 px-3 py-0.5 text-xs font-bold text-[#4F46E5]">MCQ</span>
+            <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs font-bold text-slate-700">{q.difficulty?.toUpperCase()} ({q.marks ?? 3} Marks)</span>
+            <span className="rounded-full bg-amber-50 px-3 py-0.5 text-xs font-bold text-amber-800">Time left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
           </div>
         </div>
 
@@ -638,59 +615,55 @@ function QuizPlayer({
         </div>
       </div>
 
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 mb-6">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
         <div className="h-full rounded-full bg-[#4F46E5] transition-all duration-300" style={{ width: `${((index + 1) / quiz.length) * 100}%` }} />
       </div>
 
       {/* Question Header & Body */}
-      <div className="my-4 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-base font-black text-slate-900 whitespace-pre-wrap">{q.question}</p>
-        </div>
-        {q.topic ? <p className="mt-2 text-xs font-bold text-slate-500">Concept / Topic: {q.topic}</p> : null}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm sm:text-base font-black text-slate-900 whitespace-pre-wrap">{q.question}</p>
+        {q.topic ? <p className="mt-1.5 text-xs font-bold text-slate-500">Concept / Topic: {q.topic}</p> : null}
       </div>
 
       {/* MCQ Answer Options */}
-      <div className="mb-6">
-        <div className="grid gap-3">
-          {options.map((opt: any, i: number) => (
-            <label key={i} className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${answers[q.id] === i ? 'bg-indigo-50/80 text-slate-900 border-[#4F46E5] ring-2 ring-indigo-200 font-bold shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>
-              <input type="radio" name={q.id} checked={answers[q.id] === i} onChange={() => setAnswerFor(q.id, i)} className="h-4 w-4 text-[#4F46E5] border-slate-300 rounded focus:ring-[#4F46E5]" />
-              <div className="text-xs font-bold">{typeof opt === 'string' ? opt : JSON.stringify(opt)}</div>
-            </label>
-          ))}
-        </div>
+      <div className="space-y-2">
+        {options.map((opt: any, i: number) => (
+          <label key={i} className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition ${answers[q.id] === i ? 'bg-indigo-50/80 text-slate-900 border-[#4F46E5] ring-1 ring-indigo-200 font-bold' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>
+            <input type="radio" name={q.id} checked={answers[q.id] === i} onChange={() => setAnswerFor(q.id, i)} className="h-4 w-4 text-[#4F46E5] border-slate-300 rounded focus:ring-[#4F46E5]" />
+            <div className="text-xs font-bold">{typeof opt === 'string' ? opt : JSON.stringify(opt)}</div>
+          </label>
+        ))}
       </div>
 
       {/* Confidence Selection */}
-      <div className="mb-6 flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+      <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
         <span className="text-xs font-black text-slate-700">Confidence Level:</span>
         <button
           type="button"
           onClick={() => setConfidence((c) => ({ ...c, [q.id]: true }))}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition ${confidence[q.id] === true ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-bold transition ${confidence[q.id] === true ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}
         >
-          <CheckCircle size={14} /> Confident
+          <CheckCircle size={13} /> Confident
         </button>
         <button
           type="button"
           onClick={() => setConfidence((c) => ({ ...c, [q.id]: false }))}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition ${confidence[q.id] === false ? 'bg-orange-100 text-orange-800 border-orange-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-bold transition ${confidence[q.id] === false ? 'bg-orange-100 text-orange-800 border-orange-300 font-black' : 'bg-white text-slate-700 border-slate-200'}`}
         >
-          <HelpCircle size={14} /> Not Confident
+          <HelpCircle size={13} /> Not Confident
         </button>
       </div>
 
       {/* Pagination & Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1 border-t border-slate-100">
         <div className="flex gap-2">
-          <button onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} className="px-5 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer">Previous</button>
-          <button onClick={() => setIndex((i) => Math.min(quiz.length - 1, i + 1))} disabled={index === quiz.length - 1} className="px-5 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer">Next</button>
+          <button onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} className="px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer">Previous</button>
+          <button onClick={() => setIndex((i) => Math.min(quiz.length - 1, i + 1))} disabled={index === quiz.length - 1} className="px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer">Next</button>
         </div>
 
         <div className="flex gap-2">
-          <button onClick={submitFinal} disabled={isSubmitting} className="px-7 py-3 rounded-3xl bg-[#4F46E5] hover:bg-[#4338CA] text-xs font-black text-white shadow-md transition disabled:opacity-50 cursor-pointer">Submit MCQ Quiz</button>
-          <button onClick={() => { notify('Quiz progress saved.', 'info'); onExit(); }} className="px-5 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer">Exit</button>
+          <button onClick={submitFinal} disabled={isSubmitting} className="px-6 py-2 rounded-2xl bg-[#4F46E5] hover:bg-[#4338CA] text-xs font-black text-white shadow-xs transition disabled:opacity-50 cursor-pointer">Submit MCQ Quiz</button>
+          <button onClick={() => { notify('Quiz progress saved.', 'info'); onExit(); }} className="px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer">Exit</button>
         </div>
       </div>
     </div>
