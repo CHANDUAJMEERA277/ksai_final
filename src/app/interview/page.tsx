@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import {
@@ -13,9 +13,16 @@ import {
   ArrowRight,
   Target,
   BarChart3,
-  CheckCircle2,
   Zap,
 } from "lucide-react";
+
+interface InterviewRecord {
+  title: string;
+  type: string;
+  score: number;
+  date: string;
+  status: string;
+}
 
 const interviewTypes = [
   {
@@ -67,15 +74,34 @@ const technologies = [
   "Data Structures",
 ];
 
-const recentInterviews = [
-  { title: "Java Technical Assessment", type: "Technical", score: 86, date: "Today", status: "Strong" },
-  { title: "Full Stack Coding Challenge", type: "Coding", score: 92, date: "Yesterday", status: "Excellent" },
-  { title: "HR Behavioral Round", type: "HR", score: 78, date: "3 days ago", status: "Good" },
-];
-
 export default function InterviewPage() {
   const router = useRouter();
   const [selectedTech, setSelectedTech] = useState("Java");
+  const [history, setHistory] = useState<InterviewRecord[]>([]);
+  const [readinessScore, setReadinessScore] = useState<number>(0);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ksai_interview_history");
+      if (saved) {
+        const parsed: InterviewRecord[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHistory(parsed);
+          const totalScore = parsed.reduce((acc, item) => acc + (item.score || 0), 0);
+          setReadinessScore(Math.round(totalScore / parsed.length));
+        } else {
+          setHistory([]);
+          setReadinessScore(0);
+        }
+      } else {
+        setHistory([]);
+        setReadinessScore(0);
+      }
+    } catch {
+      setHistory([]);
+      setReadinessScore(0);
+    }
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden font-sans antialiased">
@@ -116,7 +142,7 @@ export default function InterviewPage() {
             <div className="flex items-center gap-4 shrink-0">
               <div className="px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-center backdrop-blur-md">
                 <p className="text-[10px] text-blue-100 uppercase font-black tracking-wider">Readiness Score</p>
-                <p className="text-xl font-black text-white">84%</p>
+                <p className="text-xl font-black text-white">{readinessScore}%</p>
               </div>
               <button
                 onClick={() => router.push("/interview/setup?type=mock")}
@@ -199,30 +225,40 @@ export default function InterviewPage() {
             </div>
           </div>
 
-          {/* Right Column (1 Col): History & Focus */}
+          {/* Right Column (1 Col): Dynamic History & Focus */}
           <div className="flex flex-col gap-5 min-h-0 overflow-hidden">
-            {/* Recent History */}
+            {/* Dynamic Recent History */}
             <div className="flex-1 flex flex-col rounded-2xl border border-slate-200 bg-white p-4 min-h-0 overflow-hidden shadow-xs">
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
                   <BarChart3 size={15} className="text-blue-600" /> Recent Practice History
                 </h3>
-                <span className="text-[10px] text-blue-600 font-bold cursor-pointer hover:underline">View All</span>
+                <span className="text-[10px] text-slate-400 font-bold">{history.length} Completed</span>
               </div>
 
               <div className="flex-1 flex flex-col gap-2.5 overflow-y-auto pr-1">
-                {recentInterviews.map((item) => (
-                  <div key={item.title} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">{item.title}</h4>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{item.type} • {item.date}</p>
+                {history.length > 0 ? (
+                  history.map((item, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">{item.title}</h4>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{item.type} • {item.date}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-black text-blue-600">{item.score}%</span>
+                        <p className="text-[9px] text-emerald-600 font-bold">{item.status}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-black text-blue-600">{item.score}%</span>
-                      <p className="text-[9px] text-emerald-600 font-bold">{item.status}</p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <BarChart3 size={24} className="text-slate-300 mb-2" />
+                    <p className="text-xs font-bold text-slate-700">No Interview Sessions Yet</p>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
+                      Complete your first AI practice round above to dynamically view your score history!
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -231,13 +267,13 @@ export default function InterviewPage() {
               <div className="flex items-center gap-2 text-indigo-700 text-xs font-black mb-1.5">
                 <Zap size={14} /> Recommended Action
               </div>
-              <p className="text-xs font-black text-slate-900">Master Java Multithreading & Memory Models</p>
-              <p className="text-[11px] text-slate-600 mt-1">Based on your recent response metrics, strengthening concurrency concepts will boost your readiness to 90%+.</p>
+              <p className="text-xs font-black text-slate-900">Master {selectedTech} Core Concepts</p>
+              <p className="text-[11px] text-slate-600 mt-1">Practice interview questions for {selectedTech} to calculate your overall readiness score.</p>
               <button
-                onClick={() => router.push("/interview/setup?technology=Java")}
+                onClick={() => router.push(`/interview/setup?technology=${encodeURIComponent(selectedTech)}`)}
                 className="w-full mt-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-sm transition"
               >
-                Practice Java Interview →
+                Practice {selectedTech} Interview →
               </button>
             </div>
           </div>

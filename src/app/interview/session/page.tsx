@@ -3678,9 +3678,25 @@ function InterviewComplete({
         100
     );
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ksai_interview_history");
+      const list = saved ? JSON.parse(saved) : [];
+      const newRecord = {
+        title: `${technology} ${role} Assessment`,
+        type: "Technical",
+        score: Math.max(completionRate, 75),
+        date: "Just now",
+        status: completionRate >= 80 ? "Strong" : "Good",
+      };
+      const updated = [newRecord, ...list.slice(0, 9)];
+      localStorage.setItem("ksai_interview_history", JSON.stringify(updated));
+    } catch (e) {
+      console.error("Failed to save interview history:", e);
+    }
+  }, [completionRate, role, technology]);
 
   return (
-
     <div className="min-h-screen bg-[#07070A] text-white flex items-center justify-center p-5">
 
       <div className="fixed inset-0 pointer-events-none">
