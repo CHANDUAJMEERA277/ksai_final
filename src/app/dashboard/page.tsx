@@ -8,7 +8,7 @@ import {
   BookOpen, Star, Sparkles, Trophy, Settings, LogOut, ChevronLeft, ChevronRight,
   TrendingUp, Award, Play, CheckCircle2, AlertTriangle, ArrowRight,
   Terminal, ShieldCheck, Flame, Send, Bot, MessageSquare, GraduationCap, Code2,
-  Bell, Search, Check, CheckSquare
+  Bell, Search, Check, CheckSquare, Target, Edit3, X, RefreshCw
 } from "lucide-react";
 
 interface CourseSlide {
@@ -71,6 +71,34 @@ export default function DashboardPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Weekly Goals modal state
+  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
+  const [editTargetChapters, setEditTargetChapters] = useState(2);
+  const [editTargetQuizzes, setEditTargetQuizzes] = useState(10);
+  const [editTargetAIChats, setEditTargetAIChats] = useState(5);
+  const [savingGoals, setSavingGoals] = useState(false);
+
+  const handleSaveGoals = () => {
+    setSavingGoals(true);
+    setData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        weeklyGoals: {
+          ...prev.weeklyGoals,
+          chapters: { ...(prev.weeklyGoals?.chapters || {}), target: editTargetChapters },
+          quizzes: { ...(prev.weeklyGoals?.quizzes || {}), target: editTargetQuizzes },
+          aiSessions: { ...(prev.weeklyGoals?.aiSessions || {}), target: editTargetAIChats },
+        },
+      };
+    });
+
+    setTimeout(() => {
+      setSavingGoals(false);
+      setIsGoalsModalOpen(false);
+    }, 300);
+  };
 
   // Heartbeat ping effect
   useEffect(() => {
@@ -846,11 +874,25 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Goals */}
+          {/* Goals Widget */}
           <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
-            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
-              This Week&apos;s Goals
-            </h3>
+            <div className="flex items-center justify-between pb-1 border-b border-slate-100 flex-shrink-0">
+              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                This Week&apos;s Goals
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditTargetChapters(weeklyGoals?.chapters?.target ?? 2);
+                  setEditTargetQuizzes(weeklyGoals?.quizzes?.target ?? 10);
+                  setEditTargetAIChats(weeklyGoals?.aiSessions?.target ?? 5);
+                  setIsGoalsModalOpen(true);
+                }}
+                className="text-[11px] font-extrabold text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Edit3 size={11} /> Edit Goals
+              </button>
+            </div>
             
             <div className="space-y-2 py-1 flex-1 flex flex-col justify-center text-xs text-slate-700 font-extrabold">
               <div className="space-y-1">
@@ -894,7 +936,18 @@ export default function DashboardPage() {
             </div>
 
             <div className="text-center pt-1 border-t border-slate-100 flex-shrink-0">
-              <a href="#goals" className="text-xs font-black text-[#4F46E5] hover:underline">View All Goals</a>
+              <button 
+                type="button"
+                onClick={() => {
+                  setEditTargetChapters(weeklyGoals?.chapters?.target ?? 2);
+                  setEditTargetQuizzes(weeklyGoals?.quizzes?.target ?? 10);
+                  setEditTargetAIChats(weeklyGoals?.aiSessions?.target ?? 5);
+                  setIsGoalsModalOpen(true);
+                }} 
+                className="text-xs font-black text-[#4F46E5] hover:underline cursor-pointer"
+              >
+                Manage &amp; Customize Goals
+              </button>
             </div>
           </div>
 
@@ -1000,6 +1053,95 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Edit Weekly Goals Modal */}
+        {isGoalsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 max-w-md w-full shadow-2xl space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <Target size={18} className="text-[#4F46E5]" /> Customize Weekly Goals 🎯
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsGoalsModalOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Target Chapters */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 flex justify-between">
+                    <span>🟢 Target Chapters / Week</span>
+                    <span className="font-mono text-[#4F46E5] font-black">{editTargetChapters} Chapters</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={20}
+                    value={editTargetChapters}
+                    onChange={(e) => setEditTargetChapters(Number(e.target.value))}
+                    className="w-full accent-[#4F46E5] cursor-pointer"
+                  />
+                </div>
+
+                {/* Target Quiz Questions */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 flex justify-between">
+                    <span>🎯 Target Quiz Questions / Week</span>
+                    <span className="font-mono text-purple-600 font-black">{editTargetQuizzes} Quizzes</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={5}
+                    max={50}
+                    step={5}
+                    value={editTargetQuizzes}
+                    onChange={(e) => setEditTargetQuizzes(Number(e.target.value))}
+                    className="w-full accent-purple-600 cursor-pointer"
+                  />
+                </div>
+
+                {/* Target AI Sessions */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 flex justify-between">
+                    <span>🤖 Target AI Sessions / Week</span>
+                    <span className="font-mono text-emerald-600 font-black">{editTargetAIChats} Sessions</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={30}
+                    value={editTargetAIChats}
+                    onChange={(e) => setEditTargetAIChats(Number(e.target.value))}
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsGoalsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveGoals}
+                  disabled={savingGoals}
+                  className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {savingGoals ? <RefreshCw size={14} className="animate-spin" /> : "Save Goals"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
     </div>
