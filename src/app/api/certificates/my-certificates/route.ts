@@ -44,14 +44,14 @@ export async function GET(req: Request) {
         completedChapterIds.has(ch.id)
       ).length;
 
-      // Calculate progress percentage
+      // Calculate progress percentage strictly
       const computedProgress = totalChapters > 0
         ? Math.round((completedCount / totalChapters) * 100)
         : enrollment.progress;
 
-      const progress = Math.max(computedProgress, enrollment.progress);
+      const progress = Math.min(100, Math.max(computedProgress, enrollment.progress));
       
-      // A course is marked as completed if progress is 100% OR all chapters completed
+      // STRICT RULE: Certificate is ONLY completed when progress is 100% AND all chapters are finished
       const isCompleted = progress >= 100 || (totalChapters > 0 && completedCount >= totalChapters);
 
       // Unique deterministic Certificate ID
@@ -68,7 +68,7 @@ export async function GET(req: Request) {
         studentName: user.name,
         studentCollege: user.college || "KnowledgeStream Institute of Technology",
         studentDepartment: user.department || "Computer Science & Engineering",
-        progress,
+        progress: isCompleted ? 100 : progress,
         completedChapters: completedCount,
         totalChapters,
         isCompleted,

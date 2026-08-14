@@ -6,7 +6,7 @@ import { useSession } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Award, ShieldCheck, CheckCircle2, Download, Printer, Share2, Eye,
-  Sparkles, BookOpen, Clock, Lock, CheckCircle, ExternalLink, X
+  Sparkles, BookOpen, Clock, Lock, CheckCircle, ExternalLink, X, AlertCircle
 } from "lucide-react";
 import { useNotification } from "@/components/ui/NotificationContext";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
@@ -62,9 +62,21 @@ function CertificatesContent() {
   };
 
   const handleShare = (cert: CertificateItem) => {
+    if (!cert.isCompleted && cert.progress < 100) {
+      notify("Certificate is locked. Complete 100% of the course to share your verified credential!", "warning");
+      return;
+    }
     const shareUrl = `${window.location.origin}/certificates?certId=${cert.certificateId}`;
     navigator.clipboard.writeText(shareUrl);
     notify("Certificate verification link copied to clipboard!", "success");
+  };
+
+  const openCertificateModal = (cert: CertificateItem) => {
+    if (!cert.isCompleted && cert.progress < 100) {
+      notify(`🔒 Certificate Locked! Complete 100% of "${cert.courseTitle}" to claim your official certificate (${cert.progress}% completed).`, "warning");
+      return;
+    }
+    setSelectedCert(cert);
   };
 
   const completedCount = certificates.filter((c) => c.isCompleted || c.progress >= 100).length;
@@ -98,13 +110,13 @@ function CertificatesContent() {
             </div>
             <div>
               <h1 className="text-lg font-black text-slate-900 leading-tight">Official Certificates &amp; Verified Credentials 📜</h1>
-              <p className="text-[11px] text-slate-500 font-medium">Verified Certificates of Completion issued in your name upon finishing courses.</p>
+              <p className="text-[11px] text-slate-500 font-medium">Certificates remain locked until you complete 100% of your course chapters.</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-black flex items-center gap-1.5">
-              <Award size={15} className="text-amber-600" /> {completedCount} Earned Certificates
+              <Award size={15} className="text-amber-600" /> {completedCount} / {certificates.length} Unlocked
             </span>
             <button onClick={() => router.push('/dashboard')} className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-black text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer">
               Dashboard
@@ -116,7 +128,7 @@ function CertificatesContent() {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center text-xs font-mono font-bold text-slate-500">
-              Loading your verified certificates...
+              Loading your certificates...
             </div>
           ) : certificates.length === 0 ? (
             <div className="flex-1 bg-white p-8 rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-center text-center space-y-3">
@@ -125,7 +137,7 @@ function CertificatesContent() {
               </div>
               <h3 className="text-base font-black text-slate-900">No Enrolled Courses Found</h3>
               <p className="text-xs text-slate-500 max-w-md">
-                Enroll in a course from our catalog, complete all chapters, and earn your official KnowledgeStream AI Certificate of Completion!
+                Enroll in a course from our catalog, complete all chapters 100%, and earn your official KnowledgeStream AI Certificate of Completion!
               </p>
               <button
                 onClick={() => router.push("/courses/catalog")}
@@ -145,24 +157,24 @@ function CertificatesContent() {
                       className={`p-5 rounded-2xl border transition duration-200 flex flex-col justify-between space-y-4 ${
                         isUnlocked
                           ? "bg-gradient-to-br from-amber-50/60 via-white to-indigo-50/40 border-amber-300 ring-1 ring-amber-100 shadow-sm"
-                          : "bg-white border-slate-200"
+                          : "bg-slate-50/80 border-slate-200 opacity-90"
                       }`}
                     >
                       <div className="space-y-3">
                         <div className="flex items-start justify-between gap-3">
                           <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                            isUnlocked ? "bg-amber-100 text-amber-900 border border-amber-200" : "bg-slate-100 text-slate-600 border border-slate-200"
+                            isUnlocked ? "bg-amber-100 text-amber-900 border border-amber-200" : "bg-slate-200 text-slate-700 border border-slate-300"
                           }`}>
                             {cert.courseLanguage.toUpperCase()} &bull; {cert.courseLevel}
                           </span>
 
                           <span className={`text-[11px] font-extrabold flex items-center gap-1 ${
-                            isUnlocked ? "text-emerald-700" : "text-slate-500"
+                            isUnlocked ? "text-emerald-700" : "text-amber-800"
                           }`}>
                             {isUnlocked ? (
-                              <><CheckCircle2 size={15} className="text-emerald-600" /> Verified</>
+                              <><CheckCircle2 size={15} className="text-emerald-600" /> Unlocked</>
                             ) : (
-                              <><Lock size={14} /> {cert.progress}% Complete</>
+                              <><Lock size={14} className="text-amber-700" /> Locked ({cert.progress}%)</>
                             )}
                           </span>
                         </div>
@@ -175,17 +187,17 @@ function CertificatesContent() {
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                      <div className="space-y-1.5 pt-2 border-t border-slate-200/60">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
                           <span>Course Progress:</span>
-                          <span className={isUnlocked ? "text-emerald-600 font-black" : "text-slate-700"}>
+                          <span className={isUnlocked ? "text-emerald-700 font-black" : "text-amber-800 font-black"}>
                             {cert.completedChapters}/{cert.totalChapters} Chapters ({cert.progress}%)
                           </span>
                         </div>
-                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all duration-300 rounded-full ${
-                              isUnlocked ? "bg-gradient-to-r from-amber-500 to-emerald-500" : "bg-[#4F46E5]"
+                              isUnlocked ? "bg-gradient-to-r from-amber-500 to-emerald-500" : "bg-amber-500"
                             }`}
                             style={{ width: `${Math.min(100, cert.progress)}%` }}
                           />
@@ -197,8 +209,8 @@ function CertificatesContent() {
                         {isUnlocked ? (
                           <div className="grid grid-cols-2 gap-2">
                             <button
-                              onClick={() => setSelectedCert(cert)}
-                              className="w-full py-2 px-3 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
+                              onClick={() => openCertificateModal(cert)}
+                              className="w-full py-2 px-3 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                             >
                               <Eye size={14} /> View Certificate
                             </button>
@@ -211,10 +223,10 @@ function CertificatesContent() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => setSelectedCert(cert)}
-                            className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
+                            onClick={() => openCertificateModal(cert)}
+                            className="w-full py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
                           >
-                            <Award size={14} /> Claim Certificate ({cert.progress}%)
+                            <Lock size={14} className="text-slate-500" /> Complete 100% to Unlock
                           </button>
                         )}
                       </div>
@@ -303,7 +315,7 @@ function CertificatesContent() {
                   </div>
 
                   <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-lg mx-auto leading-relaxed">
-                    has successfully completed the comprehensive curriculum and practical assessments for
+                    has successfully completed 100% of the comprehensive curriculum and practical assessments for
                   </p>
 
                   {/* Course Title */}
