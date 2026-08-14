@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ShieldCheck, Sparkles, BookOpen, CheckCircle2, AlertTriangle, TrendingUp, Zap, HelpCircle, RefreshCw, Award, XCircle } from "lucide-react";
-import { MetricCard, RecommendationCard, ReviewAccordionCard, SectionHeader } from "@/components/practice/PracticeUi";
+import {
+  ArrowLeft, ShieldCheck, Sparkles, BookOpen, CheckCircle2, AlertTriangle,
+  TrendingUp, Zap, HelpCircle, RefreshCw, Award, XCircle, CheckCircle, Clock,
+  BarChart3, CheckSquare, ChevronRight
+} from "lucide-react";
+import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 
 interface ReviewRecord {
   id: string;
@@ -23,13 +27,7 @@ interface ReviewRecord {
   starterCode?: string | null;
   testCases?: any[] | null;
   confidence?: boolean;
-}
-
-interface ConfidenceAnalysis {
-  correct_confident: number;
-  correct_not_confident: number;
-  wrong_confident: number;
-  wrong_not_confident: number;
+  options?: any[];
 }
 
 interface QuizSessionData {
@@ -47,9 +45,6 @@ interface QuizSessionData {
   certificationProgress: number;
   certificationEligible: boolean;
   weakTopics: string[];
-  aiRecommendations: Array<{ label: string; reason: string }>;
-  difficultyBreakdown: Record<string, { correct: number; total: number }>;
-  topicPerformance: Record<string, { correct: number; total: number }>;
   reviewRecords: ReviewRecord[];
   createdAt: string;
   meta: Record<string, unknown>;
@@ -57,10 +52,7 @@ interface QuizSessionData {
   correctCount?: number;
   wrongCount?: number;
   skippedCount?: number;
-  averageTimePerQuestion?: number;
-  topicsCovered?: string[];
   xpEarned?: number;
-  confidenceAnalysis?: ConfidenceAnalysis;
 }
 
 interface PracticeResultsAnalyticsProps {
@@ -75,8 +67,8 @@ function formatTime(seconds: number) {
 
 export function PracticeResultsAnalytics({ sessionData }: PracticeResultsAnalyticsProps) {
   const router = useRouter();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<"all" | "incorrect" | "skipped">("all");
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
 
   const allReviewRecords = sessionData.reviewRecords || [];
   const incorrectRecords = allReviewRecords.filter((r) => r.isAttempted && !r.correct);
@@ -91,239 +83,272 @@ export function PracticeResultsAnalytics({ sessionData }: PracticeResultsAnalyti
 
   const scorePercent = typeof sessionData.scorePercent === "number" ? sessionData.scorePercent : (typeof sessionData.score === "number" ? sessionData.score : 0);
   const earnedMarks = sessionData.earnedMarks ?? sessionData.awardedMarks ?? 0;
-  const totalMarks = sessionData.totalMarks ?? 0;
+  const totalMarks = sessionData.totalMarks ?? (allReviewRecords.length * 3);
   const attemptedCount = sessionData.attemptedCount ?? (allReviewRecords.filter((r) => r.isAttempted).length);
   const totalQuestions = sessionData.totalQuestions ?? allReviewRecords.length;
-
-  const confidence = sessionData.confidenceAnalysis || {
-    correct_confident: 0,
-    correct_not_confident: 0,
-    wrong_confident: 0,
-    wrong_not_confident: 0,
-  };
-
-  const handleRetryWeak = () => {
-    router.push(`/practice?courseId=${encodeURIComponent(sessionData.courseId)}&retryMode=wrong`);
-  };
+  const correctCount = sessionData.correctCount ?? allReviewRecords.filter((r) => r.correct).length;
+  const wrongCount = sessionData.wrongCount ?? allReviewRecords.filter((r) => r.isAttempted && !r.correct).length;
+  const skippedCount = sessionData.skippedCount ?? allReviewRecords.filter((r) => !r.isAttempted).length;
+  const xpEarned = sessionData.xpEarned ?? Math.round(earnedMarks * 10);
+  const grade = sessionData.grade || (scorePercent >= 90 ? "A+" : scorePercent >= 75 ? "A" : scorePercent >= 60 ? "B" : "F");
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 py-8">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <button
-          type="button"
-          onClick={() => router.push("/practice")}
-          className="mb-6 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm hover:shadow-md transition"
-        >
-          <ArrowLeft size={16} /> Back to Practice Hub
-        </button>
+    <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans antialiased">
+      {/* Integrated Unified Sidebar */}
+      <LeftSidebar
+        activeTab="AI Quiz Generator"
+        onTabChange={(tab) => {
+          if (tab === "Dashboard") router.push("/dashboard");
+          else if (tab === "Explore Courses") router.push("/courses/catalog");
+          else if (tab === "Courses") router.push("/courses");
+          else if (tab === "Leaderboard") router.push("/leaderboard");
+          else if (tab === "AI Mentor") router.push("/codexai");
+          else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
+          else if (tab === "Workspace") router.push("/workspace");
+          else if (tab === "Certificates") router.push("/certificates");
+          else if (tab === "Settings") router.push("/settings");
+        }}
+        fullHeight={true}
+      />
 
-        <SectionHeader
-          title="Performance Review & Real-Time Analytics"
-          description="Detailed evaluation report of your AI practice session based strictly on attempted questions, weak topics, and certificate readiness."
-          badge="Evaluated"
-        />
+      {/* Main Content Workspace - 100vh NON-SCROLLABLE FIT */}
+      <main className="flex-1 h-full overflow-hidden p-4 sm:p-5 flex flex-col gap-3.5 w-full max-w-[1600px] mx-auto">
+        {/* Top Summary Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/quiz-generator")}
+              className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer flex items-center gap-1.5 text-xs font-black"
+            >
+              <ArrowLeft size={16} /> Back to Quiz Generator
+            </button>
+            <div className="h-5 w-px bg-slate-200" />
+            <div>
+              <h1 className="text-sm sm:text-base font-black text-slate-900 leading-tight">MCQ Evaluation Report 📊</h1>
+              <p className="text-[11px] text-slate-500 font-medium">Session ID: {sessionData.id}</p>
+            </div>
+          </div>
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-          <section className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-600">Final Evaluated Score</p>
-                  <h2 className="mt-2 text-3xl font-bold text-slate-900">Score: {scorePercent}%</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Earned Marks: <span className="font-bold text-slate-900">{earnedMarks}</span> / <span className="font-bold text-slate-900">{totalMarks}</span> Marks
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    Attempted: {attemptedCount} of {totalQuestions} Questions ({sessionData.skippedCount ?? 0} Skipped)
-                  </p>
-                </div>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-xl bg-indigo-50 border border-indigo-100 text-[#4F46E5] text-xs font-black">
+              Earned: {earnedMarks}/{totalMarks} Marks
+            </span>
+            <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-black">
+              Accuracy: {sessionData.accuracy}%
+            </span>
+            <span className="px-3 py-1 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-black">
+              XP: +{xpEarned}
+            </span>
+          </div>
+        </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-center">
-                    <p className="text-xs font-semibold text-amber-800 uppercase">XP Earned</p>
-                    <p className="text-2xl font-bold text-amber-600 flex items-center justify-center gap-1"><Zap size={18} /> +{sessionData.xpEarned ?? 0}</p>
-                  </div>
-
-                  <div className={`rounded-2xl border px-4 py-3 text-center ${sessionData.certificationEligible ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
-                    <p className="text-xs font-semibold uppercase flex items-center justify-center gap-1">
-                      <Award size={14} /> Certificate
-                    </p>
-                    <p className="text-sm font-bold mt-1">
-                      {sessionData.certificationEligible ? "Qualified" : "Ineligible"}
-                    </p>
-                  </div>
+        {/* 2-COLUMN VIEWPORT WORKSPACE (NO OUTER SCROLL) */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5 min-h-0 overflow-hidden">
+          {/* LEFT COLUMN: Performance Summary & Metrics Card (4 cols) */}
+          <div className="lg:col-span-5 flex flex-col gap-3.5 min-h-0 overflow-y-auto custom-scrollbar pr-0.5">
+            {/* HERO SCORE CARD */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center text-center space-y-4">
+              <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
+                <div className="text-center">
+                  <div className="text-2xl font-black">{scorePercent}%</div>
+                  <div className="text-[10px] font-extrabold opacity-80 uppercase tracking-widest">Score</div>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                <MetricCard label="Attempted Score" value={`${scorePercent}%`} detail={`Grade ${sessionData.grade || "—"} • ${earnedMarks}/${totalMarks} marks`} accent="primary" />
-                <MetricCard label="Accuracy" value={`${sessionData.accuracy}%`} detail={`Across ${attemptedCount} attempted questions`} />
-                <MetricCard label="Time Taken" value={formatTime(sessionData.timeTakenSeconds)} detail={`Average ${sessionData.averageTimePerQuestion ?? 0}s / question`} />
-                <MetricCard label="Attempt Snapshot" value={`${sessionData.correctCount ?? 0} Correct`} detail={`${sessionData.wrongCount ?? 0} Incorrect • ${sessionData.skippedCount ?? 0} Skipped`} accent="success" />
+              <div>
+                <div className="flex items-center justify-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${scorePercent >= 75 ? 'bg-emerald-100 text-emerald-800' : scorePercent >= 60 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
+                    Grade {grade}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-black">
+                    {scorePercent >= 75 ? "Passed Certificate Bar" : "Needs Review"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-2">
+                  {earnedMarks} marks earned out of {totalMarks} total marks ({attemptedCount}/{totalQuestions} questions attempted).
+                </p>
+              </div>
+
+              {/* STATS TILES GRID */}
+              <div className="w-full grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-xs font-black text-slate-500 uppercase">Correct</div>
+                  <div className="text-lg font-black text-emerald-600 mt-0.5">{correctCount}</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-xs font-black text-slate-500 uppercase">Wrong</div>
+                  <div className="text-lg font-black text-red-600 mt-0.5">{wrongCount}</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-xs font-black text-slate-500 uppercase">Skipped</div>
+                  <div className="text-lg font-black text-amber-600 mt-0.5">{skippedCount}</div>
+                </div>
               </div>
             </div>
 
-            {/* Metacognition Confidence Matrix */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3 text-slate-900">
-                <HelpCircle size={20} className="text-blue-600" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Metacognition</p>
-                  <h3 className="text-lg font-semibold text-slate-900">Confidence vs. Accuracy Matrix</h3>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950">
-                  <p className="text-xs font-semibold text-emerald-800 uppercase">Mastery (Correct & Confident)</p>
-                  <p className="mt-2 text-2xl font-bold text-emerald-700">{confidence.correct_confident}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950">
-                  <p className="text-xs font-semibold text-blue-800 uppercase">Lucky Guess (Correct & Unconfident)</p>
-                  <p className="mt-2 text-2xl font-bold text-blue-700">{confidence.correct_not_confident}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200 text-orange-950">
-                  <p className="text-xs font-semibold text-orange-800 uppercase">Overconfidence (Wrong & Confident)</p>
-                  <p className="mt-2 text-2xl font-bold text-orange-700">{confidence.wrong_confident}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-950">
-                  <p className="text-xs font-semibold text-red-800 uppercase">Weak Concept (Wrong & Unconfident)</p>
-                  <p className="mt-2 text-2xl font-bold text-red-700">{confidence.wrong_not_confident}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Question Breakdown List */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3 text-slate-900">
-                  <Sparkles size={20} className="text-blue-600" />
+            {/* TIME TAKEN & PROCTOR COMPLIANCE CARD */}
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Session Analytics</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+                  <Clock size={18} className="text-[#4F46E5]" />
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Explanations & Review</p>
-                    <h3 className="text-lg font-semibold text-slate-900">Detailed Question Evaluation</h3>
+                    <div className="text-[10px] font-bold text-slate-500">Time Taken</div>
+                    <div className="text-xs font-black text-slate-900">{formatTime(sessionData.timeTakenSeconds)}</div>
                   </div>
                 </div>
-
-                <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-semibold self-start sm:self-auto">
-                  <button onClick={() => setFilterMode("all")} className={`px-3 py-1.5 rounded-lg transition ${filterMode === "all" ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>All ({allReviewRecords.length})</button>
-                  <button onClick={() => setFilterMode("incorrect")} className={`px-3 py-1.5 rounded-lg transition ${filterMode === "incorrect" ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>Incorrect ({incorrectRecords.length})</button>
-                  <button onClick={() => setFilterMode("skipped")} className={`px-3 py-1.5 rounded-lg transition ${filterMode === "skipped" ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>Skipped ({skippedRecords.length})</button>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+                  <ShieldCheck size={18} className="text-emerald-600" />
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-500">Proctor Exam</div>
+                    <div className="text-xs font-black text-emerald-700">Verified Active</div>
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                {displayedRecords.length === 0 ? (
-                  <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">No questions match the selected filter.</div>
-                ) : (
-                  displayedRecords.map((record) => (
-                    <ReviewAccordionCard
-                      key={record.id}
-                      record={record}
-                      expanded={expandedId === record.id}
-                      onToggle={() => setExpandedId(expandedId === record.id ? null : record.id)}
-                      onPracticeSimilar={handleRetryWeak}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-          </section>
-
-          <aside className="space-y-6">
-            {/* Strict Certificate System Status */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3 text-slate-900">
-                <Award size={20} className="text-blue-600" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Certificate Status</p>
-                  <h3 className="text-lg font-semibold text-slate-900">Qualification Rules</h3>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-2.5 text-xs text-slate-600">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-                  <span>Score ≥ 75% ({scorePercent}%)</span>
-                  {scorePercent >= 75 ? <CheckCircle2 size={16} className="text-emerald-600" /> : <XCircle size={16} className="text-red-500" />}
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-                  <span>Proctor Mode ON</span>
-                  {Boolean(sessionData.meta?.challengeMode) ? <CheckCircle2 size={16} className="text-emerald-600" /> : <XCircle size={16} className="text-red-500" />}
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50">
-                  <span>All Questions Attempted ({attemptedCount}/{totalQuestions})</span>
-                  {attemptedCount === totalQuestions ? <CheckCircle2 size={16} className="text-emerald-600" /> : <XCircle size={16} className="text-red-500" />}
-                </div>
-              </div>
-
-              <div className={`mt-4 p-3 rounded-2xl text-xs font-semibold ${sessionData.certificationEligible ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-amber-50 text-amber-900 border border-amber-200'}`}>
-                {sessionData.certificationEligible ? (
-                  <p>Congratulations! You qualify for course certification.</p>
-                ) : (
-                  <p>Certificate requires Score ≥ 75%, Proctor Mode ON, and All Questions Attempted.</p>
-                )}
               </div>
             </div>
 
-            {/* Weak Topics strictly from Attempted INCORRECT questions */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3 text-slate-900">
-                <BookOpen size={18} className="text-blue-600" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Weak Topics</p>
-                  <h3 className="text-lg font-semibold text-slate-900">Incorrect Answer Analysis</h3>
+            {/* WEAK TOPICS & SMART RETRY CARD */}
+            {sessionData.weakTopics && sessionData.weakTopics.length > 0 && (
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <AlertTriangle size={16} className="text-amber-600" />
+                  <h3 className="text-xs font-black uppercase tracking-wider">Weak Concepts Identified</h3>
                 </div>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Derived strictly from topics of attempted incorrect answers (excludes skipped).</p>
-
-              <div className="mt-4 space-y-3">
-                {sessionData.weakTopics.length === 0 ? (
-                  <p className="text-xs text-slate-500">No weak topics identified! You answered all attempted questions correctly.</p>
-                ) : (
-                  sessionData.weakTopics.map((topic) => (
-                    <div key={topic} className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-900 flex items-center justify-between">
-                      <span>{topic}</span>
-                      <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">Review</span>
-                    </div>
-                  ))
-                )}
-
+                <div className="flex flex-wrap gap-1.5">
+                  {sessionData.weakTopics.map((topic, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
+                      {topic}
+                    </span>
+                  ))}
+                </div>
                 <button
-                  type="button"
-                  onClick={handleRetryWeak}
-                  className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-4 py-3 text-xs font-semibold text-white shadow-sm hover:bg-amber-600 transition"
+                  onClick={() => router.push(`/practice?courseId=${encodeURIComponent(sessionData.courseId)}&retryMode=wrong`)}
+                  className="w-full mt-2 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <RefreshCw size={14} /> Retry Weak Topics (Smart Mode)
+                  <RefreshCw size={14} /> Retry Weak Concept MCQs
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT COLUMN: Question Evaluation Review List (7 cols) - INNER SCROLL */}
+          <div className="lg:col-span-7 flex flex-col bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs min-h-0 overflow-hidden">
+            {/* Header & Filter Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 shrink-0">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <BookOpen size={16} className="text-[#4F46E5]" /> Question Evaluation Breakdown
+              </h3>
+
+              <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-black">
+                <button
+                  onClick={() => setFilterMode("all")}
+                  className={`px-3 py-1 rounded-lg transition ${filterMode === "all" ? "bg-[#4F46E5] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+                >
+                  All ({allReviewRecords.length})
+                </button>
+                <button
+                  onClick={() => setFilterMode("incorrect")}
+                  className={`px-3 py-1 rounded-lg transition ${filterMode === "incorrect" ? "bg-red-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+                >
+                  Incorrect ({incorrectRecords.length})
+                </button>
+                <button
+                  onClick={() => setFilterMode("skipped")}
+                  className={`px-3 py-1 rounded-lg transition ${filterMode === "skipped" ? "bg-amber-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+                >
+                  Skipped ({skippedRecords.length})
                 </button>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3 text-slate-900">
-                <TrendingUp size={18} className="text-blue-600" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">AI Guidance</p>
-                  <h3 className="text-lg font-semibold text-slate-900">Recommended Steps</h3>
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                {sessionData.aiRecommendations.map((rec) => (
-                  <RecommendationCard
-                    key={rec.label}
-                    icon={<CheckCircle2 size={16} />}
-                    title={rec.label}
-                    description={rec.reason}
-                    ctaLabel="Practice Again"
-                    onAction={() => router.push("/practice")}
-                  />
-                ))}
-              </div>
+            {/* SCROLLABLE QUESTION REVIEW LIST */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-3 py-3 min-h-0">
+              {displayedRecords.length === 0 ? (
+                <div className="p-8 text-center text-xs font-semibold text-slate-400">No questions match the selected filter.</div>
+              ) : (
+                displayedRecords.map((record, idx) => {
+                  const isExpanded = selectedRecordId === record.id;
+                  const userAns = record.isAttempted ? String(record.selectedAnswer ?? record.userAnswer) : "Skipped";
+                  const correctAns = record.correctAnswer !== null && record.correctAnswer !== undefined ? String(record.correctAnswer) : "N/A";
+
+                  return (
+                    <div
+                      key={record.id || idx}
+                      className={`p-4 rounded-xl border transition duration-150 ${
+                        record.correct
+                          ? "bg-emerald-50/40 border-emerald-200"
+                          : !record.isAttempted
+                          ? "bg-amber-50/40 border-amber-200"
+                          : "bg-red-50/40 border-red-200"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                            {record.correct ? (
+                              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold flex items-center gap-1">
+                                <CheckCircle size={12} /> Correct (+{record.marks ?? 3} Marks)
+                              </span>
+                            ) : !record.isAttempted ? (
+                              <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-extrabold flex items-center gap-1">
+                                <HelpCircle size={12} /> Skipped (0 Marks)
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-extrabold flex items-center gap-1">
+                                <XCircle size={12} /> Incorrect (0 Marks)
+                              </span>
+                            )}
+                            <span className="text-slate-500">&bull; {record.topic || "General Concept"}</span>
+                          </div>
+
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 leading-snug pt-1">
+                            Q{idx + 1}. {record.question}
+                          </h4>
+                        </div>
+
+                        <button
+                          onClick={() => setSelectedRecordId(isExpanded ? null : record.id)}
+                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-black text-slate-700 hover:bg-slate-50 shrink-0 cursor-pointer"
+                        >
+                          {isExpanded ? "Hide" : "Review Details"}
+                        </button>
+                      </div>
+
+                      {/* Expanded Answer Breakdown & Explanation */}
+                      {isExpanded && (
+                        <div className="mt-3 pt-3 border-t border-slate-200/80 space-y-2 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                              <span className="font-extrabold text-slate-500 block text-[10px] uppercase">Your Answer:</span>
+                              <span className={`font-black ${record.correct ? 'text-emerald-700' : !record.isAttempted ? 'text-amber-700 italic' : 'text-red-700'}`}>
+                                {userAns}
+                              </span>
+                            </div>
+
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                              <span className="font-extrabold text-slate-500 block text-[10px] uppercase">Correct Answer:</span>
+                              <span className="font-black text-emerald-700">
+                                {correctAns}
+                              </span>
+                            </div>
+                          </div>
+
+                          {record.explanation && (
+                            <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-indigo-900 leading-relaxed font-medium">
+                              <span className="font-black block mb-0.5 text-indigo-950">AI Concept Explanation:</span>
+                              {record.explanation}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
-          </aside>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

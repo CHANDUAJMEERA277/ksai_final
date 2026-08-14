@@ -6,8 +6,7 @@ import { useSession } from "@/lib/auth-client";
 import { motion } from "framer-motion";
 import {
   Play, ShieldCheck, Eye, Bookmark, Sparkles, RefreshCw,
-  CheckCircle, HelpCircle, CalendarDays, BookOpen, Layers, CheckCircle2,
-  CheckSquare, Square, ChevronRight
+  CheckCircle, HelpCircle, CalendarDays, BookOpen, Layers
 } from "lucide-react";
 import { useNotification } from "@/components/ui/NotificationContext";
 import { PracticeHistoryPanel } from "@/components/practice/PracticeHistoryPanel";
@@ -47,7 +46,6 @@ function QuizGeneratorContent() {
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [builderConfig, setBuilderConfig] = useState({ difficulty: "mixed", count: 10, types: ["mcq"] });
-  const [proctorMode, setProctorMode] = useState(false);
   const [retryModeActive, setRetryModeActive] = useState(false);
 
   useEffect(() => {
@@ -112,10 +110,14 @@ function QuizGeneratorContent() {
       notify("Please select a course before starting your MCQ quiz.", "warning");
       return;
     }
+    if (selectedChapters.length === 0) {
+      notify("Please select at least 1 chapter to start your MCQ quiz.", "warning");
+      return;
+    }
     setIsGenerating(true);
 
     try {
-      const activeChapters = selectedChapters.length > 0 ? selectedChapters : chapters.map((c) => c.id);
+      const activeChapters = selectedChapters;
       const res = await fetch("/api/practice/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +125,7 @@ function QuizGeneratorContent() {
           courseId: selectedCourse.id,
           chapters: activeChapters,
           config: { ...builderConfig, types: ["mcq"] },
-          proctored: proctorMode,
+          proctored: true, // Mandatory Proctor Mode
           retryMode: overrideRetryMode || retryModeActive ? "wrong" : "standard",
         }),
       });
@@ -140,8 +142,8 @@ function QuizGeneratorContent() {
         setSessionId(data.sessionId || null);
         notify(
           overrideRetryMode || retryModeActive
-            ? "Retry MCQ quiz generated targeting your weak topics!"
-            : "Adaptive MCQ practice quiz generated successfully.",
+            ? "Retry MCQ quiz generated targeting your weak topics! (Proctor Mode Active)"
+            : "Adaptive MCQ practice quiz generated successfully! (Proctor Mode Active)",
           "success"
         );
       } else {
@@ -257,7 +259,7 @@ function QuizGeneratorContent() {
                 </div>
               </div>
 
-              {/* Step 2 & 3 Combined Workspace - Vertical Stack List (Below Below Only) & Integrated Action Panel */}
+              {/* Step 2 & 3 Combined Workspace - Vertical Stack List (Below Below Only) */}
               <div className="flex-1 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col min-h-0 overflow-hidden">
                 {/* List Header Control Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 shrink-0">
@@ -291,7 +293,7 @@ function QuizGeneratorContent() {
                   </div>
                 </div>
 
-                {/* STACKED VERTICAL LIST (BELOW BELOW ONLY) - FITS IN VIEWPORT WITH SLIM INNER SCROLL */}
+                {/* STACKED VERTICAL LIST (BELOW BELOW ONLY) */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2 py-3 min-h-0">
                   {chapters.length === 0 ? (
                     <div className="p-8 text-center text-xs font-semibold text-slate-400">Loading course chapters...</div>
@@ -339,7 +341,7 @@ function QuizGeneratorContent() {
                   )}
                 </div>
 
-                {/* Bottom MCQ Quiz Controls Bar */}
+                {/* Bottom MCQ Quiz Controls Bar - Mandatory Proctor Mode */}
                 <div className="pt-3 border-t border-slate-100 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3 text-xs font-black text-slate-700">
                     <label className="flex items-center gap-2">
@@ -368,17 +370,11 @@ function QuizGeneratorContent() {
                       />
                     </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                      <input
-                        type="checkbox"
-                        checked={proctorMode}
-                        onChange={(e) => setProctorMode(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#4F46E5]"
-                      />
-                      <span className="flex items-center gap-1.5 text-slate-900">
-                        <ShieldCheck size={14} className="text-[#4F46E5]" /> Proctor Mode
-                      </span>
-                    </label>
+                    {/* MANDATORY PROCTOR MODE BADGE (NOT OPTIONAL) */}
+                    <div className="flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-extrabold text-xs">
+                      <ShieldCheck size={14} className="text-red-600" />
+                      <span>Proctor Mode: Mandatory Active (3/3 Violation Chances)</span>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2.5">
@@ -407,7 +403,6 @@ function QuizGeneratorContent() {
             <QuizPlayer
               quiz={quiz}
               sessionId={sessionId}
-              proctorMode={proctorMode}
               onExit={() => {
                 setQuiz(null);
                 setSessionId(null);
@@ -427,12 +422,10 @@ function QuizGeneratorContent() {
 function QuizPlayer({
   quiz,
   sessionId,
-  proctorMode,
   onExit,
 }: {
   quiz: QuizQuestion[];
   sessionId: string | null;
-  proctorMode: boolean;
   onExit: () => void;
 }) {
   const router = useRouter();
@@ -480,15 +473,16 @@ function QuizPlayer({
     return () => clearInterval(iv);
   }, [answers, confidence, bookmarks]);
 
+  // MANDATORY PROCTOR MODE MONITORING (3/3 CHANCES)
   useEffect(() => {
-    if (!proctorMode) return;
-
     const recordViolation = (type: string) => {
       setViolations((current) => {
         const next = current + 1;
-        notify(`Proctor violation detected: ${type} (${next}/3)`, "warning");
-        if (next >= 3 && !isSubmitting) {
-          submitFinal();
+        if (next >= 3) {
+          notify(`Proctor Limit Reached (3/3): ${type}. Submitting test immediately...`, "error");
+          if (!isSubmitting) submitFinal();
+        } else {
+          notify(`Proctor Warning (${next}/3 chances used): ${type} detected!`, "warning");
         }
         return next;
       });
@@ -504,11 +498,11 @@ function QuizPlayer({
     };
     const handleCopy = (e: ClipboardEvent) => {
       e.preventDefault();
-      recordViolation("Copy block");
+      recordViolation("Copy blocked");
     };
     const handlePaste = (e: ClipboardEvent) => {
       e.preventDefault();
-      recordViolation("Paste block");
+      recordViolation("Paste blocked");
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
@@ -524,7 +518,7 @@ function QuizPlayer({
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("paste", handlePaste);
     };
-  }, [proctorMode, isSubmitting]);
+  }, [isSubmitting]);
 
   const autosave = async () => {
     if (!sessionId) return;
@@ -598,11 +592,10 @@ function QuizPlayer({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {proctorMode && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-              <Eye size={14} /> Proctor Active ({violations}/3)
-            </span>
-          )}
+          {/* MANDATORY PROCTOR STATUS BADGE (3/3 CHANCES) */}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-extrabold text-red-700">
+            <Eye size={14} /> Proctor Mandatory ({violations}/3 Violations)
+          </span>
           <button
             onClick={() => setBookmarks((b) => ({ ...b, [q.id]: !b[q.id] }))}
             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${bookmarks[q.id] ? 'bg-amber-100 text-amber-800 border-amber-300 font-semibold' : 'bg-slate-50 text-slate-700 border-slate-200'}`}
@@ -616,13 +609,11 @@ function QuizPlayer({
         <div className="h-full rounded-full bg-[#4F46E5] transition-all duration-300" style={{ width: `${((index + 1) / quiz.length) * 100}%` }} />
       </div>
 
-      {/* Question Header & Body */}
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-sm sm:text-base font-black text-slate-900 whitespace-pre-wrap">{q.question}</p>
         {q.topic ? <p className="mt-1.5 text-xs font-bold text-slate-500">Concept / Topic: {q.topic}</p> : null}
       </div>
 
-      {/* MCQ Answer Options */}
       <div className="space-y-2">
         {options.map((opt: any, i: number) => (
           <label key={i} className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition ${answers[q.id] === i ? 'bg-indigo-50/80 text-slate-900 border-[#4F46E5] ring-1 ring-indigo-200 font-bold' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}`}>
@@ -632,7 +623,6 @@ function QuizPlayer({
         ))}
       </div>
 
-      {/* Confidence Selection */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
         <span className="text-xs font-black text-slate-700">Confidence Level:</span>
         <button
@@ -651,7 +641,6 @@ function QuizPlayer({
         </button>
       </div>
 
-      {/* Pagination & Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1 border-t border-slate-100">
         <div className="flex gap-2">
           <button onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} className="px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-slate-100 transition disabled:opacity-50 cursor-pointer">Previous</button>

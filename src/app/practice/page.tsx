@@ -46,7 +46,6 @@ function PracticeContent() {
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [builderConfig, setBuilderConfig] = useState({ difficulty: "mixed", count: 10, types: ["mcq"] });
-  const [proctorMode, setProctorMode] = useState(false);
   const [retryModeActive, setRetryModeActive] = useState(false);
 
   useEffect(() => {
@@ -110,10 +109,14 @@ function PracticeContent() {
       notify("Please select a course before starting your MCQ quiz.", "warning");
       return;
     }
+    if (selectedChapters.length === 0) {
+      notify("Please select at least 1 chapter to start your MCQ quiz.", "warning");
+      return;
+    }
     setIsGenerating(true);
 
     try {
-      const activeChapters = selectedChapters.length > 0 ? selectedChapters : chapters.map((c) => c.id);
+      const activeChapters = selectedChapters;
       const res = await fetch("/api/practice/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -121,7 +124,7 @@ function PracticeContent() {
           courseId: selectedCourse.id,
           chapters: activeChapters,
           config: { ...builderConfig, types: ["mcq"] },
-          proctored: proctorMode,
+          proctored: true, // Mandatory Proctor Mode
           retryMode: overrideRetryMode || retryModeActive ? "wrong" : "standard",
         }),
       });
@@ -137,8 +140,8 @@ function PracticeContent() {
         setSessionId(data.sessionId || null);
         notify(
           overrideRetryMode || retryModeActive
-            ? "Retry MCQ quiz generated targeting your weak topics!"
-            : "Adaptive MCQ practice quiz generated successfully.",
+            ? "Retry MCQ quiz generated targeting your weak topics! (Proctor Mode Active)"
+            : "Adaptive MCQ practice quiz generated successfully! (Proctor Mode Active)",
           "success"
         );
       } else {
@@ -357,17 +360,10 @@ function PracticeContent() {
                       />
                     </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                      <input
-                        type="checkbox"
-                        checked={proctorMode}
-                        onChange={(e) => setProctorMode(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#4F46E5]"
-                      />
-                      <span className="flex items-center gap-1.5 text-slate-900">
-                        <ShieldCheck size={14} className="text-[#4F46E5]" /> Proctor Mode
-                      </span>
-                    </label>
+                    <div className="flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-extrabold text-xs">
+                      <ShieldCheck size={14} className="text-red-600" />
+                      <span>Proctor Mode: Mandatory Active (3/3 Violation Chances)</span>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2.5">
@@ -396,7 +392,6 @@ function PracticeContent() {
             <QuizPlayer
               quiz={quiz}
               sessionId={sessionId}
-              proctorMode={proctorMode}
               onExit={() => {
                 setQuiz(null);
                 setSessionId(null);
@@ -416,12 +411,10 @@ function PracticeContent() {
 function QuizPlayer({
   quiz,
   sessionId,
-  proctorMode,
   onExit,
 }: {
   quiz: QuizQuestion[];
   sessionId: string | null;
-  proctorMode: boolean;
   onExit: () => void;
 }) {
   const router = useRouter();
@@ -470,14 +463,14 @@ function QuizPlayer({
   }, [answers, confidence, bookmarks]);
 
   useEffect(() => {
-    if (!proctorMode) return;
-
     const recordViolation = (type: string) => {
       setViolations((current) => {
         const next = current + 1;
-        notify(`Proctor violation detected: ${type} (${next}/3)`, "warning");
-        if (next >= 3 && !isSubmitting) {
-          submitFinal();
+        if (next >= 3) {
+          notify(`Proctor Limit Reached (3/3): ${type}. Submitting test immediately...`, "error");
+          if (!isSubmitting) submitFinal();
+        } else {
+          notify(`Proctor Warning (${next}/3 chances used): ${type} detected!`, "warning");
         }
         return next;
       });
@@ -493,11 +486,11 @@ function QuizPlayer({
     };
     const handleCopy = (e: ClipboardEvent) => {
       e.preventDefault();
-      recordViolation("Copy block");
+      recordViolation("Copy blocked");
     };
     const handlePaste = (e: ClipboardEvent) => {
       e.preventDefault();
-      recordViolation("Paste block");
+      recordViolation("Paste blocked");
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
@@ -513,7 +506,7 @@ function QuizPlayer({
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("paste", handlePaste);
     };
-  }, [proctorMode, isSubmitting]);
+  }, [isSubmitting]);
 
   const autosave = async () => {
     if (!sessionId) return;
@@ -587,11 +580,9 @@ function QuizPlayer({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {proctorMode && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-              <Eye size={14} /> Proctor Active ({violations}/3)
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-extrabold text-red-700">
+            <Eye size={14} /> Proctor Mandatory ({violations}/3 Violations)
+          </span>
           <button
             onClick={() => setBookmarks((b) => ({ ...b, [q.id]: !b[q.id] }))}
             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${bookmarks[q.id] ? 'bg-amber-100 text-amber-800 border-amber-300 font-semibold' : 'bg-slate-50 text-slate-700 border-slate-200'}`}

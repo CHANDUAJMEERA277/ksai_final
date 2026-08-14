@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { PracticeResultsAnalytics } from "@/components/practice/PracticeResultsAnalytics";
+import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 
 export default function PracticeResultsPage() {
   const params = useParams<{ sessionId: string }>();
@@ -21,11 +22,33 @@ export default function PracticeResultsPage() {
   }, [params?.sessionId]);
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center">Loading results…</div>;
+    return (
+      <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans">
+        <LeftSidebar
+          activeTab="AI Quiz Generator"
+          onTabChange={() => {}}
+          fullHeight={true}
+        />
+        <main className="flex-1 h-full flex items-center justify-center text-xs font-mono font-bold text-slate-500">
+          Loading Evaluation Report...
+        </main>
+      </div>
+    );
   }
 
   if (!sessionData) {
-    return <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center">No results available for this session.</div>;
+    return (
+      <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans">
+        <LeftSidebar
+          activeTab="AI Quiz Generator"
+          onTabChange={() => {}}
+          fullHeight={true}
+        />
+        <main className="flex-1 h-full flex items-center justify-center text-xs font-mono font-bold text-slate-500">
+          No results evaluation report available for this session ID.
+        </main>
+      </div>
+    );
   }
 
   return <PracticeResultsAnalytics sessionData={sessionData} />;
