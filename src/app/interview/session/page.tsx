@@ -2569,56 +2569,9 @@ console.log(
 
   return (
 
-    <div className="h-screen bg-[#050507] text-white flex flex-col overflow-hidden font-sans">
-
-      {proctorWarning && (
-  <div className="fixed top-20 right-5 z-[100] w-[320px] rounded-2xl border border-amber-500/30 bg-[#15120A] p-4 shadow-2xl">
-
-    <div className="flex items-start gap-3">
-
-      <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-        <Video
-          size={16}
-          className="text-amber-400"
-        />
-      </div>
-
-      <div className="flex-1">
-
-        <p className="text-xs font-bold text-amber-300">
-          Proctoring Warning
-        </p>
-
-        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-          {proctorWarning}
-        </p>
-
-        <p className="text-[10px] text-amber-500 mt-2 font-bold">
-          Warning {proctorWarningCount} / {MAX_PROCTOR_WARNINGS}
-        </p>
-
-      </div>
-
-      <button
-        type="button"
-        onClick={() =>
-          setProctorWarning(null)
-        }
-        className="text-slate-600 hover:text-white"
-      >
-        <X size={15} />
-      </button>
-
-    </div>
-
-  </div>
-)}
-
-      {/* ===================================================
-          TOP BAR
-      ==================================================== */}
-
-      <header className="h-16 border-b border-white/10 bg-[#09090B]/90 backdrop-blur-xl">
+    <div className="h-screen bg-[#F8FAFC] text-slate-900 flex flex-col overflow-hidden font-sans">
+      {/* Top Header */}
+      <header className="h-16 border-b border-slate-200 bg-white shadow-2xs">
 
         <div className="h-full max-w-[1600px] mx-auto px-4 md:px-6 flex items-center justify-between">
 
@@ -2808,7 +2761,7 @@ console.log(
               MAIN QUESTION PANEL
           ================================================= */}
 
-          <section className="min-h-[calc(100vh-115px)] rounded-3xl border border-white/10 bg-[#09090B] overflow-hidden">
+          <section className="flex-1 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs overflow-hidden flex flex-col justify-between text-slate-900">
 
             {/* Interviewer */}
 
@@ -3005,7 +2958,7 @@ console.log(
     ? "Answer the follow-up question..."
     : "Start typing your answer here..."
 }
-                      className="w-full min-h-[220px] resize-none rounded-2xl border border-white/10 bg-black/30 p-5 text-sm text-slate-200 placeholder:text-slate-700 outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 transition"
+                      className="w-full min-h-[200px] resize-none rounded-2xl border border-slate-300 bg-slate-50 p-5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500/20 transition"
                     />
 
                   </div>
@@ -3214,7 +3167,7 @@ console.log(
     CAMERA / PROCTORING
 ================================================== */}
 
-<div className="rounded-3xl border border-white/10 bg-[#09090B] p-4">
+<div className="rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xs">
 
   <div className="flex items-center justify-between mb-3">
 
@@ -3386,7 +3339,7 @@ console.log(
                 INTERVIEW STATUS
             ================================================== */}
 
-            <div className="rounded-3xl border border-white/10 bg-[#09090B] p-5">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-slate-900 shadow-xs">
 
               <div className="flex items-center justify-between">
 
@@ -3394,7 +3347,7 @@ console.log(
                   Interview Progress
                 </h3>
 
-                <span className="text-xs text-cyan-400 font-bold">
+                <span className="text-xs text-blue-600 font-bold">
                   {Math.round(
                     progress
                   )}%
@@ -3403,10 +3356,10 @@ console.log(
               </div>
 
 
-              <div className="h-2 rounded-full bg-white/5 mt-4 overflow-hidden">
+              <div className="h-2 rounded-full bg-slate-100 mt-4 overflow-hidden">
 
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all"
+                  className="h-full bg-blue-600 rounded-full transition-all"
                   style={{
                     width: `${progress}%`,
                   }}
@@ -3415,7 +3368,7 @@ console.log(
               </div>
 
 
-              <p className="text-[11px] text-slate-600 mt-2">
+              <p className="text-[11px] text-slate-500 mt-2">
                 {currentIndex + 1} of{" "}
                 {totalQuestions} questions
               </p>
@@ -3427,9 +3380,9 @@ console.log(
                 SESSION DETAILS
             ================================================== */}
 
-            <div className="rounded-3xl border border-white/10 bg-[#09090B] p-5">
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 text-slate-900 shadow-xs">
 
-              <p className="text-[10px] uppercase tracking-widest text-slate-600 font-bold">
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black">
                 Session
               </p>
 
@@ -3475,7 +3428,7 @@ console.log(
                 INTERVIEWER TIPS
             ================================================== */}
 
-            <div className="rounded-3xl border border-purple-500/15 bg-purple-500/[0.04] p-5">
+            <div className="rounded-3xl border border-purple-200 bg-purple-50/70 p-5 text-slate-900 shadow-xs">
 
               <div className="flex items-center gap-2 text-purple-400">
 
