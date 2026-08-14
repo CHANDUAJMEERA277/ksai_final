@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
@@ -100,6 +100,46 @@ export default function DashboardPage() {
     }, 300);
   };
 
+  // Search & Profile Menu states and refs
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  const ALL_SEARCH_TOPICS = [
+    { title: "Java Enterprise & Object-Oriented Architecture", path: "/courses/java/curriculum", category: "Java Course", icon: "☕" },
+    { title: "C Language Mastery & System Programming", path: "/courses/c/curriculum", category: "C Course", icon: "⚡" },
+    { title: "C++ Object-Oriented & STL Mastery", path: "/courses/cpp/curriculum", category: "C++ Course", icon: "🚀" },
+    { title: "Python AI & Data Structures Mastery", path: "/courses/python/curriculum", category: "Python Course", icon: "🐍" },
+    { title: "Data Structures & Algorithms (DSA)", path: "/courses/cpp/curriculum", category: "Topic", icon: "📊" },
+    { title: "Object-Oriented Programming (OOPs)", path: "/courses/java/curriculum", category: "Core Concept", icon: "💡" },
+    { title: "Pointers & Dynamic Memory Management", path: "/courses/c/curriculum", category: "C Topic", icon: "🧠" },
+    { title: "Generics & Collections Framework", path: "/courses/java/curriculum", category: "Java Topic", icon: "📦" },
+    { title: "AI Practice Workspace & Quiz Generator", path: "/quiz-generator", category: "AI Tool", icon: "🤖" },
+    { title: "Interactive Coding Editor", path: "/workspace", category: "IDE Workspace", icon: "💻" },
+    { title: "Weekly Leaderboard Rankings", path: "/leaderboard", category: "Community", icon: "🏆" },
+  ];
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return ALL_SEARCH_TOPICS.filter(
+      (item) => item.title.toLowerCase().includes(q) || item.category.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/auth";
+    } catch (err) {
+      console.error("Logout failed:", err);
+      window.location.href = "/auth";
+    }
+  };
+
   // Heartbeat ping effect
   useEffect(() => {
     const sendHeartbeat = async () => {
@@ -119,9 +159,15 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Close notifications on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
         setNotificationsOpen(false);
       }
@@ -358,22 +404,76 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Search Input */}
-            <div className="relative hidden md:block">
+            {/* Functional Search Input with Live Dropdown */}
+            <div className="relative hidden md:block" ref={searchRef}>
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (searchResults.length > 0) {
+                      router.push(searchResults[0].path);
+                      setSearchOpen(false);
+                    } else if (searchQuery.trim()) {
+                      router.push(`/courses/catalog?search=${encodeURIComponent(searchQuery)}`);
+                      setSearchOpen(false);
+                    }
+                  }
+                }}
                 placeholder="Search courses, topics..." 
-                className="pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 w-56 focus:outline-none focus:border-[#4F46E5] placeholder-slate-400 font-medium shadow-sm"
-                disabled
+                className="pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 w-60 focus:outline-none focus:border-[#4F46E5] placeholder-slate-400 font-medium shadow-sm transition-all"
               />
+
+              {/* Live Search Results Dropdown */}
+              {searchOpen && searchQuery.trim().length > 0 && (
+                <div className="absolute right-0 top-10 w-80 max-h-80 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 scrollbar-thin animate-fadeIn">
+                  <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    Search Results ({searchResults.length})
+                  </div>
+
+                  {searchResults.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-400 font-medium">
+                      No matching courses or topics found.
+                    </div>
+                  ) : (
+                    searchResults.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          router.push(item.path);
+                          setSearchOpen(false);
+                          setSearchQuery("");
+                        }}
+                        className="w-full text-left p-2.5 rounded-xl hover:bg-indigo-50/60 transition-colors flex items-center gap-2.5 group cursor-pointer border border-transparent hover:border-indigo-100"
+                      >
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-black text-slate-800 truncate group-hover:text-[#4F46E5] transition-colors">
+                            {item.title}
+                          </div>
+                          <div className="text-[10px] font-bold text-slate-400">
+                            {item.category}
+                          </div>
+                        </div>
+                        <ArrowRight size={12} className="text-slate-400 group-hover:text-[#4F46E5] shrink-0" />
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Notification Icon */}
             <div className="relative" ref={notificationsRef}>
               <button 
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="w-8 h-8 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all hover:shadow-sm cursor-pointer"
+                className="w-8.5 h-8.5 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all hover:shadow-sm cursor-pointer"
               >
                 <Bell size={16} />
                 {notifications?.unreadCount > 0 && (
@@ -412,18 +512,112 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Profile Avatar */}
-            {activeUser.image ? (
-              <img 
-                src={activeUser.image} 
-                alt={activeUser.name} 
-                className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-black text-xs shadow-sm border border-slate-200">
-                {firstName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            {/* Profile Avatar Button & Click Popover Menu */}
+            <div className="relative" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                className="focus:outline-none cursor-pointer group flex items-center gap-1.5"
+                title="View Profile Details"
+              >
+                {activeUser.image ? (
+                  <img 
+                    src={activeUser.image} 
+                    alt={activeUser.name || "User Profile"} 
+                    className="w-8.5 h-8.5 rounded-full object-cover border-2 border-slate-200 group-hover:border-[#4F46E5] shadow-sm transition-all"
+                  />
+                ) : (
+                  <div className="w-8.5 h-8.5 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-black text-xs shadow-sm border-2 border-slate-200 group-hover:border-[#4338CA] transition-all">
+                    {firstName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </button>
+
+              {/* Profile Dropdown Popover Card */}
+              {profileMenuOpen && (
+                <div className="absolute right-0 top-11 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-fadeIn">
+                  {/* User Info Header */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                    {activeUser.image ? (
+                      <img
+                        src={activeUser.image}
+                        alt={activeUser.name}
+                        className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#4F46E5] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                        {firstName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <h4 className="text-xs font-black text-slate-900 truncate leading-snug">
+                        {activeUser.name || "Ajmeera Chandu"}
+                      </h4>
+                      <p className="text-[11px] font-mono text-slate-500 truncate">
+                        {activeUser.email || "student@knowledgestream.ai"}
+                      </p>
+                      <div className="flex items-center gap-1.5 pt-0.5">
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-[#4F46E5] text-[9px] font-black uppercase tracking-wider border border-indigo-100">
+                          {activeUser.role || "Student"}
+                        </span>
+                        {activeUser.college && (
+                          <span className="text-[10px] text-slate-400 font-bold truncate">
+                            • {activeUser.college}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Navigation Links */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        router.push("/settings");
+                        setProfileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 hover:text-[#4F46E5] transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Settings size={14} className="text-slate-400" />
+                      <span>Account Settings</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/courses");
+                        setProfileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 hover:text-[#4F46E5] transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <BookOpen size={14} className="text-slate-400" />
+                      <span>My Enrolled Courses</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/leaderboard");
+                        setProfileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 hover:text-[#4F46E5] transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Trophy size={14} className="text-slate-400" />
+                      <span>Leaderboard Rankings</span>
+                    </button>
+                  </div>
+
+                  {/* Divider & Logout */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <LogOut size={14} className="text-red-500" />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
