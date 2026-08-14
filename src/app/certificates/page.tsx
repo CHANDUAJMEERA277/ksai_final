@@ -6,7 +6,7 @@ import { useSession } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Award, ShieldCheck, CheckCircle2, Download, Printer, Share2, Eye,
-  Sparkles, BookOpen, Clock, Lock, CheckCircle, ExternalLink, X, AlertCircle
+  Sparkles, BookOpen, Clock, Lock, CheckCircle, ExternalLink, X, AlertCircle, Play
 } from "lucide-react";
 import { useNotification } from "@/components/ui/NotificationContext";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
@@ -39,6 +39,7 @@ function CertificatesContent() {
   const [certificates, setCertificates] = useState<CertificateItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCert, setSelectedCert] = useState<CertificateItem | null>(null);
+  const [lockedCertInfo, setLockedCertInfo] = useState<CertificateItem | null>(null);
   const certPrintRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,7 +64,8 @@ function CertificatesContent() {
 
   const handleShare = (cert: CertificateItem) => {
     if (!cert.isCompleted && cert.progress < 100) {
-      notify("Certificate is locked. Complete 100% of the course to share your verified credential!", "warning");
+      setLockedCertInfo(cert);
+      notify("Certificate is locked. Complete 100% of the course to share your credential!", "warning");
       return;
     }
     const shareUrl = `${window.location.origin}/certificates?certId=${cert.certificateId}`;
@@ -71,9 +73,10 @@ function CertificatesContent() {
     notify("Certificate verification link copied to clipboard!", "success");
   };
 
-  const openCertificateModal = (cert: CertificateItem) => {
+  const handleCertClick = (cert: CertificateItem) => {
     if (!cert.isCompleted && cert.progress < 100) {
-      notify(`🔒 Certificate Locked! Complete 100% of "${cert.courseTitle}" to claim your official certificate (${cert.progress}% completed).`, "warning");
+      setLockedCertInfo(cert);
+      notify(`Certificate Locked! Complete 100% of "${cert.courseTitle}" to unlock.`, "warning");
       return;
     }
     setSelectedCert(cert);
@@ -157,7 +160,7 @@ function CertificatesContent() {
                       className={`p-5 rounded-2xl border transition duration-200 flex flex-col justify-between space-y-4 ${
                         isUnlocked
                           ? "bg-gradient-to-br from-amber-50/60 via-white to-indigo-50/40 border-amber-300 ring-1 ring-amber-100 shadow-sm"
-                          : "bg-slate-50/80 border-slate-200 opacity-90"
+                          : "bg-slate-50/80 border-slate-200 opacity-95"
                       }`}
                     >
                       <div className="space-y-3">
@@ -209,7 +212,7 @@ function CertificatesContent() {
                         {isUnlocked ? (
                           <div className="grid grid-cols-2 gap-2">
                             <button
-                              onClick={() => openCertificateModal(cert)}
+                              onClick={() => handleCertClick(cert)}
                               className="w-full py-2 px-3 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                             >
                               <Eye size={14} /> View Certificate
@@ -223,10 +226,10 @@ function CertificatesContent() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => openCertificateModal(cert)}
-                            className="w-full py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
+                            onClick={() => handleCertClick(cert)}
+                            className="w-full py-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100 text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
                           >
-                            <Lock size={14} className="text-slate-500" /> Complete 100% to Unlock
+                            <Lock size={14} className="text-amber-700" /> Complete 100% to Unlock
                           </button>
                         )}
                       </div>
@@ -238,6 +241,60 @@ function CertificatesContent() {
           )}
         </div>
       </main>
+
+      {/* LOCKED CERTIFICATE CLEAR DIALOG */}
+      <AnimatePresence>
+        {lockedCertInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 p-6 space-y-4 text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                <Lock size={28} />
+              </div>
+
+              <div>
+                <h3 className="text-base font-black text-slate-900">Certificate Currently Locked 🔒</h3>
+                <p className="text-xs font-bold text-amber-800 mt-1">{lockedCertInfo.courseTitle}</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
+                <div className="flex justify-between font-bold">
+                  <span>Current Progress:</span>
+                  <span className="text-slate-900 font-black">{lockedCertInfo.completedChapters} of {lockedCertInfo.totalChapters} Chapters ({lockedCertInfo.progress}%)</span>
+                </div>
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${lockedCertInfo.progress}%` }} />
+                </div>
+                <p className="text-[11px] text-slate-500 pt-1">
+                  Complete remaining <span className="font-bold text-slate-800">{lockedCertInfo.totalChapters - lockedCertInfo.completedChapters} chapter(s)</span> to reach 100% and claim your official verified certificate!
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setLockedCertInfo(null);
+                    router.push("/courses");
+                  }}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Play size={14} /> Resume Course
+                </button>
+                <button
+                  onClick={() => setLockedCertInfo(null)}
+                  className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FULL-SCREEN LUXURY CERTIFICATE MODAL */}
       <AnimatePresence>
