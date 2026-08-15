@@ -297,7 +297,10 @@ export async function GET(req: Request) {
     const editorLogs = await db.activityLog.findMany({
       where: {
         userId: user.id,
-        createdAt: { gte: startOfGrid }
+        createdAt: { gte: startOfGrid },
+        actionType: {
+          in: ["CHAPTER_COMPLETE", "QUIZ_SUBMIT", "CHALLENGE_SUBMIT", "AI_CHAT", "EDITOR_RUN", "EDITOR_EXECUTE", "EDITOR_SUBMIT", "PRACTICE_SUBMIT"]
+        }
       }
     });
 
