@@ -1304,87 +1304,354 @@ export default function ProfessionalResumeStudio() {
 
             {/* Right Live A4 Document Preview */}
             <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 sm:p-8 bg-slate-200/60 flex flex-col items-center custom-scrollbar print-area">
-              <div className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-2xl rounded-sm p-8 sm:p-12 font-sans space-y-5">
-                {/* Document Header */}
-                <div className="border-b-2 border-blue-600 pb-4 mb-4">
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight uppercase">
-                    {resumeData.personalInfo.fullName}
-                  </h1>
-                  <p className="text-xs font-extrabold text-blue-600 uppercase tracking-widest mt-1">
-                    {resumeData.personalInfo.jobTitle}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-600 font-semibold mt-3">
-                    <span>📧 {resumeData.personalInfo.email}</span> &bull;
-                    <span>📞 {resumeData.personalInfo.phone}</span> &bull;
-                    <span>📍 {resumeData.personalInfo.location}</span> &bull;
-                    <span>🌐 {resumeData.personalInfo.githubUrl}</span>
+              {/* TEMPLATE 1: MODERN TECH (ATS Standard) */}
+              {template === "modern" && (
+                <div className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-2xl rounded-sm p-8 sm:p-12 font-sans space-y-5">
+                  <div className="border-b-2 border-blue-600 pb-4 mb-4">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight uppercase">
+                      {resumeData.personalInfo.fullName}
+                    </h1>
+                    <p className="text-xs font-extrabold text-blue-600 uppercase tracking-widest mt-1">
+                      {resumeData.personalInfo.jobTitle}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-600 font-semibold mt-3">
+                      <span>📧 {resumeData.personalInfo.email}</span> &bull;
+                      <span>📞 {resumeData.personalInfo.phone}</span> &bull;
+                      <span>📍 {resumeData.personalInfo.location}</span> &bull;
+                      <span>🌐 {resumeData.personalInfo.githubUrl}</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Summary */}
-                <div className="space-y-1">
-                  <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
-                    Professional Summary
-                  </h2>
-                  <p className="text-[11px] text-slate-700 leading-relaxed font-medium pt-1">
-                    {resumeData.summary}
-                  </p>
-                </div>
+                  <div className="space-y-1">
+                    <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
+                      Professional Summary
+                    </h2>
+                    <p className="text-[11px] text-slate-700 leading-relaxed font-medium pt-1">
+                      {resumeData.summary}
+                    </p>
+                  </div>
 
-                {/* Skills */}
-                <div className="space-y-1.5">
-                  <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
-                    Core Technical Skills & Stack
-                  </h2>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {resumeData.skills.map((s, idx) => (
-                      <span key={idx} className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-900 text-[10.5px] font-extrabold border border-blue-200">
-                        {s}
-                      </span>
+                  <div className="space-y-1.5">
+                    <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
+                      Core Technical Skills & Stack
+                    </h2>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {resumeData.skills.map((s, idx) => (
+                        <span key={idx} className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-900 text-[10.5px] font-extrabold border border-blue-200">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
+                      Work Experience
+                    </h2>
+                    {resumeData.experience.map((exp) => (
+                      <div key={exp.id} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-black text-slate-950">
+                          <span>{exp.role} &bull; <span className="text-blue-600">{exp.company}</span></span>
+                          <span className="text-[10px] text-slate-500 font-mono font-bold">{exp.startDate} - {exp.endDate}</span>
+                        </div>
+                        <ul className="list-disc list-inside text-[10.5px] text-slate-800 space-y-1 pt-1 font-medium leading-relaxed">
+                          {exp.bullets.map((b, idx) => (
+                            <li key={idx}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
+                      Featured Projects
+                    </h2>
+                    {resumeData.projects.map((proj) => (
+                      <div key={proj.id} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-black text-slate-950">
+                          <span>{proj.title}</span>
+                          <span className="text-[10px] text-blue-600 font-mono font-bold">{proj.techStack}</span>
+                        </div>
+                        <ul className="list-disc list-inside text-[10.5px] text-slate-800 space-y-1 font-medium">
+                          {proj.bullets.map((b, idx) => (
+                            <li key={idx}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
                   </div>
                 </div>
+              )}
 
-                {/* Experience */}
-                <div className="space-y-3">
-                  <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
-                    Work Experience
-                  </h2>
-                  {resumeData.experience.map((exp) => (
-                    <div key={exp.id} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs font-black text-slate-950">
-                        <span>{exp.role} &bull; <span className="text-blue-600">{exp.company}</span></span>
-                        <span className="text-[10px] text-slate-500 font-mono font-bold">{exp.startDate} - {exp.endDate}</span>
-                      </div>
-                      <ul className="list-disc list-inside text-[10.5px] text-slate-800 space-y-1 pt-1 font-medium leading-relaxed">
-                        {exp.bullets.map((b, idx) => (
-                          <li key={idx}>{b}</li>
-                        ))}
-                      </ul>
+              {/* TEMPLATE 2: EXECUTIVE MODERN */}
+              {template === "executive" && (
+                <div className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-2xl rounded-sm p-8 sm:p-12 font-sans space-y-6">
+                  {/* Executive Header Banner */}
+                  <div className="bg-slate-950 text-white p-8 rounded-2xl space-y-3 -mx-2">
+                    <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase">
+                      {resumeData.personalInfo.fullName}
+                    </h1>
+                    <p className="text-xs font-extrabold text-cyan-400 uppercase tracking-widest">
+                      {resumeData.personalInfo.jobTitle}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-300 font-semibold pt-2 border-t border-slate-800">
+                      <span>📧 {resumeData.personalInfo.email}</span> &bull;
+                      <span>📞 {resumeData.personalInfo.phone}</span> &bull;
+                      <span>📍 {resumeData.personalInfo.location}</span> &bull;
+                      <span>🌐 {resumeData.personalInfo.githubUrl}</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                {/* Projects */}
-                <div className="space-y-3">
-                  <h2 className="text-xs font-black text-blue-700 uppercase tracking-widest border-b border-slate-200 pb-1">
-                    Featured Projects
-                  </h2>
-                  {resumeData.projects.map((proj) => (
-                    <div key={proj.id} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs font-black text-slate-950">
-                        <span>{proj.title}</span>
-                        <span className="text-[10px] text-blue-600 font-mono font-bold">{proj.techStack}</span>
+                  {/* Summary */}
+                  <div className="space-y-2">
+                    <h2 className="text-xs font-black text-slate-950 uppercase tracking-widest border-b-2 border-slate-950 pb-1">
+                      Executive Overview
+                    </h2>
+                    <p className="text-[11px] text-slate-800 leading-relaxed font-medium">
+                      {resumeData.summary}
+                    </p>
+                  </div>
+
+                  {/* 2-Column Body */}
+                  <div className="grid grid-cols-3 gap-6">
+                    {/* Left Column (Skills) */}
+                    <div className="col-span-1 space-y-4 border-r border-slate-200 pr-4">
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-300 pb-1">
+                          Core Competencies
+                        </h3>
+                        <div className="flex flex-col gap-1.5">
+                          {resumeData.skills.map((s, idx) => (
+                            <div key={idx} className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-600"></span> {s}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <ul className="list-disc list-inside text-[10.5px] text-slate-800 space-y-1 font-medium">
-                        {proj.bullets.map((b, idx) => (
-                          <li key={idx}>{b}</li>
-                        ))}
-                      </ul>
                     </div>
-                  ))}
+
+                    {/* Right Column (Experience & Projects) */}
+                    <div className="col-span-2 space-y-5">
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-black text-slate-950 uppercase tracking-widest border-b-2 border-slate-950 pb-1">
+                          Leadership & Experience
+                        </h3>
+                        {resumeData.experience.map((exp) => (
+                          <div key={exp.id} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs font-black text-slate-950">
+                              <span>{exp.role}</span>
+                              <span className="text-[10px] text-slate-500 font-mono font-bold">{exp.startDate} - {exp.endDate}</span>
+                            </div>
+                            <p className="text-[10.5px] font-extrabold text-cyan-800">{exp.company}</p>
+                            <ul className="list-disc list-inside text-[10.5px] text-slate-800 space-y-1 pt-1 font-medium leading-relaxed">
+                              {exp.bullets.map((b, idx) => (
+                                <li key={idx}>{b}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-black text-slate-950 uppercase tracking-widest border-b-2 border-slate-950 pb-1">
+                          Key Projects
+                        </h3>
+                        {resumeData.projects.map((proj) => (
+                          <div key={proj.id} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs font-black text-slate-950">
+                              <span>{proj.title}</span>
+                              <span className="text-[10px] text-slate-600 font-mono font-bold">{proj.techStack}</span>
+                            </div>
+                            <ul className="list-disc list-inside text-[10.5px] text-slate-800 space-y-1 font-medium">
+                              {proj.bullets.map((b, idx) => (
+                                <li key={idx}>{b}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* TEMPLATE 3: CREATIVE AI */}
+              {template === "creative" && (
+                <div className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-2xl rounded-sm flex overflow-hidden font-sans">
+                  {/* Left Purple Sidebar (35%) */}
+                  <div className="w-[35%] bg-gradient-to-b from-purple-950 via-indigo-950 to-slate-950 text-white p-6 sm:p-8 space-y-6 flex flex-col justify-between">
+                    <div className="space-y-6">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-400 to-purple-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg">
+                        {resumeData.personalInfo.fullName ? resumeData.personalInfo.fullName.charAt(0) : "C"}
+                      </div>
+
+                      <div className="space-y-1">
+                        <h1 className="text-xl font-black text-white leading-tight uppercase">
+                          {resumeData.personalInfo.fullName}
+                        </h1>
+                        <p className="text-xs font-bold text-cyan-300">
+                          {resumeData.personalInfo.jobTitle}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2 text-[10.5px] text-slate-300 pt-3 border-t border-purple-800/60 font-medium">
+                        <div className="truncate">📧 {resumeData.personalInfo.email}</div>
+                        <div>📞 {resumeData.personalInfo.phone}</div>
+                        <div>📍 {resumeData.personalInfo.location}</div>
+                        <div className="truncate">🌐 {resumeData.personalInfo.githubUrl}</div>
+                      </div>
+
+                      <div className="space-y-3 pt-3 border-t border-purple-800/60">
+                        <h3 className="text-xs font-black text-purple-200 uppercase tracking-widest">
+                          Tech Skills Stack
+                        </h3>
+                        <div className="flex flex-wrap gap-1.5">
+                          {resumeData.skills.map((s, idx) => (
+                            <span key={idx} className="px-2.5 py-1 rounded-lg bg-purple-900/60 text-purple-200 text-[10px] font-bold border border-purple-400/30">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-purple-400/80 font-bold uppercase tracking-widest">
+                      Codenthra Verified AI Candidate
+                    </div>
+                  </div>
+
+                  {/* Right Main Content (65%) */}
+                  <div className="w-[65%] p-6 sm:p-8 space-y-6 bg-white text-slate-900">
+                    <div className="space-y-2">
+                      <h2 className="text-xs font-black text-purple-900 uppercase tracking-widest border-b-2 border-purple-600 pb-1">
+                        Executive Summary
+                      </h2>
+                      <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                        {resumeData.summary}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h2 className="text-xs font-black text-purple-900 uppercase tracking-widest border-b-2 border-purple-600 pb-1">
+                        Professional Work History
+                      </h2>
+                      {resumeData.experience.map((exp) => (
+                        <div key={exp.id} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-black text-slate-950">
+                            <span className="text-purple-700 font-extrabold">{exp.role}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">{exp.startDate} - {exp.endDate}</span>
+                          </div>
+                          <p className="text-[10.5px] font-extrabold text-slate-800">{exp.company}</p>
+                          <ul className="list-disc list-inside text-[10.5px] text-slate-700 space-y-1 font-medium leading-relaxed">
+                            {exp.bullets.map((b, idx) => (
+                              <li key={idx}>{b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h2 className="text-xs font-black text-purple-900 uppercase tracking-widest border-b-2 border-purple-600 pb-1">
+                        Featured Engineering Projects
+                      </h2>
+                      {resumeData.projects.map((proj) => (
+                        <div key={proj.id} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs font-black text-slate-950">
+                            <span>{proj.title}</span>
+                            <span className="text-[10px] text-purple-600 font-mono font-bold">{proj.techStack}</span>
+                          </div>
+                          <ul className="list-disc list-inside text-[10.5px] text-slate-700 space-y-1 font-medium">
+                            {proj.bullets.map((b, idx) => (
+                              <li key={idx}>{b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TEMPLATE 4: SILICON VALLEY CLASSIC */}
+              {template === "classic" && (
+                <div className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-2xl rounded-sm p-8 sm:p-12 font-serif space-y-5">
+                  {/* Centered Traditional Header */}
+                  <div className="text-center space-y-1">
+                    <h1 className="text-3xl font-serif font-black text-slate-950 tracking-tight uppercase">
+                      {resumeData.personalInfo.fullName}
+                    </h1>
+                    <p className="text-xs font-serif font-bold text-slate-800 uppercase tracking-widest">
+                      {resumeData.personalInfo.jobTitle}
+                    </p>
+                    <p className="text-[11px] font-serif text-slate-700 border-t border-b border-slate-900 py-1 my-2">
+                      {resumeData.personalInfo.email} &bull; {resumeData.personalInfo.phone} &bull; {resumeData.personalInfo.location} &bull; {resumeData.personalInfo.githubUrl}
+                    </p>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="space-y-1">
+                    <h2 className="text-xs font-serif font-bold text-slate-950 uppercase tracking-widest border-b border-slate-900 pb-0.5">
+                      OBJECTIVE / SUMMARY
+                    </h2>
+                    <p className="text-[11px] font-serif text-slate-800 leading-relaxed pt-1">
+                      {resumeData.summary}
+                    </p>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="space-y-1">
+                    <h2 className="text-xs font-serif font-bold text-slate-950 uppercase tracking-widest border-b border-slate-900 pb-0.5">
+                      TECHNICAL SKILLS
+                    </h2>
+                    <p className="text-[11px] font-serif text-slate-900 pt-1 leading-normal">
+                      <span className="font-bold">Core Stack: </span>
+                      {resumeData.skills.join(" • ")}
+                    </p>
+                  </div>
+
+                  {/* Experience */}
+                  <div className="space-y-3">
+                    <h2 className="text-xs font-serif font-bold text-slate-950 uppercase tracking-widest border-b border-slate-900 pb-0.5">
+                      WORK EXPERIENCE
+                    </h2>
+                    {resumeData.experience.map((exp) => (
+                      <div key={exp.id} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-serif font-bold text-slate-950">
+                          <span>{exp.company} — <span className="italic font-normal">{exp.role}</span></span>
+                          <span className="text-[10.5px] text-slate-700 font-mono">{exp.startDate} – {exp.endDate}</span>
+                        </div>
+                        <ul className="list-disc list-inside text-[11px] font-serif text-slate-800 space-y-1 pt-0.5 leading-relaxed">
+                          {exp.bullets.map((b, idx) => (
+                            <li key={idx}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Projects */}
+                  <div className="space-y-3">
+                    <h2 className="text-xs font-serif font-bold text-slate-950 uppercase tracking-widest border-b border-slate-900 pb-0.5">
+                      KEY PROJECTS
+                    </h2>
+                    {resumeData.projects.map((proj) => (
+                      <div key={proj.id} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-serif font-bold text-slate-950">
+                          <span>{proj.title}</span>
+                          <span className="text-[10.5px] text-slate-700 font-mono font-bold">{proj.techStack}</span>
+                        </div>
+                        <ul className="list-disc list-inside text-[11px] font-serif text-slate-800 space-y-1 leading-relaxed">
+                          {proj.bullets.map((b, idx) => (
+                            <li key={idx}>{b}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
