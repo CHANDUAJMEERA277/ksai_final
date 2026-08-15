@@ -24,7 +24,10 @@ import {
   Wand2,
   Zap,
   LayoutTemplate,
-  CheckCircle2
+  CheckCircle2,
+  Target,
+  Building2,
+  ArrowRight
 } from "lucide-react";
 
 // Pre-packaged Professional Resume Profiles
@@ -186,6 +189,34 @@ const PRESET_PROFILES = {
   },
 };
 
+// Sample Job Description Presets
+const SAMPLE_JDS = {
+  google: {
+    company: "Google",
+    targetRole: "Senior Full-Stack AI Engineer",
+    jdText: `We are looking for a Senior Full-Stack AI Engineer to join Google's Cloud & AI Core engineering group.
+Key Responsibilities:
+- Architect high-throughput web applications and browser-based developer tooling using Next.js, React, TypeScript, and TailwindCSS.
+- Integrate generative AI models (Gemini Flash/Pro) for intelligent speech-to-text, real-time code assistance, and automated debugging.
+- Design resilient REST and GraphQL microservice APIs backed by PostgreSQL and Redis.
+- Collaborate with cloud infrastructure teams on Docker containerization, CI/CD automation, and load testing.
+Qualifications:
+- 3+ years experience with Next.js SSR, React Server Components, and TypeScript.
+- Hands-on experience with Java Spring Boot microservices or Python FastAPI.
+- Proven track record of optimizing page load speeds and API latency for high-traffic platforms.`,
+  },
+  amazon: {
+    company: "Amazon Web Services (AWS)",
+    targetRole: "Backend Java Microservices Specialist",
+    jdText: `AWS is seeking a Backend Java Systems Engineer to build high-scale distributed services.
+Key Responsibilities:
+- Design low-latency financial transaction message brokers using Java 21, Spring Boot, Kafka, and Redis.
+- Optimize database queries in PostgreSQL and MySQL to ensure sub-10ms response times.
+- Implement automated unit testing, integration tests, and CI/CD pipelines in AWS ECS/EKS.
+- Guarantee zero data loss and strict ACID transaction compliance across microservices.`,
+  },
+};
+
 export default function ResumeBuilderPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
@@ -195,7 +226,16 @@ export default function ResumeBuilderPage() {
   const [template, setTemplate] = useState<"modern" | "executive" | "creative" | "classic">("modern");
   const [activeAccordion, setActiveAccordion] = useState<string>("personal");
 
-  // AI State
+  // AI & JD Alignment State
+  const [jdModalOpen, setJdModalOpen] = useState(false);
+  const [targetCompany, setTargetCompany] = useState("Google");
+  const [targetRoleInput, setTargetRoleInput] = useState("Senior Full-Stack AI Engineer");
+  const [jobDescriptionInput, setJobDescriptionInput] = useState(SAMPLE_JDS.google.jdText);
+  const [isAligningJD, setIsAligningJD] = useState(false);
+  const [jdResult, setJdResult] = useState<any>(null);
+  const [activeJdMatch, setActiveJdMatch] = useState<{ company: string; role: string; score: number } | null>(null);
+
+  // General AI Polish State
   const [isEnhancingSummary, setIsEnhancingSummary] = useState(false);
   const [enhancingBulletId, setEnhancingBulletId] = useState<string | null>(null);
   const [isScoringATS, setIsScoringATS] = useState(false);
@@ -256,6 +296,77 @@ export default function ResumeBuilderPage() {
         [field]: val,
       },
     }));
+  };
+
+  // Run AI JD Alignment
+  const handleRunJdAlignment = async () => {
+    if (!jobDescriptionInput.trim()) return;
+    setIsAligningJD(true);
+    try {
+      const res = await fetch("/api/ai/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "align_with_jd",
+          jobDescription: jobDescriptionInput,
+          targetRole: targetRoleInput,
+          company: targetCompany,
+          resumeData,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setJdResult(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAligningJD(false);
+    }
+  };
+
+  // Apply JD Optimization to Resume Data
+  const handleApplyJdOptimization = () => {
+    if (!jdResult) return;
+
+    setResumeData((prev) => {
+      // Add missing keywords to skills list
+      const updatedSkills = [...prev.skills];
+      if (jdResult.missingKeywords) {
+        jdResult.missingKeywords.forEach((k: string) => {
+          if (!updatedSkills.includes(k)) updatedSkills.push(k);
+        });
+      }
+
+      // Replace or optimize bullets for first experience item
+      const updatedExp = prev.experience.map((item, i) => {
+        if (i === 0 && jdResult.recommendedBullets && jdResult.recommendedBullets.length > 0) {
+          return {
+            ...item,
+            bullets: jdResult.recommendedBullets,
+          };
+        }
+        return item;
+      });
+
+      return {
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          jobTitle: targetRoleInput || prev.personalInfo.jobTitle,
+        },
+        summary: jdResult.tailoredSummary || prev.summary,
+        skills: updatedSkills,
+        experience: updatedExp,
+      };
+    });
+
+    setActiveJdMatch({
+      company: targetCompany,
+      role: targetRoleInput,
+      score: jdResult.score || 96,
+    });
+    setJdModalOpen(false);
   };
 
   // AI Polish Summary
@@ -459,12 +570,12 @@ export default function ResumeBuilderPage() {
         fullHeight={true}
       />
 
-      {/* Center Workspace (Clean Light Theme) */}
+      {/* Center Workspace */}
       <main data-lenis-prevent className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#F8FAFC]">
         {/* Top Control Header Bar */}
         <div className="glass-panel px-6 py-3.5 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-xs no-print">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-sm">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-500 flex items-center justify-center text-white shadow-sm">
               <FileText size={20} />
             </div>
             <div>
@@ -472,34 +583,31 @@ export default function ResumeBuilderPage() {
                 <h1 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-1.5">
                   Codenthra AI Resume Studio <Sparkles size={14} className="text-blue-600" />
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-mono font-bold">
-                  ATS Score 98+
-                </span>
+                {activeJdMatch ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-bold flex items-center gap-1">
+                    <Target size={11} /> {activeJdMatch.company}: {activeJdMatch.score}% Match
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-mono font-bold">
+                    ATS Score 98+
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 font-medium">
-                Professional FAANG-grade AI Resume Architect & Instant PDF Generator
+                Targeted AI Job Description Alignment & Instant PDF Generator
               </p>
             </div>
           </div>
 
           {/* Preset Profiles & Toolbar Actions */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            {/* Presets */}
-            <div className="hidden xl:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider px-2">Presets:</span>
-              <button
-                onClick={() => setResumeData(PRESET_PROFILES.fullstack)}
-                className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-[11px] transition-all cursor-pointer border border-blue-200"
-              >
-                Full-Stack
-              </button>
-              <button
-                onClick={() => setResumeData(PRESET_PROFILES.backend as any)}
-                className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold text-[11px] transition-all cursor-pointer border border-purple-200"
-              >
-                Java / Backend
-              </button>
-            </div>
+            {/* Prominent Target Job Description Button */}
+            <button
+              onClick={() => setJdModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:opacity-95 shadow-md flex items-center gap-2 transition-all cursor-pointer border border-purple-300/30 animate-pulse"
+            >
+              <Target size={15} className="text-yellow-300" /> 🎯 Target Job Description (JD)
+            </button>
 
             {/* Template Selector */}
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
@@ -519,16 +627,16 @@ export default function ResumeBuilderPage() {
             {/* Run ATS Audit Button */}
             <button
               onClick={handleRunAtsAudit}
-              className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-2 rounded-xl text-xs font-extrabold text-slate-800 bg-slate-100 border border-slate-200 hover:bg-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <Zap size={14} className="text-yellow-300 fill-yellow-300" /> ✨ Run ATS Audit
+              <Zap size={14} className="text-amber-500 fill-amber-500" /> Run ATS Audit
             </button>
 
             {/* Export JSON */}
             <button
               onClick={handleExportJSON}
               title="Export Resume Data as JSON"
-              className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Download size={14} /> Export JSON
             </button>
@@ -536,7 +644,7 @@ export default function ResumeBuilderPage() {
             {/* Download PDF / Print */}
             <button
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-95 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Printer size={14} /> Download PDF
             </button>
@@ -545,8 +653,33 @@ export default function ResumeBuilderPage() {
 
         {/* Split Screen Workspace Area */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-          {/* Left Form Builder Panel (Clean White / Light Slate) */}
+          {/* Left Form Builder Panel */}
           <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 sm:p-6 border-r border-slate-200 bg-slate-50/70 space-y-4 custom-scrollbar no-print">
+            {/* Active Target JD Banner if applied */}
+            {activeJdMatch && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-blue-500/10 border border-emerald-300 text-slate-900 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold shrink-0">
+                    <Target size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-950">
+                      Tailored for {activeJdMatch.company}: {activeJdMatch.role}
+                    </h4>
+                    <p className="text-[10.5px] text-slate-600 font-medium">
+                      Summary, skills & bullets optimized for {activeJdMatch.score}% ATS match!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setJdModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-50 transition-colors cursor-pointer"
+                >
+                  Change JD
+                </button>
+              </div>
+            )}
+
             {/* Accordion 1: Personal Info */}
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <button
@@ -1163,14 +1296,178 @@ export default function ResumeBuilderPage() {
         </div>
       </main>
 
+      {/* Target Job Description (JD) AI Alignment Modal */}
+      {jdModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-500 text-white flex items-center justify-center font-bold shadow-md">
+                  <Target size={22} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-950 text-base flex items-center gap-2">
+                    Codenthra AI Job Description Alignment
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Paste any target job description & Codenthra AI will tailor your resume for 95%+ ATS score!
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setJdModalOpen(false)} className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer">
+                &times;
+              </button>
+            </div>
+
+            {/* Quick Sample JD Presets */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                Quick Sample JD Presets:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    setTargetCompany(SAMPLE_JDS.google.company);
+                    setTargetRoleInput(SAMPLE_JDS.google.targetRole);
+                    setJobDescriptionInput(SAMPLE_JDS.google.jdText);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Building2 size={13} /> Google - Full-Stack AI Engineer
+                </button>
+                <button
+                  onClick={() => {
+                    setTargetCompany(SAMPLE_JDS.amazon.company);
+                    setTargetRoleInput(SAMPLE_JDS.amazon.targetRole);
+                    setJobDescriptionInput(SAMPLE_JDS.amazon.jdText);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Building2 size={13} /> Amazon AWS - Java Backend Specialist
+                </button>
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">
+                    Target Company (e.g. Google, TCS, Amazon)
+                  </label>
+                  <input
+                    type="text"
+                    value={targetCompany}
+                    onChange={(e) => setTargetCompany(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white"
+                    placeholder="Google / Amazon / TCS"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">
+                    Target Job Title
+                  </label>
+                  <input
+                    type="text"
+                    value={targetRoleInput}
+                    onChange={(e) => setTargetRoleInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white"
+                    placeholder="Senior Full-Stack Engineer"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">
+                  Target Job Description (JD) Requirements
+                </label>
+                <textarea
+                  rows={6}
+                  value={jobDescriptionInput}
+                  onChange={(e) => setJobDescriptionInput(e.target.value)}
+                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:bg-white leading-relaxed custom-scrollbar"
+                  placeholder="Paste the job posting responsibilities and qualifications here..."
+                />
+              </div>
+            </div>
+
+            {/* AI Results preview if generated */}
+            {isAligningJD ? (
+              <div className="py-8 text-center space-y-3 bg-purple-50/50 rounded-2xl border border-purple-100">
+                <RefreshCw size={28} className="animate-spin text-purple-600 mx-auto" />
+                <p className="text-xs font-bold text-purple-900">
+                  Codenthra AI is extracting JD keywords and building your tailored application...
+                </p>
+              </div>
+            ) : jdResult ? (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-950">AI JD Match Evaluation</span>
+                  <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">
+                    {jdResult.score || 96}% ATS Match
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                    Tailored Executive Summary
+                  </span>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium bg-white p-3 rounded-xl border border-slate-200">
+                    {jdResult.tailoredSummary}
+                  </p>
+                </div>
+
+                {jdResult.missingKeywords && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                      Target Keywords Extracted from JD
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {jdResult.missingKeywords.map((k: string, i: number) => (
+                        <span key={i} className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-extrabold border border-blue-200">
+                          + {k}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleRunJdAlignment}
+                disabled={isAligningJD}
+                className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Wand2 size={14} className={isAligningJD ? "animate-spin" : ""} />
+                {isAligningJD ? "Analyzing JD..." : "✨ Run AI JD Alignment"}
+              </button>
+
+              {jdResult && (
+                <button
+                  type="button"
+                  onClick={handleApplyJdOptimization}
+                  className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  ⚡ Apply JD Optimization to Resume <ArrowRight size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ATS Score Audit Modal */}
       {atsModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold">
-                  <Zap size={22} className="fill-purple-600" />
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center font-bold">
+                  <Zap size={22} className="fill-amber-500 text-amber-500" />
                 </div>
                 <div>
                   <h3 className="font-black text-slate-950 text-base">Codenthra ATS Score Audit</h3>
@@ -1184,15 +1481,15 @@ export default function ResumeBuilderPage() {
 
             {isScoringATS ? (
               <div className="py-12 text-center space-y-3">
-                <RefreshCw size={32} className="animate-spin text-purple-600 mx-auto" />
+                <RefreshCw size={32} className="animate-spin text-amber-600 mx-auto" />
                 <p className="text-xs font-bold text-slate-700">Codenthra AI is scanning your resume structure...</p>
               </div>
             ) : atsResult ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                <div className="flex items-center justify-between bg-amber-50 p-4 rounded-2xl border border-amber-100">
                   <div>
-                    <p className="text-3xl font-black text-purple-700">{atsResult.score || 94}%</p>
-                    <p className="text-[10px] text-purple-600 font-mono font-bold uppercase tracking-wider">ATS Score</p>
+                    <p className="text-3xl font-black text-amber-700">{atsResult.score || 94}%</p>
+                    <p className="text-[10px] text-amber-600 font-mono font-bold uppercase tracking-wider">ATS Score</p>
                   </div>
                   <div className="text-xs text-slate-700 font-medium max-w-xs leading-relaxed">
                     Your resume aligns excellently with standard corporate Applicant Tracking Systems (ATS).
