@@ -236,39 +236,36 @@ export default function ExploreCoursesCatalogPage() {
       {/* Center Main Workspace Content Area */}
       <main data-lenis-prevent className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 w-full custom-scrollbar bg-slate-50">
         
-        {/* Welcome Header Banner */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-tr from-indigo-500/5 to-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-semibold border border-indigo-100">
-              <Sparkles size={13} className="text-indigo-500" /> Professional Paths &bull; Browse Catalog
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Explore Available Courses 🚀
-            </h1>
-            <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-              Unlock access to our interactive curricula, custom Sandbox coding workspaces, speech modules, and personalized AI Mentor tutoring.
-            </p>
+        {/* Welcome Header */}
+        <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-200 bg-white shadow-xs space-y-1 flex-shrink-0">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold border border-blue-100">
+            <Sparkles size={12} /> Professional Paths &bull; Browse Catalog
           </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Explore Available Courses 🚀
+          </h1>
+          <p className="text-slate-500 text-xs font-medium">
+            Unlock access to interactive curricula, Sandbox coding workspaces, speech modules, and AI Mentor tutoring.
+          </p>
         </div>
 
         {loading ? (
           /* Loading Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 py-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white space-y-4 animate-pulse">
-                <div className="h-40 bg-slate-200 rounded-2xl w-full" />
-                <div className="h-4 bg-slate-200 rounded w-1/4" />
-                <div className="h-6 bg-slate-200 rounded w-3/4" />
-                <div className="h-4 bg-slate-200 rounded w-5/6" />
+              <div key={i} className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white space-y-3 animate-pulse">
+                <div className="h-24 bg-slate-200 rounded-xl w-full" />
+                <div className="h-3 bg-slate-200 rounded w-1/4" />
+                <div className="h-5 bg-slate-200 rounded w-3/4" />
+                <div className="h-3 bg-slate-200 rounded w-5/6" />
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-12 text-slate-500">{error}</div>
+          <div className="text-center py-8 text-slate-500 text-xs font-medium">{error}</div>
         ) : (
           /* Courses Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {courses.map((course) => {
               const isEnrolled = enrollments.some((e) => e.courseId === course.id);
               const isBuying = buyingCourseId === course.id;
@@ -276,7 +273,7 @@ export default function ExploreCoursesCatalogPage() {
               return (
                 <div
                   key={course.id}
-                  className="glass-panel rounded-3xl border border-slate-200 bg-white hover:border-[#4F46E5]/55 hover:bg-slate-50/20 transition-all duration-300 shadow-sm flex flex-col justify-between overflow-hidden group hover:scale-[1.01]"
+                  className="glass-panel rounded-2xl border border-slate-200/90 bg-white hover:border-[#4F46E5]/50 transition-all duration-300 shadow-xs flex flex-col justify-between overflow-hidden group hover:shadow-md"
                 >
                   <div
                     onClick={() => {
@@ -289,58 +286,58 @@ export default function ExploreCoursesCatalogPage() {
                     className="cursor-pointer"
                   >
                     {/* Thumbnail Banner */}
-                    <div className="relative h-44 w-full overflow-hidden">
+                    <div className="relative h-28 w-full overflow-hidden">
                       <img
                         src={course.thumbnail}
                         alt={course.title}
-                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                      <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/10 uppercase">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 uppercase">
                           {course.level}
                         </span>
-                        <div className="flex items-center gap-1 text-xs text-amber-400 font-bold bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full">
-                          <Star size={12} className="fill-amber-400 text-amber-400" />
+                        <div className="flex items-center gap-1 text-[11px] text-amber-400 font-extrabold bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full">
+                          <Star size={11} className="fill-amber-400 text-amber-400" />
                           <span>{course.rating}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Body Content */}
-                    <div className="p-6 space-y-3">
-                      <span className="text-[10px] font-mono font-bold text-[#4F46E5] uppercase tracking-wider block">
+                    <div className="p-3.5 space-y-1">
+                      <span className="text-[9px] font-mono font-black text-[#4F46E5] uppercase tracking-wider block">
                         {course.category}
                       </span>
-                      <h3 className="text-lg font-extrabold text-slate-900 leading-snug group-hover:text-[#4F46E5] transition-colors">
+                      <h3 className="text-sm font-extrabold text-slate-900 leading-snug group-hover:text-[#4F46E5] transition-colors truncate">
                         {course.title}
                       </h3>
-                      <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug font-medium">
                         {course.description}
                       </p>
                     </div>
                   </div>
 
                   {/* Footer specs & purchase triggers */}
-                  <div className="px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div className="flex flex-col text-[10px] text-slate-500 font-mono space-y-0.5">
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} className="text-slate-400" /> {course.lessons} Lessons
+                  <div className="px-3.5 py-2 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
+                    <div className="flex flex-col text-[9px] text-slate-500 font-mono leading-tight">
+                      <span className="flex items-center gap-1 font-bold">
+                        <Clock size={11} className="text-slate-400" /> {course.lessons} Lessons
                       </span>
-                      <span>Instructor: {course.instructor}</span>
+                      <span className="truncate max-w-[120px]">By {course.instructor}</span>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-black text-slate-950">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-black text-slate-900">
                         ₹{course.price}
                       </span>
                       
                       {isEnrolled ? (
                         <button
                           onClick={() => router.push(`/courses/${course.language.toLowerCase()}`)}
-                          className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 shadow-md shadow-emerald-500/10 flex items-center gap-1.5 transition-all"
+                          className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 shadow-xs flex items-center gap-1 transition-all cursor-pointer"
                         >
-                          <CheckCircle size={13} />
+                          <CheckCircle size={12} />
                           Learn Now
                         </button>
                       ) : (

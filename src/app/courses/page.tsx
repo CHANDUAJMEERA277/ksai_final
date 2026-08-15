@@ -92,95 +92,95 @@ export default function MyCoursesPage() {
       {/* Center Main Workspace Content Area */}
       <main data-lenis-prevent className="flex-1 overflow-y-auto h-full p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full custom-scrollbar">
           {/* Welcome Header */}
-          <div className="glass-panel p-6 rounded-3xl border border-slate-200 space-y-2 bg-white shadow-sm">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
-              <Sparkles size={13} /> Learning Path &bull; My Space
+          <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-200 bg-white shadow-xs space-y-1 flex-shrink-0">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold border border-blue-100">
+              <Sparkles size={12} /> Learning Path &bull; My Space
             </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               My Enrolled Courses 🎓
             </h1>
-            <p className="text-slate-500 text-xs sm:text-sm">
+            <p className="text-slate-500 text-xs font-medium">
               Your registered pathways. Click "Continue Learning" to resume your notes and chapter assessments.
             </p>
           </div>
 
           {loading ? (
             /* Loading Skeleton */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 py-3">
               {[1, 2].map((i) => (
-                <div key={i} className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white space-y-4 animate-pulse">
+                <div key={i} className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white space-y-3 animate-pulse">
                   <div className="flex justify-between items-center">
-                    <div className="h-4 bg-slate-200 rounded-full w-24" />
-                    <div className="h-4 bg-slate-200 rounded-full w-10" />
+                    <div className="h-3 bg-slate-200 rounded-full w-24" />
+                    <div className="h-3 bg-slate-200 rounded-full w-10" />
                   </div>
-                  <div className="h-6 bg-slate-200 rounded w-3/4" />
-                  <div className="space-y-2">
+                  <div className="h-5 bg-slate-200 rounded w-3/4" />
+                  <div className="space-y-1.5">
                     <div className="h-3 bg-slate-200 rounded w-full" />
                     <div className="h-3 bg-slate-200 rounded w-5/6" />
                   </div>
-                  <div className="h-10 bg-slate-200 rounded-xl w-32 pt-4" />
+                  <div className="h-8 bg-slate-200 rounded-xl w-32 pt-2" />
                 </div>
               ))}
             </div>
           ) : enrollments.length === 0 ? (
             /* Empty State */
-            <div className="glass-panel p-10 rounded-3xl border border-slate-200 bg-white text-center space-y-5 max-w-xl mx-auto py-16 shadow-lg">
-              <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 mx-auto">
-                <Compass size={32} />
+            <div className="glass-panel p-6 rounded-2xl border border-slate-200 bg-white text-center space-y-3 max-w-md mx-auto py-10 shadow-xs">
+              <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 mx-auto">
+                <Compass size={24} />
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-black text-slate-950">You haven't enrolled in any courses yet</h3>
-                <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
-                  Start your learning journey by browsing our high-quality paths in Python, Java, C++, and C!
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-slate-950">You haven't enrolled in any courses yet</h3>
+                <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+                  Start your learning journey by browsing our high-quality paths!
                 </p>
               </div>
               <button
-                onClick={() => router.push("/dashboard")}
-                className="px-6 py-3.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-95 transition-opacity inline-flex items-center gap-1.5 shadow-md shadow-blue-500/10"
+                onClick={() => router.push("/courses/catalog")}
+                className="px-4 py-2 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-95 transition-opacity inline-flex items-center gap-1 shadow-xs cursor-pointer"
               >
-                Browse Available Courses <ArrowRight size={14} />
+                Browse Available Courses <ArrowRight size={13} />
               </button>
             </div>
           ) : (
             /* Enrolled Courses Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {enrollments.map((item) => {
                 const c = item.course;
                 if (!c) return null;
                 return (
                   <div
                     key={item.id}
-                    className="glass-panel p-6 rounded-3xl border border-slate-200 bg-white hover:border-blue-500/50 hover:bg-slate-50/50 transition-all space-y-4 shadow-md flex flex-col justify-between"
+                    className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-500/50 hover:shadow-md transition-all space-y-2.5 shadow-xs flex flex-col justify-between"
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 uppercase">
                           {c.category} &bull; Enrolled
                         </span>
-                        <div className="flex items-center gap-1 text-xs text-amber-400 font-bold">
-                          <Star size={13} className="fill-amber-400" />
+                        <div className="flex items-center gap-1 text-[11px] text-amber-400 font-extrabold">
+                          <Star size={12} className="fill-amber-400" />
                           <span>{c.rating}</span>
                         </div>
                       </div>
 
-                      <h3 className="text-lg font-extrabold text-slate-900 leading-snug">
+                      <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
                         {c.title}
                       </h3>
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug font-medium">
                         {c.description}
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400 font-mono">
+                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[9px] text-slate-400 font-mono font-semibold">
                         Valid &bull; 90 Days Access
                       </span>
 
                       <button
                         onClick={() => handleStartLearning(c)}
-                        className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 shadow-md transition-all flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 shadow-xs transition-all flex items-center gap-1 cursor-pointer"
                       >
-                        Continue Learning <ArrowRight size={13} />
+                        Continue Learning <ArrowRight size={12} />
                       </button>
                     </div>
                   </div>
