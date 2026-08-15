@@ -5,7 +5,18 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import { RightAIPanel } from "@/components/dashboard/RightAIPanel";
-import { BookOpen, ArrowRight, Compass, Sparkles, Star } from "lucide-react";
+import { 
+  BookOpen, 
+  ArrowRight, 
+  Compass, 
+  Sparkles, 
+  Star, 
+  Calendar, 
+  Clock, 
+  ShieldCheck, 
+  AlertCircle, 
+  CheckCircle2 
+} from "lucide-react";
 
 export default function MyCoursesPage() {
   const router = useRouter();
@@ -78,6 +89,40 @@ export default function MyCoursesPage() {
     }
   };
 
+  const getValidityDetails = (createdAtStr: string, validityDaysInput: number = 90) => {
+    const purchaseDate = new Date(createdAtStr);
+    const validityDays = validityDaysInput || 90;
+    const endDate = new Date(purchaseDate.getTime() + validityDays * 24 * 60 * 60 * 1000);
+    
+    const now = new Date();
+    const diffMs = endDate.getTime() - now.getTime();
+    const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    
+    const formattedPurchase = purchaseDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    
+    const formattedEnd = endDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const percentRemaining = Math.min(100, Math.max(0, (daysLeft / validityDays) * 100));
+
+    return {
+      purchaseDateStr: formattedPurchase,
+      endDateStr: formattedEnd,
+      daysLeft,
+      totalDays: validityDays,
+      percentRemaining,
+      isExpired: daysLeft === 0,
+      isExpiringSoon: daysLeft > 0 && daysLeft <= 15,
+    };
+  };
+
   return (
     <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans antialiased">
       {/* Left Sidebar */}
@@ -100,7 +145,7 @@ export default function MyCoursesPage() {
               My Enrolled Courses 🎓
             </h1>
             <p className="text-slate-500 text-xs font-medium">
-              Your registered pathways. Click "Continue Learning" to resume your notes and chapter assessments.
+              Your registered pathways. Track your subscription validity, purchase date, and remaining days left.
             </p>
           </div>
 
@@ -118,7 +163,7 @@ export default function MyCoursesPage() {
                     <div className="h-3 bg-slate-200 rounded w-full" />
                     <div className="h-3 bg-slate-200 rounded w-5/6" />
                   </div>
-                  <div className="h-8 bg-slate-200 rounded-xl w-32 pt-2" />
+                  <div className="h-16 bg-slate-100 rounded-xl w-full" />
                 </div>
               ))}
             </div>
@@ -143,24 +188,39 @@ export default function MyCoursesPage() {
             </div>
           ) : (
             /* Enrolled Courses Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {enrollments.map((item) => {
                 const c = item.course;
                 if (!c) return null;
+
+                const validity = getValidityDetails(item.createdAt, c.validityDays || 90);
+
                 return (
                   <div
                     key={item.id}
-                    className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-500/50 hover:shadow-md transition-all space-y-2.5 shadow-xs flex flex-col justify-between"
+                    className="glass-panel p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-500/50 hover:shadow-md transition-all space-y-3 shadow-xs flex flex-col justify-between"
                   >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 uppercase">
+                    {/* Card Header & Title */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 uppercase truncate">
                           {c.category} &bull; Enrolled
                         </span>
-                        <div className="flex items-center gap-1 text-[11px] text-amber-400 font-extrabold">
-                          <Star size={12} className="fill-amber-400" />
-                          <span>{c.rating}</span>
-                        </div>
+
+                        {/* Validity Status Badge */}
+                        {validity.isExpired ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 shrink-0">
+                            <AlertCircle size={11} /> Access Expired
+                          </span>
+                        ) : validity.isExpiringSoon ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0 animate-pulse">
+                            <Clock size={11} /> {validity.daysLeft} Days Left
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                            <ShieldCheck size={11} /> {validity.daysLeft} Days Left
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
@@ -171,16 +231,64 @@ export default function MyCoursesPage() {
                       </p>
                     </div>
 
-                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                    {/* Subscription Validity Meta Block */}
+                    <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2">
+                      <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-600 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar size={13} className="text-blue-500 shrink-0" />
+                          <div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Purchased On</p>
+                            <p className="font-extrabold text-slate-800">{validity.purchaseDateStr}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 border-l border-slate-200/80 pl-2">
+                          <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                          <div>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Valid Until</p>
+                            <p className="font-extrabold text-slate-800">{validity.endDateStr}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Validity Time Bar */}
+                      <div className="space-y-1 pt-0.5">
+                        <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 font-bold">
+                          <span>Validity Bar</span>
+                          <span className={validity.isExpired ? "text-rose-500" : validity.isExpiringSoon ? "text-amber-600" : "text-emerald-600"}>
+                            {validity.daysLeft} of {validity.totalDays} Days Remaining
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              validity.isExpired
+                                ? "bg-rose-500"
+                                : validity.isExpiringSoon
+                                ? "bg-amber-500"
+                                : "bg-gradient-to-r from-blue-500 to-emerald-500"
+                            }`}
+                            style={{ width: `${validity.percentRemaining}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Action */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[9px] text-slate-400 font-mono font-semibold">
-                        Valid &bull; 90 Days Access
+                        Instructor: {c.instructor || "Codenthra AI"}
                       </span>
 
                       <button
                         onClick={() => handleStartLearning(c)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+                        disabled={validity.isExpired}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-white transition-all flex items-center gap-1 cursor-pointer ${
+                          validity.isExpired
+                            ? "bg-slate-300 cursor-not-allowed opacity-60"
+                            : "bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 shadow-xs"
+                        }`}
                       >
-                        Continue Learning <ArrowRight size={12} />
+                        {validity.isExpired ? "Access Expired" : "Continue Learning"} <ArrowRight size={12} />
                       </button>
                     </div>
                   </div>
