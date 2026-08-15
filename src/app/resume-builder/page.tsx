@@ -31,7 +31,9 @@ import {
   Wand2,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Lock,
+  ShieldCheck
 } from "lucide-react";
 
 // Initial Clean Candidate Profile (User enters their own details)
@@ -97,6 +99,10 @@ export default function ProfessionalResumeStudio() {
   // 4 = Interactive Studio & Live A4 Preview
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
+  // Module Lock & Razorpay Payment State (₹1 INR)
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
+
   // Step 1 State: Job Description (Starts empty for user input)
   const [jdText, setJdText] = useState("");
   const [jdCompany, setJdCompany] = useState("");
@@ -147,15 +153,106 @@ export default function ProfessionalResumeStudio() {
           ...prev,
           personalInfo: {
             ...prev.personalInfo,
-            fullName: currentUser.name || prev.personalInfo.fullName,
-            email: currentUser.email || prev.personalInfo.email,
+            fullName: prev.personalInfo.fullName || currentUser.name,
+            email: prev.personalInfo.email || currentUser.email,
           },
         }));
+
+        // Check if user has unlocked the module
+        if (currentUser.email) {
+          const unlocked = localStorage.getItem(`codenthra_resume_unlocked_${currentUser.email}`);
+          if (unlocked === "true") {
+            setIsUnlocked(true);
+          }
+        }
       } else {
         router.push("/auth");
       }
     }
   }, [session, isPending, router]);
+
+  // Load Razorpay Checkout Script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Handle Razorpay ₹1 Payment to Unlock Resume Builder
+  const handleUnlockModule = async () => {
+    if (!user) return;
+    setIsBuying(true);
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        alert("Failed to load Razorpay SDK. Please check your internet connection.");
+        setIsBuying(false);
+        return;
+      }
+
+      const res = await fetch("/api/razorpay/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: 1, // ₹1 INR
+          currency: "INR",
+          courseId: "codenthra-resume-builder",
+          userEmail: user.email,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || "Order creation failed.");
+        setIsBuying(false);
+        return;
+      }
+
+      const { isMock } = data;
+
+      if (isMock) {
+        alert("🔧 Razorpay Payment Simulation (₹1 INR). Click OK to confirm payment & unlock Codenthra AI Resume Studio!");
+        localStorage.setItem(`codenthra_resume_unlocked_${user.email}`, "true");
+        setIsUnlocked(true);
+      } else {
+        const options = {
+          key: data.key,
+          amount: data.order.amount,
+          currency: data.order.currency,
+          name: "Codenthra AI Resume Studio",
+          description: "Lifetime Access to AI Resume Builder & FAANG ATS Optimizer (₹1)",
+          order_id: data.order.id,
+          handler: async function () {
+            localStorage.setItem(`codenthra_resume_unlocked_${user.email}`, "true");
+            setIsUnlocked(true);
+          },
+          prefill: {
+            name: user.name,
+            email: user.email,
+          },
+          theme: {
+            color: "#4F46E5",
+          },
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to complete Razorpay payment.");
+    } finally {
+      setIsBuying(false);
+    }
+  };
 
   const handleSidebarTabChange = (tab: string) => {
     if (tab === "Dashboard") router.push("/dashboard");
@@ -413,8 +510,78 @@ export default function ProfessionalResumeStudio() {
           </div>
         </div>
 
-        {/* Step 1: Upload Job Description */}
-        {step === 1 && (
+        {/* Locked Module Screen / Full Pipeline */}
+        {!isUnlocked ? (
+          <div className="flex-1 overflow-y-auto p-6 sm:p-12 custom-scrollbar flex items-center justify-center">
+            <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 sm:p-10 space-y-6 text-center animate-in fade-in zoom-in-95">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-600 text-white flex items-center justify-center mx-auto shadow-xl">
+                <Lock size={36} />
+              </div>
+
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-extrabold">
+                  <Sparkles size={13} className="text-purple-600" /> Premium Module &bull; Lifetime Access
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  Unlock Codenthra AI Resume Builder
+                </h2>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Engineered for FAANG & top tech roles. Build job-targeted resumes, scan JD PDFs natively, and get real-time ATS match scoring.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                  <span>Native Base64 PDF Job Description Parser</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                  <span>FAANG ATS Keyword Gap & Match Evaluation</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                  <span>4 Professional A4 Templates (Modern, Executive, Creative, Classic)</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                  <span>1-Click High-Res Vector PDF Download</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex flex-col items-center gap-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs font-bold text-slate-400 line-through">₹999</span>
+                  <span className="text-3xl font-black text-slate-950">₹1</span>
+                  <span className="text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Special Launch Price</span>
+                </div>
+
+                <button
+                  onClick={handleUnlockModule}
+                  disabled={isBuying}
+                  className="w-full py-4 rounded-2xl text-sm font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-95 shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isBuying ? (
+                    <>
+                      <RefreshCw size={18} className="animate-spin" /> Launching Razorpay Gateway...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={18} className="text-cyan-300" /> Unlock Full Access for ₹1 (Razorpay Secured) ➔
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[10.5px] text-slate-400 font-medium flex items-center gap-1">
+                  <ShieldCheck size={12} className="text-emerald-500" /> 100% Encrypted & Secured by Razorpay Gateway
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Step 1: Upload Job Description */}
+            {step === 1 && (
           <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in zoom-in-95">
               <div className="text-center space-y-2">
@@ -1655,7 +1822,9 @@ export default function ProfessionalResumeStudio() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </>
+    )}
+  </main>
+</div>
   );
 }
