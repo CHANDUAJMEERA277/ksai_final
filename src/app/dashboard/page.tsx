@@ -99,6 +99,12 @@ export default function DashboardPage() {
   }, []);
 
   const handleSaveGoals = () => {
+    if (isGoalsLocked) {
+      setIsGoalsModalOpen(false);
+      setLockAlertMessage("🔒 This week's goals are already locked! Goal customization will unlock next Monday.");
+      return;
+    }
+
     setSavingGoals(true);
     setData((prev: any) => {
       if (!prev) return prev;
@@ -1305,6 +1311,13 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-4">
+                {isGoalsLocked && (
+                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2">
+                    <Lock size={16} className="text-amber-600 shrink-0" />
+                    <span>This week&apos;s goals are locked to maintain focus. Goal customization will unlock next Monday!</span>
+                  </div>
+                )}
+
                 {/* Target Chapters */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-black text-slate-700 flex justify-between">
@@ -1316,8 +1329,9 @@ export default function DashboardPage() {
                     min={1}
                     max={20}
                     value={editTargetChapters}
+                    disabled={isGoalsLocked}
                     onChange={(e) => setEditTargetChapters(Number(e.target.value))}
-                    className="w-full accent-[#4F46E5] cursor-pointer"
+                    className="w-full accent-[#4F46E5] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1333,8 +1347,9 @@ export default function DashboardPage() {
                     max={50}
                     step={5}
                     value={editTargetQuizzes}
+                    disabled={isGoalsLocked}
                     onChange={(e) => setEditTargetQuizzes(Number(e.target.value))}
-                    className="w-full accent-purple-600 cursor-pointer"
+                    className="w-full accent-purple-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1349,8 +1364,9 @@ export default function DashboardPage() {
                     min={1}
                     max={30}
                     value={editTargetAIChats}
+                    disabled={isGoalsLocked}
                     onChange={(e) => setEditTargetAIChats(Number(e.target.value))}
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-emerald-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -1367,9 +1383,19 @@ export default function DashboardPage() {
                   type="button"
                   onClick={handleSaveGoals}
                   disabled={savingGoals}
-                  className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className={`px-5 py-2 rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                    isGoalsLocked
+                      ? "bg-amber-600 hover:bg-amber-700 text-white"
+                      : "bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+                  }`}
                 >
-                  {savingGoals ? <RefreshCw size={14} className="animate-spin" /> : "Save Goals & Lock for Week"}
+                  {savingGoals ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : isGoalsLocked ? (
+                    "🔒 Goals Locked for Week"
+                  ) : (
+                    "Save Goals & Lock for Week"
+                  )}
                 </button>
               </div>
             </div>
