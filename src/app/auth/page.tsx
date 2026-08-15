@@ -9,11 +9,30 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
   const [authUser, setAuthUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
+  const [redirectPath, setRedirectPath] = useState<string>("/dashboard");
 
-  const handleAuthSuccess = (user: { name?: string; email?: string; role?: string }) => {
+  const handleAuthSuccess = async (user: { name?: string; email?: string; role?: string }) => {
     setAuthUser(user);
-    const destination = user.role === "Admin" ? "/admin" : "/dashboard";
-    window.location.href = destination;
+    if (user.role === "Admin") {
+      setRedirectPath("/admin");
+      window.location.href = "/admin";
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/courses/my-courses?email=${encodeURIComponent(user.email || "")}`);
+      const data = await res.json();
+      if (data.enrollments && Array.isArray(data.enrollments) && data.enrollments.length > 0) {
+        setRedirectPath("/dashboard");
+        window.location.href = "/dashboard";
+      } else {
+        setRedirectPath("/courses/catalog");
+        window.location.href = "/courses/catalog";
+      }
+    } catch {
+      setRedirectPath("/courses/catalog");
+      window.location.href = "/courses/catalog";
+    }
   };
 
   return (
@@ -60,7 +79,7 @@ export default function AuthPage() {
                     Welcome, {authUser.name || "Explorer"}!
                   </h2>
                   <p className="text-slate-300 text-sm">
-                    Authenticated into <span className="text-cyan-400 font-bold">{authUser.role || "Student"}</span> workspace in local SQLite database.
+                    Authenticated into <span className="text-cyan-400 font-bold">{authUser.role || "Student"}</span> workspace.
                   </p>
                 </div>
 
@@ -70,10 +89,14 @@ export default function AuthPage() {
                 </div>
 
                 <a
-                  href={authUser.role === "Admin" ? "/admin" : "/dashboard"}
+                  href={redirectPath}
                   className="inline-block px-8 py-3.5 rounded-full text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 glow-btn"
                 >
-                  {authUser.role === "Admin" ? "Enter Admin Dashboard →" : "Enter OS Dashboard →"}
+                  {authUser.role === "Admin"
+                    ? "Enter Admin Dashboard →"
+                    : redirectPath === "/courses/catalog"
+                    ? "Explore Available Courses →"
+                    : "Enter Dashboard →"}
                 </a>
               </motion.div>
             )}
