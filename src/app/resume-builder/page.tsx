@@ -674,12 +674,12 @@ export default function ProfessionalResumeStudio() {
                             ...prev.experience,
                             {
                               id: `exp-${Date.now()}`,
-                              company: "Tech Solutions",
-                              role: "Software Developer",
-                              startDate: "2024",
-                              endDate: "Present",
-                              description: "Built scalable web apps.",
-                              bullets: ["Engineered REST APIs reducing latency by 25%."],
+                              company: "",
+                              role: "",
+                              startDate: "",
+                              endDate: "",
+                              description: "",
+                              bullets: [""],
                             },
                           ],
                         }))
@@ -715,7 +715,7 @@ export default function ProfessionalResumeStudio() {
                             }))
                           }
                           className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Company Name"
+                          placeholder="Company Name (e.g. Google / Microsoft)"
                         />
                         <input
                           type="text"
@@ -727,7 +727,7 @@ export default function ProfessionalResumeStudio() {
                             }))
                           }
                           className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Role Title"
+                          placeholder="Role Title (e.g. Software Engineer)"
                         />
                       </div>
                       {exp.bullets.map((b, bIdx) => (
@@ -744,7 +744,7 @@ export default function ProfessionalResumeStudio() {
                             }));
                           }}
                           className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-800"
-                          placeholder="Accomplishment bullet point..."
+                          placeholder="Accomplishment bullet point (e.g. Engineered REST APIs...)"
                         />
                       ))}
                     </div>
@@ -766,10 +766,10 @@ export default function ProfessionalResumeStudio() {
                             ...prev.projects,
                             {
                               id: `proj-${Date.now()}`,
-                              title: "AI Web Platform",
-                              techStack: "Next.js, Python, PostgreSQL",
-                              description: "Built real-time web app.",
-                              bullets: ["Designed responsive user interface and backend APIs."],
+                              title: "",
+                              techStack: "",
+                              description: "",
+                              bullets: [""],
                             },
                           ],
                         }))
@@ -805,7 +805,7 @@ export default function ProfessionalResumeStudio() {
                             }))
                           }
                           className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                          placeholder="Project Title"
+                          placeholder="Project Title (e.g. AI Portfolio App)"
                         />
                         <input
                           type="text"
@@ -817,9 +817,26 @@ export default function ProfessionalResumeStudio() {
                             }))
                           }
                           className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-blue-600"
-                          placeholder="Tech Stack"
+                          placeholder="Tech Stack (e.g. Next.js, Python)"
                         />
                       </div>
+                      {proj.bullets.map((b, bIdx) => (
+                        <input
+                          key={bIdx}
+                          type="text"
+                          value={b}
+                          onChange={(e) => {
+                            const newB = [...proj.bullets];
+                            newB[bIdx] = e.target.value;
+                            setResumeData((prev) => ({
+                              ...prev,
+                              projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, bullets: newB } : i)),
+                            }));
+                          }}
+                          className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-800"
+                          placeholder="Project highlight bullet point..."
+                        />
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -1180,12 +1197,12 @@ export default function ProfessionalResumeStudio() {
                             ...prev.experience,
                             {
                               id: `exp-${Date.now()}`,
-                              company: "Tech Corp",
-                              role: "Software Engineer",
-                              startDate: "2024",
-                              endDate: "Present",
-                              description: "Software dev.",
-                              bullets: ["Engineered responsive UI and APIs."],
+                              company: "",
+                              role: "",
+                              startDate: "",
+                              endDate: "",
+                              description: "",
+                              bullets: [""],
                             },
                           ],
                         }))
@@ -1237,7 +1254,7 @@ export default function ProfessionalResumeStudio() {
                               }))
                             }
                             className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
-                            placeholder="Project Title"
+                            placeholder="Project Title (e.g. AI Workspace)"
                           />
                           <input
                             type="text"
@@ -1249,7 +1266,7 @@ export default function ProfessionalResumeStudio() {
                               }))
                             }
                             className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-blue-600"
-                            placeholder="Tech Stack"
+                            placeholder="Tech Stack (e.g. Next.js, Python)"
                           />
                         </div>
                       </div>
@@ -1263,10 +1280,10 @@ export default function ProfessionalResumeStudio() {
                             ...prev.projects,
                             {
                               id: `proj-${Date.now()}`,
-                              title: "Portfolio Web App",
-                              techStack: "Next.js, Python",
-                              description: "Built web app.",
-                              bullets: ["Engineered user dashboard."],
+                              title: "",
+                              techStack: "",
+                              description: "",
+                              bullets: [""],
                             },
                           ],
                         }))
