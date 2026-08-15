@@ -34,67 +34,45 @@ import {
   ChevronUp
 } from "lucide-react";
 
-// Initial Comprehensive Candidate Profile
+// Initial Clean Candidate Profile (User enters their own details)
 const INITIAL_CANDIDATE = {
   personalInfo: {
-    fullName: "Ajmeera Chandu",
-    jobTitle: "Senior Full-Stack AI Engineer",
-    email: "chandu@knowledgestream.ai",
-    phone: "+91 98765 43210",
-    location: "Hyderabad, India",
-    githubUrl: "github.com/CHANDUAJMEERA277",
+    fullName: "",
+    jobTitle: "",
+    email: "",
+    phone: "",
+    location: "",
+    githubUrl: "",
   },
-  summary:
-    "Results-driven Full-Stack AI Engineer with 4+ years of experience architecting high-throughput web applications, real-time code execution environments, and generative AI microservices.",
-  skills: [
-    "TypeScript / JavaScript",
-    "React / Next.js 16",
-    "Java Enterprise (Spring Boot)",
-    "Python / FastAPI / AI",
-    "SQLite / PostgreSQL / Prisma",
-    "TailwindCSS & Framer Motion",
-    "Docker & Cloud CI/CD",
-  ],
-  experience: [
-    {
-      id: "exp-1",
-      company: "KnowledgeStream AI",
-      role: "Lead Full-Stack AI Developer",
-      startDate: "2025",
-      endDate: "Present",
-      description: "Leading technical architecture for AI-driven CS learning platform.",
-      bullets: [
-        "Architected real-time browser sandbox code editor and execution pipeline with 99.9% uptime.",
-        "Integrated Gemini Flash AI engine for speech-to-code dictation and automated guided debugging.",
-        "Decreased page bundle size by 38% utilizing Next.js Turbopack SSR.",
-      ],
-    },
-  ],
-  projects: [
-    {
-      id: "proj-1",
-      title: "Codenthra AI Coding Workspace",
-      techStack: "Next.js 16, TypeScript, Prisma, Gemini AI",
-      description: "Comprehensive CS learning OS featuring live sandboxed code editor and AI mentor.",
-      bullets: [
-        "Engineered LeetCode-style green activity matrix tracking daily streak activity.",
-        "Implemented weekly goal locks and automated target alerts boosting retention by 35%.",
-      ],
-    },
-  ],
-  education: [
-    {
-      id: "edu-1",
-      institution: "State Technological University",
-      degree: "B.Tech in Computer Science & AI",
-      startDate: "2022",
-      endDate: "2026",
-      gpa: "8.9 / 10.0",
-    },
-  ],
+  summary: "",
+  skills: [] as string[],
+  experience: [] as Array<{
+    id: string;
+    company: string;
+    role: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+    bullets: string[];
+  }>,
+  projects: [] as Array<{
+    id: string;
+    title: string;
+    techStack: string;
+    description: string;
+    bullets: string[];
+  }>,
+  education: [] as Array<{
+    id: string;
+    institution: string;
+    degree: string;
+    startDate: string;
+    endDate: string;
+    gpa: string;
+  }>,
 };
 
-// Sample JDs for quick testing
+// Sample JDs for quick testing presets
 const SAMPLE_JDS = [
   {
     company: "Google",
@@ -119,10 +97,10 @@ export default function ProfessionalResumeStudio() {
   // 4 = Interactive Studio & Live A4 Preview
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Step 1 State: Job Description
-  const [jdText, setJdText] = useState(SAMPLE_JDS[0].text);
-  const [jdCompany, setJdCompany] = useState(SAMPLE_JDS[0].company);
-  const [jdTargetRole, setJdTargetRole] = useState(SAMPLE_JDS[0].title);
+  // Step 1 State: Job Description (Starts empty for user input)
+  const [jdText, setJdText] = useState("");
+  const [jdCompany, setJdCompany] = useState("");
+  const [jdTargetRole, setJdTargetRole] = useState("");
   const [jdFileName, setJdFileName] = useState<string | null>(null);
   const [pdfBase64, setPdfBase64] = useState<string | null>(null);
 
