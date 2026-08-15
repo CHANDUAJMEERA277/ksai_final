@@ -401,9 +401,63 @@ export default function DashboardPage() {
     );
   }
 
-  const { stats, continueLearningCourses = [], learningProgress, weeklyGoals, heatmap = [], recommended = [], notifications = { unreadCount: 0, list: [] } } = data || {};
+  const { stats, continueLearningCourses = [], learningProgress, weeklyGoals, heatmap = [], recommended = [], notifications: rawNotifications = { unreadCount: 0, list: [] } } = data || {};
   const activeUser = data?.user || {};
   const firstName = activeUser.name ? activeUser.name.split(" ")[0] : "Student";
+
+  // Compute Weekend Pending Goals Notification & Alert
+  const computedNotifications = useMemo(() => {
+    const rawList = rawNotifications?.list || [];
+    let unreadCount = rawNotifications?.unreadCount || 0;
+
+    const d = new Date();
+    const day = d.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = day === 6 || day === 0;
+
+    const chaptersDone = weeklyGoals?.chapters?.current ?? 0;
+    const chaptersTarget = weeklyGoals?.chapters?.target ?? 2;
+    const quizzesDone = weeklyGoals?.quizzes?.current ?? 0;
+    const quizzesTarget = weeklyGoals?.quizzes?.target ?? 10;
+    const aiDone = weeklyGoals?.aiSessions?.current ?? 0;
+    const aiTarget = weeklyGoals?.aiSessions?.target ?? 5;
+
+    const isPendingGoals = chaptersDone < chaptersTarget || quizzesDone < quizzesTarget || aiDone < aiTarget;
+
+    if (isWeekend && isPendingGoals) {
+      const daysLeft = day === 6 ? 2 : 1;
+      const pendingItems: string[] = [];
+      if (chaptersDone < chaptersTarget) pendingItems.push(`${chaptersTarget - chaptersDone} Chapters`);
+      if (quizzesDone < quizzesTarget) pendingItems.push(`${quizzesTarget - quizzesDone} Quizzes`);
+      if (aiDone < aiTarget) pendingItems.push(`${aiTarget - aiDone} AI Chats`);
+
+      const weekendAlertNotice = {
+        id: "weekly-goal-weekend-alert",
+        title: daysLeft === 1 ? "⚠️ 1 Day Left for Weekly Goals!" : "⚠️ 2 Days Left for Weekly Goals!",
+        message: `You have pending targets (${pendingItems.join(", ")}). Only ${daysLeft} day${daysLeft > 1 ? "s" : ""} left to complete your goals before Monday reset!`,
+        read: false,
+        createdAt: new Date().toISOString(),
+        isUrgent: true,
+      };
+
+      unreadCount += 1;
+      return {
+        unreadCount,
+        list: [weekendAlertNotice, ...rawList],
+        weekendPendingAlert: {
+          daysLeft,
+          pendingText: pendingItems.join(", "),
+        },
+      };
+    }
+
+    return {
+      unreadCount,
+      list: rawList,
+      weekendPendingAlert: null,
+    };
+  }, [rawNotifications, weeklyGoals]);
+
+  const notifications = computedNotifications;
 
   return (
     <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans antialiased">
@@ -656,6 +710,31 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Weekend Pending Goals Alert Banner */}
+        {computedNotifications.weekendPendingAlert && (
+          <div className="p-3.5 px-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 flex items-center justify-between shadow-xs shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm animate-pulse">
+                ⚠️
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">
+                  {computedNotifications.weekendPendingAlert.daysLeft === 1 ? "⚠️ 1 Day Left to Complete Weekly Targets!" : "⚠️ 2 Days Left to Complete Weekly Targets!"}
+                </h4>
+                <p className="text-[11px] text-slate-600 font-medium">
+                  You have incomplete goals (<span className="font-bold text-slate-900">{computedNotifications.weekendPendingAlert.pendingText}</span>). Complete them before Monday reset!
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/courses")}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs transition shadow-sm shrink-0 cursor-pointer"
+            >
+              Finish Targets →
+            </button>
+          </div>
+        )}
 
         {/* Top 4 Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0 select-none h-[11vh] min-h-[75px]">
