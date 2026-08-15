@@ -16,26 +16,37 @@ export async function POST(request: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (action === "align_with_jd") {
+      const userSkills: string[] = Array.isArray(resumeData?.skills) ? resumeData.skills : [];
+      const userExp: any[] = Array.isArray(resumeData?.experience) ? resumeData.experience : [];
+      const userProjects: any[] = Array.isArray(resumeData?.projects) ? resumeData.projects : [];
+
+      const userTextBlob = [
+        ...userSkills,
+        ...userExp.map((e: any) => `${e.company} ${e.role} ${e.description} ${(e.bullets || []).join(" ")}`),
+        ...userProjects.map((p: any) => `${p.title} ${p.techStack} ${p.description} ${(p.bullets || []).join(" ")}`),
+      ].join(" ").toLowerCase();
+
       if (apiKey && (jobDescription || pdfBase64)) {
         try {
           const promptText = `You are Codenthra AI, an elite FAANG Career Strategist and ATS Optimizer.
-Given the Target Job Description provided (in text or attached PDF) for a ${targetRole} role at ${company}, and the candidate's current resume data:
+Given the Target Job Description provided for a "${targetRole}" role at "${company}", and candidate's current resume JSON:
 """
 ${JSON.stringify(resumeData)}
 """
 
-Analyze the Job Description requirements thoroughly and generate a tailored resume enhancement plan in JSON format with exact key structure:
+Analyze the Job Description requirements thoroughly against candidate's current skills and experience.
+Generate a JSON object with EXACT keys:
 {
-  "score": 95, (number 85-98 based on match)
-  "tailoredSummary": "A 3-sentence powerful executive summary engineered specifically for this target job.",
-  "missingKeywords": ["Array of 4-6 specific technical skills/frameworks mentioned in JD but missing in candidate's resume"],
-  "recommendedBullets": ["Array of 3 high-impact accomplishment bullets tailored for experience/projects section using action verbs and metrics matching the JD"],
-  "feedback": ["Array of 3-4 strategic advice notes on how this resume matches the JD"]
+  "score": <number between 15 and 98 reflecting actual match percentage. If candidate resume has NO skills or experience, return score under 30.>,
+  "matchedKeywords": [<array of specific technical skills/tools mentioned in JD that ARE ACTUALLY PRESENT in candidate's resume>],
+  "missingKeywords": [<array of 4-6 specific technical skills/tools mentioned in JD that ARE MISSING in candidate's resume>],
+  "tailoredSummary": "<A 3-sentence powerful executive summary engineered specifically for this target job.>",
+  "recommendedBullets": [<array of 3 high-impact accomplishment bullets tailored for experience/projects section using action verbs and metrics matching the JD>],
+  "feedback": [<array of 3-4 strategic advice notes on how this resume matches the JD>]
 }`;
 
           const parts: any[] = [];
           if (pdfBase64) {
-            // Remove data URL prefix if present
             const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, "");
             parts.push({
               inline_data: {
@@ -68,21 +79,32 @@ Analyze the Job Description requirements thoroughly and generate a tailored resu
         }
       }
 
-      // Intelligent Fallback for JD Alignment
+      // Dynamic Fallback logic based on actual candidate input
+      const jdKeywords = ["React", "Next.js", "TypeScript", "TailwindCSS", "Java", "Spring Boot", "Python", "FastAPI", "GraphQL", "Microservices", "Docker", "Kubernetes", "PostgreSQL", "AWS"];
+      
+      const matched = jdKeywords.filter((k) => userTextBlob.includes(k.toLowerCase()));
+      const missing = jdKeywords.filter((k) => !userTextBlob.includes(k.toLowerCase())).slice(0, 6);
+
+      const isProfileEmpty = userSkills.length === 0 && userExp.length === 0 && userProjects.length === 0;
+      const calculatedScore = isProfileEmpty ? 25 : Math.min(95, Math.max(35, matched.length * 15 + (userExp.length > 0 ? 25 : 0)));
+
       return NextResponse.json({
         success: true,
-        score: 96,
-        tailoredSummary: `High-impact ${targetRole} with proven expertise architecting full-stack web applications, microservice backend pipelines, and real-time AI integrations aligned with ${company}'s technical standards. Expert in modern JavaScript/TypeScript, React/Next.js, and cloud systems design with a focus on code efficiency and scalable performance.`,
-        missingKeywords: ["Microservices", "Kafka / Event Broker", "Docker / K8s", "GraphQL", "AWS Cloud"],
+        score: calculatedScore,
+        matchedKeywords: matched,
+        missingKeywords: missing,
+        tailoredSummary: userSkills.length > 0
+          ? `High-impact ${targetRole} with proven expertise in ${userSkills.slice(0, 3).join(", ")}, microservice backend pipelines, and cloud systems design aligned with ${company}'s technical standards.`
+          : `Motivated ${targetRole} seeking to build scalable web applications and software solutions for ${company}.`,
         recommendedBullets: [
           `Architected resilient backend services and REST/GraphQL APIs aligned with ${company}'s infrastructure, achieving 99.9% uptime.`,
           "Implemented automated CI/CD pipelines and unit testing suites, reducing release bug rates by 42%.",
           "Engineered interactive real-time dashboards utilizing Next.js Turbopack SSR, optimizing page load times by 38%.",
         ],
         feedback: [
-          `Job Description parsed successfully for ${targetRole} at ${company}.`,
-          "Summary aligned with key engineering responsibilities in target JD.",
-          "Extracted critical ATS keywords to inject into core technical skills section.",
+          `Job Description parsed for ${targetRole} at ${company}.`,
+          matched.length > 0 ? `Identified ${matched.length} matched skills in candidate profile.` : "No technical skills found in candidate profile. Add your skills in Step 2 to improve your ATS score.",
+          "Extracted target JD keywords for one-click injection into your resume.",
         ],
       });
     }

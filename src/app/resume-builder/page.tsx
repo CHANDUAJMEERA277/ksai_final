@@ -212,15 +212,12 @@ export default function ProfessionalResumeStudio() {
       const data = await res.json();
       if (data.success) {
         setMatchResult({
-          score: data.score || 88,
-          matchedKeywords: ["React", "Next.js", "TypeScript", "TailwindCSS", "Java Spring Boot", "Python FastAPI"],
-          missingKeywords: data.missingKeywords || ["GraphQL", "Kafka", "Docker / K8s", "System Architecture"],
+          score: data.score !== undefined ? data.score : 25,
+          matchedKeywords: data.matchedKeywords || [],
+          missingKeywords: data.missingKeywords || [],
           tailoredSummary: data.tailoredSummary || resumeData.summary,
           recommendedBullets: data.recommendedBullets || [],
-          feedback: data.feedback || [
-            "Strong foundation in core web frameworks matched with JD.",
-            "Suggested adding specific cloud microservices keywords.",
-          ],
+          feedback: data.feedback || [],
         });
       }
     } catch (e) {
@@ -880,7 +877,7 @@ export default function ProfessionalResumeStudio() {
                       <Target size={14} /> Step 3 of 4: AI Match Analysis
                     </div>
                     <h2 className="text-2xl font-black text-slate-950 tracking-tight">
-                      Match Evaluation for {jdCompany}
+                      Match Evaluation {jdCompany ? `for ${jdCompany}` : "for Target Position"}
                     </h2>
                     <p className="text-xs text-slate-500 font-medium">
                       Codenthra AI analyzed your profile vs target JD. Here is your gap analysis and keywords match score!
@@ -891,7 +888,9 @@ export default function ProfessionalResumeStudio() {
                   <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white flex flex-wrap items-center justify-between gap-4 shadow-xl">
                     <div className="space-y-1">
                       <p className="text-3xl font-black">{matchResult.score}% ATS Match</p>
-                      <p className="text-xs font-bold text-cyan-200">Aligned for {jdTargetRole} at {jdCompany}</p>
+                      <p className="text-xs font-bold text-cyan-200">
+                        {jdTargetRole || "Target Role"} {jdCompany ? `at ${jdCompany}` : ""}
+                      </p>
                     </div>
 
                     <button
@@ -910,11 +909,17 @@ export default function ProfessionalResumeStudio() {
                         <CheckCircle2 size={16} className="text-emerald-500" /> Matched Skills & Keywords
                       </h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {matchResult.matchedKeywords.map((k, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
-                            ✓ {k}
-                          </span>
-                        ))}
+                        {matchResult.matchedKeywords && matchResult.matchedKeywords.length > 0 ? (
+                          matchResult.matchedKeywords.map((k, i) => (
+                            <span key={i} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                              ✓ {k}
+                            </span>
+                          ))
+                        ) : (
+                          <p className="text-xs text-slate-400 font-medium italic">
+                            No matching technical skills found in candidate profile. Add your skills in Step 2 to improve your ATS score!
+                          </p>
+                        )}
                       </div>
                     </div>
 
