@@ -153,10 +153,8 @@ export function AuthSceneCanvas() {
 
       {/* Top Header Logo */}
       <div className="flex items-center gap-3 z-20 pt-8 pl-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-blue-400 p-[1px] shadow-lg shadow-blue-500/30">
-          <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
-            <Sparkles size={18} className="text-cyan-400" />
-          </div>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-blue-400 p-[1px] shadow-lg shadow-blue-500/30 flex items-center justify-center overflow-hidden">
+          <img src="/logo.png" alt="KnowledgeStream AI Logo" className="w-full h-full object-cover rounded-[10px]" />
         </div>
         <div>
           <span className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">

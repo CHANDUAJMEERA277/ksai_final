@@ -11,10 +11,8 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/30">
-                <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
-                  <Sparkles size={18} className="text-cyan-400" />
-                </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="KnowledgeStream AI Logo" className="w-full h-full object-cover rounded-[10px]" />
               </div>
               <span className="font-bold text-lg text-white">
                 Knowledge<span className="text-blue-500">Stream</span> AI

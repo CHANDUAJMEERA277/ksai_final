@@ -203,10 +203,8 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
         }`}>
           {!collapsed ? (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg flex items-center justify-center">
-                <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
-                  <Brain size={14} className="text-cyan-400" />
-                </div>
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="KnowledgeStream AI Logo" className="w-full h-full object-cover rounded-[10px]" />
               </div>
               <div className="flex flex-col leading-none">
                 <span className={`font-black text-xs tracking-tight flex items-center gap-1 ${
@@ -228,10 +226,8 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
             </div>
           ) : (
             <div className="w-full flex justify-center py-0.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-sm flex items-center justify-center">
-                <div className="w-full h-full bg-[#09090B] rounded-[7px] flex items-center justify-center">
-                  <Brain size={12} className="text-cyan-400" />
-                </div>
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-sm flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="KnowledgeStream AI Logo" className="w-full h-full object-cover rounded-[6px]" />
               </div>
             </div>
           )}

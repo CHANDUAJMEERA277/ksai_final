@@ -39,10 +39,8 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Brand Logo */}
         <a href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
-              <Sparkles size={20} className="text-cyan-400 group-hover:rotate-12 transition-transform" />
-            </div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="KnowledgeStream AI Logo" className="w-full h-full object-cover rounded-[10px]" />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-lg tracking-tight text-white flex items-center gap-1">

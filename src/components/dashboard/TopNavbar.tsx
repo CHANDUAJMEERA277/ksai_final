@@ -76,10 +76,8 @@ export function TopNavbar({ userName = "Student", userRole = "Student", user, sh
       {/* Left Brand Logo */}
       <div className="flex items-center gap-3">
         <a href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-[#09090B] rounded-[11px] flex items-center justify-center">
-              <Sparkles size={18} className="text-cyan-400 group-hover:rotate-12 transition-transform" />
-            </div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="KnowledgeStream AI Logo" className="w-full h-full object-cover rounded-[10px]" />
           </div>
           <span className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
             Knowledge<span className="text-blue-500">Stream</span>
