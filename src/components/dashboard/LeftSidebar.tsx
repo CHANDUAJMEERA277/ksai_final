@@ -133,6 +133,7 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
   const [paymentMethod, setPaymentMethod] = useState<"card" | "upi">("card");
 
   const [isProState, setIsProState] = useState<boolean | null>(null);
+  const [hasResumeUnlocked, setHasResumeUnlocked] = useState(false);
 
   useEffect(() => {
     const isProSession = sessionStorage.getItem("is_pro") === "true";
@@ -140,6 +141,15 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
       setIsProState(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && session?.user?.email) {
+      const unlocked = localStorage.getItem(`codenthra_resume_unlocked_${session.user.email}`);
+      if (unlocked === "true") {
+        setHasResumeUnlocked(true);
+      }
+    }
+  }, [session]);
 
   const [localProfile, setLocalProfile] = useState<{
     name: string;
@@ -264,7 +274,7 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
             }
           }
 
-          const isLocked = false;
+          const isLocked = item.id === "Resume Builder" && !hasResumeUnlocked;
 
           return (
             <button
