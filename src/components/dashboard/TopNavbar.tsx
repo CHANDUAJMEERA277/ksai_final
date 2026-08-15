@@ -26,9 +26,10 @@ interface TopNavbarProps {
     role?: string;
     [key: string]: any;
   } | null;
+  showSearch?: boolean;
 }
 
-export function TopNavbar({ userName = "Student", userRole = "Student", user }: TopNavbarProps) {
+export function TopNavbar({ userName = "Student", userRole = "Student", user, showSearch = true }: TopNavbarProps) {
   const sessionData = useSession();
   const sessionUser = (sessionData?.data as any)?.user ?? null;
   const authUser = user ?? sessionUser;
@@ -90,25 +91,29 @@ export function TopNavbar({ userName = "Student", userRole = "Student", user }: 
       </div>
 
       {/* Center Search Input */}
-      <div className="hidden md:flex items-center gap-2 max-w-md w-full">
-        <div className="relative w-full">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects, AI agents, courses, tasks... (Ctrl + K)"
-            className="w-full pl-9 pr-12 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-slate-400 font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-            <Command size={10} /> K
+      {showSearch ? (
+        <div className="hidden md:flex items-center gap-2 max-w-md w-full">
+          <div className="relative w-full">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search projects, AI agents, courses, tasks... (Ctrl + K)"
+              className="w-full pl-9 pr-12 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-slate-400 font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+              <Command size={10} /> K
+            </div>
           </div>
-        </div>
 
-        <button className="px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 hover:opacity-90 shadow-md">
-          <Sparkles size={13} /> AI Search
-        </button>
-      </div>
+          <button className="px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 hover:opacity-90 shadow-md">
+            <Sparkles size={13} /> AI Search
+          </button>
+        </div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
       {/* Right Controls & Profile */}
       <div className="flex items-center gap-2 sm:gap-3">

@@ -246,7 +246,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans">
       {/* Top Navbar */}
-      <TopNavbar user={user} />
+      <TopNavbar user={user} showSearch={false} />
 
       <div className="flex-1 flex">
         {/* Left Sidebar */}
@@ -387,22 +387,6 @@ export default function LeaderboardPage() {
                       ))}
                     </select>
                   )}
-                  <div className="relative flex-1">
-                    <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
-                    <input
-                      type="text"
-                      list="colleges-datalist"
-                      value={selectedCollege}
-                      onChange={(e) => setSelectedCollege(e.target.value)}
-                      placeholder="Or search/type college..."
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:border-purple-500"
-                    />
-                    <datalist id="colleges-datalist">
-                      {collegesList.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
-                  </div>
                 </div>
               </div>
             )}

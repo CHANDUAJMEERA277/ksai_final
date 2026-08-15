@@ -365,9 +365,9 @@ function CertificatesContent() {
                   </div>
 
                   {/* Student Name */}
-                  <div className="py-2 border-b-2 border-amber-500/40 inline-block px-8">
+                  <div className="py-2 border-b-2 border-amber-500/40 inline-block px-8 relative group">
                     <h1 className="text-3xl sm:text-4xl font-black text-[#4F46E5] font-sans tracking-tight">
-                      {selectedCert.studentName}
+                      {selectedCert.studentName || "Vasundara"}
                     </h1>
                   </div>
 

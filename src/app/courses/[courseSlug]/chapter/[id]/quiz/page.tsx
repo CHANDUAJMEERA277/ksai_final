@@ -403,9 +403,10 @@ export default function CourseQuizPage() {
               {currentQuestionIndex < quizQuestions.length - 1 ? (
                 <button
                   onClick={handleNextQuestion}
-                  className="px-5 py-3 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-all flex items-center gap-1.5"
+                  disabled={currentQuestion && selectedAnswers[currentQuestion.id] === undefined}
+                  className="px-5 py-3 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
                 >
-                  Next <ChevronRight size={16} />
+                  Next Question <ChevronRight size={16} />
                 </button>
               ) : (
                 <button
@@ -471,16 +472,30 @@ export default function CourseQuizPage() {
 
               <div className="pt-4 flex flex-wrap justify-center gap-3 border-t border-slate-200">
                 <button
-                  onClick={() => router.push(`/courses/${courseSlug}/curriculum`)}
-                  className="px-6 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
+                  onClick={() => router.push(`/courses/${courseSlug}/chapter/${chapterOrder}`)}
+                  className="px-5 py-3.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-all flex items-center gap-1.5"
                 >
-                  Go to Curriculum Syllabus
+                  <ArrowLeft size={14} /> Review Lesson Notes
                 </button>
-                
-                {!quizResult.passed && (
+
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="px-5 py-3.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-all flex items-center gap-1.5"
+                >
+                  Back to Dashboard
+                </button>
+
+                {quizResult.passed ? (
+                  <button
+                    onClick={() => router.push(`/courses/${courseSlug}/chapter/${chapterOrder + 1}`)}
+                    className="px-6 py-3.5 rounded-xl font-black text-xs text-white bg-blue-600 hover:bg-blue-700 transition-all flex items-center gap-1.5 shadow-md"
+                  >
+                    Next Chapter <ArrowRight size={14} />
+                  </button>
+                ) : (
                   <button
                     onClick={handleRetakeQuiz}
-                    className="px-6 py-3.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-all flex items-center gap-1.5"
+                    className="px-6 py-3.5 rounded-xl font-bold text-xs bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 transition-all flex items-center gap-1.5"
                   >
                     <RotateCcw size={14} /> Retake Assessment
                   </button>

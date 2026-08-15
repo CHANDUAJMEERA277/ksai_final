@@ -85,6 +85,7 @@ export default function MyCoursesPage() {
       <TopNavbar
         userName={user?.name || "Loading..."}
         userRole={user?.role || "Student"}
+        showSearch={false}
       />
 
       {/* Main Workspace Layout */}
