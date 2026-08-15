@@ -374,38 +374,11 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-[#F8FAFC] text-slate-800 flex items-center justify-center flex-col space-y-4">
-        <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-[#4F46E5] animate-spin" />
-        <div className="text-slate-600 text-sm font-mono font-bold">Loading dashboard...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-screen bg-[#F8FAFC] text-slate-800 flex items-center justify-center flex-col space-y-4">
-        <div className="p-8 rounded-3xl border border-red-200 bg-red-50/50 max-w-md text-center space-y-4 shadow-sm">
-          <AlertTriangle className="text-red-500 mx-auto" size={40} />
-          <h2 className="text-lg font-bold text-slate-900">Dashboard Error</h2>
-          <p className="text-xs text-slate-500 leading-relaxed">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-all text-xs"
-          >
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const { stats, continueLearningCourses = [], learningProgress, weeklyGoals, heatmap = [], recommended = [], notifications: rawNotifications = { unreadCount: 0, list: [] } } = data || {};
   const activeUser = data?.user || {};
   const firstName = activeUser.name ? activeUser.name.split(" ")[0] : "Student";
 
-  // Compute Weekend Pending Goals Notification & Alert
+  // Compute Weekend Pending Goals Notification & Alert (Must be called unconditionally at top level for React Rules of Hooks)
   const computedNotifications = useMemo(() => {
     const rawList = rawNotifications?.list || [];
     let unreadCount = rawNotifications?.unreadCount || 0;
@@ -458,6 +431,33 @@ export default function DashboardPage() {
   }, [rawNotifications, weeklyGoals]);
 
   const notifications = computedNotifications;
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-[#F8FAFC] text-slate-800 flex items-center justify-center flex-col space-y-4">
+        <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-[#4F46E5] animate-spin" />
+        <div className="text-slate-600 text-sm font-mono font-bold">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen bg-[#F8FAFC] text-slate-800 flex items-center justify-center flex-col space-y-4">
+        <div className="p-8 rounded-3xl border border-red-200 bg-red-50/50 max-w-md text-center space-y-4 shadow-sm">
+          <AlertTriangle className="text-red-500 mx-auto" size={40} />
+          <h2 className="text-lg font-bold text-slate-900">Dashboard Error</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-all text-xs"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans antialiased">
