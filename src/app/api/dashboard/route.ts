@@ -288,16 +288,15 @@ export async function GET(req: Request) {
       }
     };
 
-    // H. Editor Activity heatmap (past 5 weeks aligned to Mon-Sun)
+    // H. LeetCode-style Coding Activity Heatmap (past 12 weeks Mon-Sun)
     const currentMonday = new Date(mondayDate);
     const startOfGrid = new Date(currentMonday);
-    startOfGrid.setDate(startOfGrid.getDate() - 28); 
+    startOfGrid.setDate(startOfGrid.getDate() - 77); // 12 weeks = 84 days grid
 
     const editorActivityCounts: { [dateStr: string]: number } = {};
     const editorLogs = await db.activityLog.findMany({
       where: {
         userId: user.id,
-        actionType: { startsWith: "EDITOR_" },
         createdAt: { gte: startOfGrid }
       }
     });
@@ -308,7 +307,7 @@ export async function GET(req: Request) {
     }
 
     const heatmapData = [];
-    for (let w = 0; w < 5; w++) {
+    for (let w = 0; w < 12; w++) {
       const weekDays = [];
       for (let d = 0; d < 7; d++) {
         const targetDate = new Date(startOfGrid);
@@ -320,7 +319,8 @@ export async function GET(req: Request) {
         if (count > 0) {
           if (count <= 2) intensity = 1;
           else if (count <= 5) intensity = 2;
-          else intensity = 3;
+          else if (count <= 8) intensity = 3;
+          else intensity = 4;
         }
         
         weekDays.push({

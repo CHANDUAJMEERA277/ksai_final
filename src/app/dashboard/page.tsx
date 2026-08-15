@@ -1316,25 +1316,37 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Heatmap */}
-          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
-            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-100 flex-shrink-0">
-              Editor Activity
-            </h3>
+          {/* LeetCode Style Coding Activity Heatmap */}
+          <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full space-y-1.5">
+            <div className="flex items-center justify-between pb-1 border-b border-slate-100 flex-shrink-0">
+              <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Coding Activity Matrix 🟩
+              </h3>
+              <span className="text-[9px] font-mono font-black text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                {heatmap.reduce((sum: number, w: any) => sum + w.days.reduce((dSum: number, d: any) => dSum + d.count, 0), 0)} Submissions
+              </span>
+            </div>
             
-            <div className="flex flex-col justify-between flex-1 min-h-0 pt-1.5 space-y-2">
-              <div className="flex gap-1.5 justify-center">
+            <div className="flex flex-col justify-between flex-1 min-h-0 pt-1 space-y-2">
+              {/* LeetCode Green Grid Matrix */}
+              <div className="flex gap-1 justify-between items-center overflow-x-auto py-1 scrollbar-thin">
                 {heatmap.map((week: any, wIdx: number) => (
-                  <div key={wIdx} className="flex flex-col gap-1">
+                  <div key={wIdx} className="flex flex-col gap-1 shrink-0">
                     {week.days.map((day: any, dIdx: number) => (
                       <div 
                         key={dIdx}
-                        title={`${day.date}: ${day.count} editor activities`}
-                        className={`w-3 h-3 rounded-sm transition-all duration-300 hover:scale-110 cursor-pointer ${
-                          day.intensity === 0 ? "bg-slate-100" :
-                          day.intensity === 1 ? "bg-indigo-100 border border-indigo-200/30" :
-                          day.intensity === 2 ? "bg-indigo-300 border border-indigo-400/30" :
-                          "bg-[#4F46E5] shadow-sm shadow-[#4F46E5]/15"
+                        title={`${day.date}: ${day.count} coding submissions`}
+                        className={`w-3 h-3 rounded-xs transition-all duration-200 hover:scale-125 cursor-pointer shadow-xs ${
+                          day.intensity === 0 
+                            ? "bg-slate-100 border border-slate-200/40 hover:bg-slate-200/60" 
+                            : day.intensity === 1 
+                            ? "bg-[#9BE9A8] border border-[#6CC686]" 
+                            : day.intensity === 2 
+                            ? "bg-[#40C463] border border-[#2E994B]" 
+                            : day.intensity === 3 
+                            ? "bg-[#30A14E] border border-[#237A39]" 
+                            : "bg-[#216E39] border border-[#144A24] shadow-sm shadow-emerald-700/20"
                         }`}
                       />
                     ))}
@@ -1342,22 +1354,15 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              {/* Heatmap Legend Swatches */}
-              <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono font-bold uppercase tracking-wider">
+              {/* LeetCode Heatmap Swatches Legend */}
+              <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono font-bold uppercase tracking-wider pt-1 border-t border-slate-100 flex-shrink-0">
                 <span>Less</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1.5 h-1.5 rounded-sm bg-indigo-100" />
-                    <span>Hints</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1.5 h-1.5 rounded-sm bg-indigo-300" />
-                    <span>Suggestions</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1.5 h-1.5 rounded-sm bg-[#4F46E5]" />
-                    <span>Fixes</span>
-                  </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-xs bg-slate-100 border border-slate-200/60" />
+                  <div className="w-2.5 h-2.5 rounded-xs bg-[#9BE9A8]" />
+                  <div className="w-2.5 h-2.5 rounded-xs bg-[#40C463]" />
+                  <div className="w-2.5 h-2.5 rounded-xs bg-[#30A14E]" />
+                  <div className="w-2.5 h-2.5 rounded-xs bg-[#216E39]" />
                 </div>
                 <span>More</span>
               </div>
