@@ -924,201 +924,181 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Course Completion Carousel */}
-          <div className="xl:col-span-1 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                <Award size={14} className="text-[#4F46E5]" /> Course Metric
-              </h3>
-              {continueLearningCourses.length > 1 && (
-                <span className="text-[10px] text-slate-400 font-mono font-bold">
-                  {currentCompleteIndex + 1}/{continueLearningCourses.length}
-                </span>
-              )}
-            </div>
-
-            {continueLearningCourses.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-3">
-                <span className="text-xl">🏆</span>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">Zero active courses.</p>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col justify-between min-h-0 pt-2.5 relative">
-                {continueLearningCourses.length > 1 && (
-                  <>
-                    <button 
-                      onClick={() => triggerManualCompleteSelect((currentCompleteIndex - 1 + continueLearningCourses.length) % continueLearningCourses.length)}
-                      className="absolute left-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
-                    >
-                      <ChevronLeft size={12} />
-                    </button>
-                    <button 
-                      onClick={() => triggerManualCompleteSelect((currentCompleteIndex + 1) % continueLearningCourses.length)}
-                      className="absolute right-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
-                    >
-                      <ChevronRight size={12} />
-                    </button>
-                  </>
-                )}
-
-                {continueLearningCourses.map((course: CourseSlide, idx: number) => {
-                  if (idx !== currentCompleteIndex) return null;
-                  return (
-                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-2 px-1">
-                      <div className="flex flex-col items-center text-center space-y-1">
-                        <img 
-                          src={course.courseThumbnail} 
-                          alt={course.courseTitle}
-                          className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm"
-                        />
-                        <h4 className="text-xs font-black text-slate-900 line-clamp-2">
-                          {course.courseTitle}
-                        </h4>
-                        <span className="text-[10px] text-slate-500 font-mono font-bold uppercase">
-                          {course.courseLanguage} TRACK
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[11px] font-extrabold text-slate-600">
-                          <span>Timeline Completion</span>
-                          <span className="font-mono text-[#4F46E5]">{course.progressPercent}%</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                          <div 
-                            className="h-full bg-emerald-500 rounded-full"
-                            style={{ width: `${course.progressPercent}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <button 
-                        onClick={() => router.push(`/courses/${course.courseLanguage}/chapter/${course.currentChapter?.orderNumber ?? 1}`)}
-                        className="w-full py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors text-center cursor-pointer shadow-sm"
-                      >
-                        Continue Learning
-                      </button>
-                    </div>
-                  );
-                })}
-
-                {continueLearningCourses.length > 1 && (
-                  <div className="flex justify-center items-center gap-1 pt-1">
-                    {continueLearningCourses.map((_course: CourseSlide, dIdx: number) => (
-                      <button
-                        key={dIdx}
-                        onClick={() => triggerManualCompleteSelect(dIdx)}
-                        className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
-                          dIdx === currentCompleteIndex ? "bg-[#4F46E5] w-2.5" : "bg-slate-200 w-1"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* AI Teacher */}
-          <div className="xl:col-span-2 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm">
+          {/* Gamified Skill Mastery & XP Progress Graph (Replaces Course Metric & AI Teacher) */}
+          <div className="xl:col-span-3 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative space-y-3">
+            
+            {/* Header: Gamified Level & XP Velocity */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[#4F46E5] shrink-0">
-                  <Bot size={16} />
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-black text-sm shadow-md shrink-0 animate-pulse">
+                  ⚡
                 </div>
-                <span className="text-xs sm:text-sm font-black text-slate-900">AI Teacher</span>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                    Skill Mastery & XP Journey Matrix 🎮
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-bold">
+                    Real-time gamified performance tracking & XP growth curve
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] text-emerald-600 font-mono font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Online
+
+              {/* Player Level Badge */}
+              <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 px-3 py-1 rounded-xl shrink-0">
+                <ShieldCheck size={16} className="text-[#4F46E5]" />
+                <div>
+                  <div className="text-[10px] font-black uppercase text-[#4F46E5] tracking-wider leading-none">
+                    Level 4 Code Champion
+                  </div>
+                  <div className="text-[9px] font-mono font-extrabold text-slate-600 mt-0.5">
+                    {stats?.completedChaptersCount ? stats.completedChaptersCount * 250 + 450 : 1450} / 2,000 XP
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Grid: Skill Radar Breakdown (Left) + Weekly XP Area Wave Chart (Right) */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center min-h-0">
+              
+              {/* Left Column: Multi-Attribute Skill Mastery Meters */}
+              <div className="space-y-2.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                <div className="flex items-center justify-between text-[11px] font-black text-slate-900 border-b border-slate-200/60 pb-1">
+                  <span>⚡ Attribute Power Breakdown</span>
+                  <span className="text-[9px] text-indigo-600 uppercase font-mono font-bold">Live Status</span>
+                </div>
+
+                {/* Skill 1: DSA & Logic */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                    <span className="flex items-center gap-1">🧠 Logic & DSA Power</span>
+                    <span className="text-[#4F46E5]">88% • Tier 3</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-[#4F46E5] rounded-full" style={{ width: "88%" }} />
+                  </div>
+                </div>
+
+                {/* Skill 2: Quiz Accuracy */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                    <span className="flex items-center gap-1">🎯 Quiz Accuracy & Retention</span>
+                    <span className="text-purple-600">{stats?.quizAccuracy || 80}% • {stats?.quizAccuracy > 70 ? "Master" : "Pro"}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full" style={{ width: `${Math.max(stats?.quizAccuracy || 80, 20)}%` }} />
+                  </div>
+                </div>
+
+                {/* Skill 3: AI Collaboration */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                    <span className="flex items-center gap-1">🤖 AI Prompting & Debugging</span>
+                    <span className="text-emerald-600">92% • Grandmaster</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-600 rounded-full" style={{ width: "92%" }} />
+                  </div>
+                </div>
+
+                {/* Skill 4: Streak Consistency */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                    <span className="flex items-center gap-1">🔥 Consistency & Streak</span>
+                    <span className="text-amber-600">{stats?.streak || 2} Days • Warrior</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full" style={{ width: `${Math.min((stats?.streak || 2) * 20, 100)}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Weekly XP Velocity Area Wave Chart */}
+              <div className="flex flex-col justify-between h-full bg-slate-50/70 p-3 rounded-xl border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black text-slate-900 flex items-center gap-1">
+                    📈 Weekly XP Growth Wave
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-mono text-[9px] font-black uppercase">
+                    2x XP Weekend 🔥
+                  </span>
+                </div>
+
+                {/* Interactive SVG Area Curve Chart */}
+                <div className="h-28 w-full relative pt-2">
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 90">
+                    <defs>
+                      <linearGradient id="xpGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Horizontal Grid lines */}
+                    <line x1="0" y1="20" x2="300" y2="20" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                    <line x1="0" y1="50" x2="300" y2="50" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+
+                    {/* Area Fill under curve */}
+                    <path
+                      d="M 0 75 Q 40 45, 80 60 T 160 30 T 240 15 T 300 25 L 300 85 L 0 85 Z"
+                      fill="url(#xpGradient)"
+                    />
+
+                    {/* Smooth Area Wave Line */}
+                    <path
+                      d="M 0 75 Q 40 45, 80 60 T 160 30 T 240 15 T 300 25"
+                      fill="none"
+                      stroke="#4F46E5"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Interactive Points */}
+                    <circle cx="0" cy="75" r="4" fill="#4F46E5" />
+                    <circle cx="50" cy="50" r="4" fill="#4F46E5" />
+                    <circle cx="100" cy="62" r="4" fill="#4F46E5" />
+                    <circle cx="150" cy="35" r="4" fill="#4F46E5" />
+                    <circle cx="200" cy="22" r="4" fill="#4F46E5" />
+                    <circle cx="250" cy="15" r="5" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
+                    <circle cx="300" cy="25" r="4" fill="#4F46E5" />
+                  </svg>
+
+                  {/* Days Labels */}
+                  <div className="flex justify-between text-[9px] font-mono font-extrabold text-slate-400 pt-1">
+                    <span>MON</span>
+                    <span>TUE</span>
+                    <span>WED</span>
+                    <span>THU</span>
+                    <span>FRI</span>
+                    <span className="text-amber-600 font-black">SAT</span>
+                    <span>SUN</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600 pt-1 border-t border-slate-200/60">
+                  <span>Current Velocity: <strong className="text-[#4F46E5]">+420 XP / day</strong></span>
+                  <span className="text-emerald-600 font-black">↑ +28% vs last week</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Achievement Badges Footer Strip */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-shrink-0 text-xs">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                🏆 Unlocked Achievements
               </span>
-            </div>
-
-            {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto my-2 space-y-2 p-1 scrollbar-thin text-xs leading-relaxed min-h-0">
-              {chatMessages.map((msg, idx) => (
-                <div 
-                  key={idx} 
-                  className={`flex gap-2 max-w-[88%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
-                >
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                    msg.sender === "user" ? "bg-indigo-50 text-[#4F46E5] border border-indigo-100" : "bg-slate-100 text-slate-700 border border-slate-200"
-                  }`}>
-                    {msg.sender === "user" ? "👤" : "🤖"}
-                  </div>
-                  <div className={`p-2.5 rounded-2xl border ${
-                    msg.sender === "user" 
-                      ? "bg-indigo-50/70 border-indigo-100 text-[#4F46E5]" 
-                      : "bg-slate-50 border-slate-150 text-slate-800"
-                  }`}>
-                    <p className="whitespace-pre-line font-medium text-xs">{msg.text}</p>
-                  </div>
-                </div>
-              ))}
-              {chatLoading && (
-                <div className="flex gap-2 max-w-[88%] mr-auto items-center">
-                  <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs">
-                    🤖
-                  </div>
-                  <div className="flex gap-1 py-2 px-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <span className="w-1.5 h-1.5 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 bg-[#4F46E5] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              )}
-              <div ref={chatBottomRef} />
-            </div>
-
-            {/* Controls */}
-            <div className="space-y-1.5 flex-shrink-0 pt-1.5 border-t border-slate-100">
-              <form 
-                onSubmit={(e) => { e.preventDefault(); handleSendChat(chatInput); }}
-                className="flex items-center gap-2 border border-slate-200 rounded-xl bg-slate-50 px-3 py-1.5 shadow-inner"
-              >
-                <input 
-                  type="text" 
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type your question here..." 
-                  className="bg-transparent border-none outline-none text-xs text-slate-800 w-full placeholder-slate-400 font-medium"
-                  disabled={chatLoading}
-                />
-                <button 
-                  type="submit"
-                  disabled={chatLoading || !chatInput.trim()}
-                  className="p-1.5 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] text-white transition-colors disabled:opacity-40 cursor-pointer shrink-0"
-                >
-                  <Send size={12} />
-                </button>
-              </form>
-
-              {/* Action grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs font-extrabold">
-                <button 
-                  onClick={() => handleSendChat("", "explain")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
-                >
-                  💡 Explain
-                </button>
-                <button 
-                  onClick={() => handleSendChat("", "quiz")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
-                >
-                  🎯 Quiz
-                </button>
-                <button 
-                  onClick={() => handleSendChat("", "debug")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
-                >
-                  💻 Debug
-                </button>
-                <button 
-                  onClick={() => handleSendChat("", "summarize")}
-                  className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#4F46E5] hover:border-indigo-300 hover:bg-slate-50 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
-                >
-                  📝 Summarize
-                </button>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black flex items-center gap-1">
+                  ⚡ Speed Demon
+                </span>
+                <span className="px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-[#4F46E5] text-[10px] font-black flex items-center gap-1">
+                  🔥 Streak Master
+                </span>
+                <span className="px-2 py-0.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-[10px] font-black flex items-center gap-1">
+                  🎯 Quiz Titan
+                </span>
+                <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 text-[10px] font-black flex items-center gap-1">
+                  🔒 Grand Champion
+                </span>
               </div>
             </div>
           </div>
