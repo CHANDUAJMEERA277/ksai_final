@@ -15,26 +15,16 @@ import {
   ChevronUp,
   RefreshCw,
   Code2,
-  GraduationCap,
   Briefcase,
   User,
   Globe,
   Mail,
   Phone,
   MapPin,
-  ZoomIn,
-  ZoomOut,
   Wand2,
-  ShieldCheck,
   Zap,
   LayoutTemplate,
-  CheckCircle2,
-  AlertCircle,
-  FileJson,
-  Check,
-  SlidersHorizontal,
-  Layers,
-  Sparkle
+  CheckCircle2
 } from "lucide-react";
 
 // Pre-packaged Professional Resume Profiles
@@ -56,7 +46,7 @@ const PRESET_PROFILES = {
       "TypeScript / JavaScript",
       "React / Next.js 16",
       "Java Enterprise (Spring Boot)",
-      "Python / FastAPI / AI",
+      "Python / Fast API / AI",
       "C++ / System Programming",
       "Node.js & Express",
       "SQLite / PostgreSQL / Prisma",
@@ -203,7 +193,6 @@ export default function ResumeBuilderPage() {
   const [activeSidebarTab, setActiveSidebarTab] = useState("Resume Builder");
   const [resumeData, setResumeData] = useState(PRESET_PROFILES.fullstack);
   const [template, setTemplate] = useState<"modern" | "executive" | "creative" | "classic">("modern");
-  const [zoomLevel, setZoomLevel] = useState(100);
   const [activeAccordion, setActiveAccordion] = useState<string>("personal");
 
   // AI State
@@ -430,8 +419,8 @@ export default function ResumeBuilderPage() {
   };
 
   return (
-    <div className="h-screen bg-[#09090B] text-white flex overflow-hidden font-sans antialiased selection:bg-cyan-500 selection:text-black">
-      {/* Printable CSS Media Shield */}
+    <div className="h-screen bg-[#F8FAFC] text-slate-800 flex overflow-hidden font-sans antialiased selection:bg-blue-500 selection:text-white">
+      {/* Printable Media Shield */}
       <style jsx global>{`
         @media print {
           body {
@@ -470,69 +459,67 @@ export default function ResumeBuilderPage() {
         fullHeight={true}
       />
 
-      {/* Center Main Workspace (Takes full width, no squeezed Right AI Panel) */}
-      <main data-lenis-prevent className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#09090B]">
-        {/* Sleek Top Control Bar */}
-        <div className="glass-panel px-6 py-3.5 bg-[#0C0C14]/90 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-2xl backdrop-blur-2xl no-print">
+      {/* Center Workspace (Clean Light Theme) */}
+      <main data-lenis-prevent className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#F8FAFC]">
+        {/* Top Control Header Bar */}
+        <div className="glass-panel px-6 py-3.5 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-xs no-print">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 p-[1px] shadow-lg shadow-blue-500/30 flex items-center justify-center">
-              <div className="w-full h-full bg-[#09090B] rounded-[15px] flex items-center justify-center text-cyan-400 font-bold">
-                <FileText size={20} />
-              </div>
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-sm">
+              <FileText size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
-                  Codenthra AI Resume Studio <Sparkles size={14} className="text-cyan-400" />
+                <h1 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                  Codenthra AI Resume Studio <Sparkles size={14} className="text-blue-600" />
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px] font-mono font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-mono font-bold">
                   ATS Score 98+
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                FAANG-Grade AI Resume Architect & Instant PDF Generator
+              <p className="text-[11px] text-slate-500 font-medium">
+                Professional FAANG-grade AI Resume Architect & Instant PDF Generator
               </p>
             </div>
           </div>
 
-          {/* Preset Profiles & Action Toolbar */}
+          {/* Preset Profiles & Toolbar Actions */}
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* Presets */}
-            <div className="hidden xl:flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
+            <div className="hidden xl:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider px-2">Presets:</span>
               <button
                 onClick={() => setResumeData(PRESET_PROFILES.fullstack)}
-                className="px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 font-bold text-[11px] transition-all cursor-pointer border border-blue-500/30"
+                className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-[11px] transition-all cursor-pointer border border-blue-200"
               >
                 Full-Stack
               </button>
               <button
                 onClick={() => setResumeData(PRESET_PROFILES.backend as any)}
-                className="px-2.5 py-1 rounded-lg bg-purple-600/20 text-purple-300 hover:bg-purple-600/30 font-bold text-[11px] transition-all cursor-pointer border border-purple-500/30"
+                className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold text-[11px] transition-all cursor-pointer border border-purple-200"
               >
                 Java / Backend
               </button>
             </div>
 
-            {/* Template Dropdown */}
-            <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10 text-xs font-bold text-slate-300">
-              <LayoutTemplate size={14} className="text-cyan-400" />
+            {/* Template Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
+              <LayoutTemplate size={14} className="text-blue-600" />
               <select
                 value={template}
                 onChange={(e) => setTemplate(e.target.value as any)}
-                className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer pr-1"
+                className="bg-transparent text-xs font-bold text-slate-900 outline-none cursor-pointer pr-1"
               >
-                <option value="modern" className="bg-[#0C0C14] text-white">Modern Tech (ATS Standard)</option>
-                <option value="executive" className="bg-[#0C0C14] text-white">Executive Modern</option>
-                <option value="creative" className="bg-[#0C0C14] text-white">Creative AI Accent</option>
-                <option value="classic" className="bg-[#0C0C14] text-white">Silicon Valley Classic</option>
+                <option value="modern">Modern Tech (ATS Standard)</option>
+                <option value="executive">Executive Modern</option>
+                <option value="creative">Creative AI Accent</option>
+                <option value="classic">Silicon Valley Classic</option>
               </select>
             </div>
 
             {/* Run ATS Audit Button */}
             <button
               onClick={handleRunAtsAudit}
-              className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:opacity-95 shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center gap-1.5 transition-all cursor-pointer border border-purple-400/30"
+              className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Zap size={14} className="text-yellow-300 fill-yellow-300" /> ✨ Run ATS Audit
             </button>
@@ -541,7 +528,7 @@ export default function ResumeBuilderPage() {
             <button
               onClick={handleExportJSON}
               title="Export Resume Data as JSON"
-              className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-slate-200 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Download size={14} /> Export JSON
             </button>
@@ -549,7 +536,7 @@ export default function ResumeBuilderPage() {
             {/* Download PDF / Print */}
             <button
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-95 shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Printer size={14} /> Download PDF
             </button>
@@ -558,92 +545,92 @@ export default function ResumeBuilderPage() {
 
         {/* Split Screen Workspace Area */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-          {/* Left Form Builder Panel */}
-          <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 sm:p-6 border-r border-white/10 bg-[#0C0C14]/60 space-y-4 custom-scrollbar no-print">
+          {/* Left Form Builder Panel (Clean White / Light Slate) */}
+          <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 sm:p-6 border-r border-slate-200 bg-slate-50/70 space-y-4 custom-scrollbar no-print">
             {/* Accordion 1: Personal Info */}
-            <div className="bg-[#12121C] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <button
                 onClick={() => setActiveAccordion(activeAccordion === "personal" ? "" : "personal")}
-                className="w-full p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-colors font-extrabold text-white text-sm"
+                className="w-full p-4 flex items-center justify-between bg-slate-50/60 hover:bg-slate-100/80 transition-colors font-black text-slate-900 text-sm"
               >
                 <span className="flex items-center gap-2.5">
-                  <User size={18} className="text-cyan-400" /> Personal Details & Header
+                  <User size={18} className="text-blue-600" /> Personal Details & Header
                 </span>
                 {activeAccordion === "personal" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
               {activeAccordion === "personal" && (
-                <div className="p-4 space-y-3.5 border-t border-white/10 bg-[#0E0E18]">
+                <div className="p-4 space-y-3.5 border-t border-slate-100 bg-white">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         Full Name
                       </label>
                       <input
                         type="text"
                         value={resumeData.personalInfo.fullName}
                         onChange={(e) => handlePersonalInfoChange("fullName", e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                         placeholder="Ajmeera Chandu"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         Target Job Title
                       </label>
                       <input
                         type="text"
                         value={resumeData.personalInfo.jobTitle}
                         onChange={(e) => handlePersonalInfoChange("jobTitle", e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                         placeholder="Full-Stack Developer"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         Email Address
                       </label>
                       <input
                         type="email"
                         value={resumeData.personalInfo.email}
                         onChange={(e) => handlePersonalInfoChange("email", e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                         placeholder="chandu@knowledgestream.ai"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         Phone Number
                       </label>
                       <input
                         type="text"
                         value={resumeData.personalInfo.phone}
                         onChange={(e) => handlePersonalInfoChange("phone", e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                         placeholder="+91 98765 43210"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         Location
                       </label>
                       <input
                         type="text"
                         value={resumeData.personalInfo.location}
                         onChange={(e) => handlePersonalInfoChange("location", e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                         placeholder="Hyderabad, India"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         GitHub Profile
                       </label>
                       <input
                         type="text"
                         value={resumeData.personalInfo.githubUrl}
                         onChange={(e) => handlePersonalInfoChange("githubUrl", e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                         placeholder="github.com/CHANDUAJMEERA277"
                       />
                     </div>
@@ -653,28 +640,28 @@ export default function ResumeBuilderPage() {
             </div>
 
             {/* Accordion 2: Professional Summary */}
-            <div className="bg-[#12121C] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <button
                 onClick={() => setActiveAccordion(activeAccordion === "summary" ? "" : "summary")}
-                className="w-full p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-colors font-extrabold text-white text-sm"
+                className="w-full p-4 flex items-center justify-between bg-slate-50/60 hover:bg-slate-100/80 transition-colors font-black text-slate-900 text-sm"
               >
                 <span className="flex items-center gap-2.5">
-                  <Sparkles size={18} className="text-purple-400" /> Professional Summary
+                  <Sparkles size={18} className="text-purple-600" /> Professional Summary
                 </span>
                 {activeAccordion === "summary" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
               {activeAccordion === "summary" && (
-                <div className="p-4 space-y-3 border-t border-white/10 bg-[#0E0E18]">
+                <div className="p-4 space-y-3 border-t border-slate-100 bg-white">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
                       Summary Text
                     </span>
                     <button
                       type="button"
                       onClick={handleEnhanceSummary}
                       disabled={isEnhancingSummary}
-                      className="px-3 py-1 rounded-xl text-xs font-extrabold text-purple-300 bg-purple-500/20 border border-purple-500/40 hover:bg-purple-500/30 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-3 py-1 rounded-xl text-xs font-extrabold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                       <Wand2 size={13} className={isEnhancingSummary ? "animate-spin" : ""} />
                       {isEnhancingSummary ? "Optimizing with Codenthra..." : "✨ AI Polish Summary"}
@@ -684,7 +671,7 @@ export default function ResumeBuilderPage() {
                     rows={4}
                     value={resumeData.summary}
                     onChange={(e) => setResumeData((prev) => ({ ...prev, summary: e.target.value }))}
-                    className="w-full p-3.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-medium text-slate-200 focus:outline-none focus:border-purple-400 leading-relaxed"
+                    className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:bg-white leading-relaxed"
                     placeholder="Write a brief summary of your tech experience..."
                   />
                 </div>
@@ -692,31 +679,31 @@ export default function ResumeBuilderPage() {
             </div>
 
             {/* Accordion 3: Technical Skills */}
-            <div className="bg-[#12121C] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <button
                 onClick={() => setActiveAccordion(activeAccordion === "skills" ? "" : "skills")}
-                className="w-full p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-colors font-extrabold text-white text-sm"
+                className="w-full p-4 flex items-center justify-between bg-slate-50/60 hover:bg-slate-100/80 transition-colors font-black text-slate-900 text-sm"
               >
                 <span className="flex items-center gap-2.5">
-                  <Code2 size={18} className="text-cyan-400" /> Skills & Tech Stack
+                  <Code2 size={18} className="text-cyan-600" /> Skills & Tech Stack
                 </span>
                 {activeAccordion === "skills" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
               {activeAccordion === "skills" && (
-                <div className="p-4 space-y-3 border-t border-white/10 bg-[#0E0E18]">
+                <div className="p-4 space-y-3 border-t border-slate-100 bg-white">
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={newSkillInput}
                       onChange={(e) => setNewSkillInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddSkill(newSkillInput)}
-                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#161624] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-cyan-500 focus:bg-white"
                       placeholder="e.g. Next.js, Docker, Java, PostgreSQL..."
                     />
                     <button
                       onClick={() => handleAddSkill(newSkillInput)}
-                      className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 transition-colors cursor-pointer"
+                      className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-700 transition-colors cursor-pointer"
                     >
                       <Plus size={16} />
                     </button>
@@ -727,12 +714,12 @@ export default function ResumeBuilderPage() {
                     {resumeData.skills.map((s, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-extrabold text-blue-700"
                       >
                         {s}
                         <button
                           onClick={() => handleRemoveSkill(s)}
-                          className="hover:text-rose-400 transition-colors cursor-pointer font-extrabold text-sm"
+                          className="hover:text-rose-600 transition-colors cursor-pointer font-extrabold text-sm"
                         >
                           &times;
                         </button>
@@ -744,24 +731,24 @@ export default function ResumeBuilderPage() {
             </div>
 
             {/* Accordion 4: Work Experience */}
-            <div className="bg-[#12121C] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <button
                 onClick={() => setActiveAccordion(activeAccordion === "experience" ? "" : "experience")}
-                className="w-full p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-colors font-extrabold text-white text-sm"
+                className="w-full p-4 flex items-center justify-between bg-slate-50/60 hover:bg-slate-100/80 transition-colors font-black text-slate-900 text-sm"
               >
                 <span className="flex items-center gap-2.5">
-                  <Briefcase size={18} className="text-emerald-400" /> Work Experience
+                  <Briefcase size={18} className="text-emerald-600" /> Work Experience
                 </span>
                 {activeAccordion === "experience" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
               {activeAccordion === "experience" && (
-                <div className="p-4 space-y-4 border-t border-white/10 bg-[#0E0E18]">
+                <div className="p-4 space-y-4 border-t border-slate-100 bg-white">
                   {resumeData.experience.map((exp) => (
-                    <div key={exp.id} className="p-4 rounded-xl bg-[#161624] border border-white/10 space-y-3 relative">
+                    <div key={exp.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 relative">
                       <button
                         onClick={() => handleRemoveExperience(exp.id)}
-                        className="absolute top-3.5 right-3.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                        className="absolute top-3.5 right-3.5 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Delete Experience"
                       >
                         <Trash2 size={16} />
@@ -769,7 +756,7 @@ export default function ResumeBuilderPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Company</label>
+                          <label className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">Company</label>
                           <input
                             type="text"
                             value={exp.company}
@@ -779,11 +766,11 @@ export default function ResumeBuilderPage() {
                                 experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, company: e.target.value } : i)),
                               }))
                             }
-                            className="w-full px-3 py-2 rounded-lg bg-[#0E0E18] border border-white/10 text-xs font-bold text-white"
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Role Title</label>
+                          <label className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">Role Title</label>
                           <input
                             type="text"
                             value={exp.role}
@@ -793,14 +780,14 @@ export default function ResumeBuilderPage() {
                                 experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, role: e.target.value } : i)),
                               }))
                             }
-                            className="w-full px-3 py-2 rounded-lg bg-[#0E0E18] border border-white/10 text-xs font-bold text-white"
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
                           />
                         </div>
                       </div>
 
                       {/* Bullet points */}
                       <div className="space-y-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
                           Accomplishment Bullets
                         </span>
                         {exp.bullets.map((b, bIdx) => (
@@ -816,13 +803,13 @@ export default function ResumeBuilderPage() {
                                   experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, bullets: newBullets } : i)),
                                 }));
                               }}
-                              className="flex-1 p-2.5 rounded-lg bg-[#0E0E18] border border-white/10 text-xs font-medium text-slate-200 leading-relaxed"
+                              className="flex-1 p-2.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-800 leading-relaxed"
                             />
                             <button
                               type="button"
                               onClick={() => handleEnhanceBullet("exp", exp.id, bIdx)}
                               disabled={enhancingBulletId === `${exp.id}-${bIdx}`}
-                              className="px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold text-purple-300 bg-purple-500/20 border border-purple-500/40 hover:bg-purple-500/30 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
+                              className="px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
                               title="Enhance with AI"
                             >
                               <Wand2 size={12} className={enhancingBulletId === `${exp.id}-${bIdx}` ? "animate-spin" : ""} />
@@ -835,7 +822,7 @@ export default function ResumeBuilderPage() {
 
                   <button
                     onClick={handleAddExperience}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus size={15} /> Add Work Experience
                   </button>
@@ -844,24 +831,24 @@ export default function ResumeBuilderPage() {
             </div>
 
             {/* Accordion 5: Key Projects */}
-            <div className="bg-[#12121C] rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <button
                 onClick={() => setActiveAccordion(activeAccordion === "projects" ? "" : "projects")}
-                className="w-full p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-colors font-extrabold text-white text-sm"
+                className="w-full p-4 flex items-center justify-between bg-slate-50/60 hover:bg-slate-100/80 transition-colors font-black text-slate-900 text-sm"
               >
                 <span className="flex items-center gap-2.5">
-                  <Globe size={18} className="text-blue-400" /> Featured Projects
+                  <Globe size={18} className="text-blue-600" /> Featured Projects
                 </span>
                 {activeAccordion === "projects" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
               {activeAccordion === "projects" && (
-                <div className="p-4 space-y-4 border-t border-white/10 bg-[#0E0E18]">
+                <div className="p-4 space-y-4 border-t border-slate-100 bg-white">
                   {resumeData.projects.map((proj) => (
-                    <div key={proj.id} className="p-4 rounded-xl bg-[#161624] border border-white/10 space-y-3 relative">
+                    <div key={proj.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 relative">
                       <button
                         onClick={() => handleRemoveProject(proj.id)}
-                        className="absolute top-3.5 right-3.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                        className="absolute top-3.5 right-3.5 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Delete Project"
                       >
                         <Trash2 size={16} />
@@ -876,7 +863,7 @@ export default function ResumeBuilderPage() {
                             projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, title: e.target.value } : i)),
                           }))
                         }
-                        className="w-full px-3 py-2 rounded-lg bg-[#0E0E18] border border-white/10 text-xs font-bold text-white"
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
                         placeholder="Project Title"
                       />
                       <input
@@ -888,7 +875,7 @@ export default function ResumeBuilderPage() {
                             projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, techStack: e.target.value } : i)),
                           }))
                         }
-                        className="w-full px-3 py-2 rounded-lg bg-[#0E0E18] border border-white/10 text-xs font-semibold text-cyan-300"
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-blue-600"
                         placeholder="Tech Stack (e.g. Next.js, Python, PostgreSQL)"
                       />
                       <textarea
@@ -900,7 +887,7 @@ export default function ResumeBuilderPage() {
                             projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, description: e.target.value } : i)),
                           }))
                         }
-                        className="w-full p-2.5 rounded-lg bg-[#0E0E18] border border-white/10 text-xs font-medium text-slate-200 leading-relaxed"
+                        className="w-full p-2.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-800 leading-relaxed"
                         placeholder="Project summary and architecture details..."
                       />
                     </div>
@@ -908,7 +895,7 @@ export default function ResumeBuilderPage() {
 
                   <button
                     onClick={handleAddProject}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold text-blue-300 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus size={15} /> Add Portfolio Project
                   </button>
@@ -918,13 +905,12 @@ export default function ResumeBuilderPage() {
           </div>
 
           {/* Right Live Document Preview Studio Pane */}
-          <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 sm:p-8 bg-[#07070C] flex flex-col items-center custom-scrollbar print-area relative">
+          <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 sm:p-8 bg-slate-200/60 flex flex-col items-center custom-scrollbar print-area relative">
             {/* Live Vector A4 Sheet Rendering */}
             <div
-              className={`w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-sm p-8 sm:p-12 transition-all duration-300 ${
+              className={`w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-xl rounded-sm p-8 sm:p-12 transition-all duration-300 ${
                 template === "classic" ? "font-serif" : "font-sans"
               }`}
-              style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
             >
               {/* Template Style 1: Modern Tech */}
               {template === "modern" && (
@@ -1179,46 +1165,46 @@ export default function ResumeBuilderPage() {
 
       {/* ATS Score Audit Modal */}
       {atsModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0C0C14] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-[0_0_50px_rgba(168,85,247,0.3)] border border-purple-500/40 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center font-bold">
-                  <Zap size={22} className="fill-purple-300" />
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold">
+                  <Zap size={22} className="fill-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-white text-base">Codenthra ATS Score Audit</h3>
-                  <p className="text-[11px] text-slate-400 font-medium">AI parsing compatibility evaluation</p>
+                  <h3 className="font-black text-slate-950 text-base">Codenthra ATS Score Audit</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">AI parsing compatibility evaluation</p>
                 </div>
               </div>
-              <button onClick={() => setAtsModalOpen(false)} className="text-slate-400 hover:text-white font-bold text-xl cursor-pointer">
+              <button onClick={() => setAtsModalOpen(false)} className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer">
                 &times;
               </button>
             </div>
 
             {isScoringATS ? (
               <div className="py-12 text-center space-y-3">
-                <RefreshCw size={32} className="animate-spin text-purple-400 mx-auto" />
-                <p className="text-xs font-bold text-slate-300">Codenthra AI is scanning your resume structure...</p>
+                <RefreshCw size={32} className="animate-spin text-purple-600 mx-auto" />
+                <p className="text-xs font-bold text-slate-700">Codenthra AI is scanning your resume structure...</p>
               </div>
             ) : atsResult ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between bg-gradient-to-r from-purple-900/40 to-indigo-900/40 p-4 rounded-2xl border border-purple-500/30">
+                <div className="flex items-center justify-between bg-purple-50 p-4 rounded-2xl border border-purple-100">
                   <div>
-                    <p className="text-3xl font-black text-purple-300">{atsResult.score || 94}%</p>
-                    <p className="text-[10px] text-purple-400 font-mono font-bold uppercase tracking-wider">ATS Score</p>
+                    <p className="text-3xl font-black text-purple-700">{atsResult.score || 94}%</p>
+                    <p className="text-[10px] text-purple-600 font-mono font-bold uppercase tracking-wider">ATS Score</p>
                   </div>
-                  <div className="text-xs text-slate-300 font-medium max-w-xs leading-relaxed">
+                  <div className="text-xs text-slate-700 font-medium max-w-xs leading-relaxed">
                     Your resume aligns excellently with standard corporate Applicant Tracking Systems (ATS).
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-black text-white uppercase tracking-wider">Key Recommendations</p>
-                  <ul className="space-y-2 text-xs text-slate-300 font-medium">
+                  <p className="text-xs font-black text-slate-900 uppercase tracking-wider">Key Recommendations</p>
+                  <ul className="space-y-2 text-xs text-slate-700 font-medium">
                     {atsResult.feedback?.map((f: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 bg-white/5 p-2 rounded-xl border border-white/5">
-                        <CheckCircle2 size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+                      <li key={i} className="flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
                         <span>{f}</span>
                       </li>
                     ))}
@@ -1227,13 +1213,13 @@ export default function ResumeBuilderPage() {
 
                 {atsResult.missingKeywords && (
                   <div className="space-y-1.5">
-                    <p className="text-xs font-black text-white uppercase tracking-wider">Suggested Keywords</p>
+                    <p className="text-xs font-black text-slate-900 uppercase tracking-wider">Suggested Keywords</p>
                     <div className="flex flex-wrap gap-1.5">
                       {atsResult.missingKeywords.map((k: string, i: number) => (
                         <button
                           key={i}
                           onClick={() => handleAddSkill(k)}
-                          className="px-2.5 py-1 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold transition-all cursor-pointer"
+                          className="px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-bold transition-all cursor-pointer"
                         >
                           + {k}
                         </button>
@@ -1244,10 +1230,10 @@ export default function ResumeBuilderPage() {
               </div>
             ) : null}
 
-            <div className="pt-2 flex justify-end border-t border-white/10">
+            <div className="pt-2 flex justify-end border-t border-slate-100">
               <button
                 onClick={() => setAtsModalOpen(false)}
-                className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 transition-colors cursor-pointer shadow-lg"
+                className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-slate-900 hover:bg-slate-800 transition-colors cursor-pointer shadow-md"
               >
                 Close Audit Report
               </button>
