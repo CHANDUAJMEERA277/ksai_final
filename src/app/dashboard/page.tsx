@@ -924,184 +924,251 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Gamified Skill Mastery & XP Progress Graph (Replaces Course Metric & AI Teacher) */}
-          <div className="xl:col-span-3 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative space-y-3">
-            
-            {/* Header: Gamified Level & XP Velocity */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-black text-sm shadow-md shrink-0 animate-pulse">
-                  ⚡
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                    Skill Mastery & XP Journey Matrix 🎮
-                  </h3>
-                  <p className="text-[10px] text-slate-500 font-bold">
-                    Real-time gamified performance tracking & XP growth curve
-                  </p>
-                </div>
-              </div>
+          {/* Gamified Skill Mastery & XP Progress Graph (100% Dynamic Real Data) */}
+          {(() => {
+            const currentXp = activeUser?.xp ?? 0;
+            const currentLevel = activeUser?.level ?? 1;
+            const targetXp = activeUser?.targetXp ?? 1000;
 
-              {/* Player Level Badge */}
-              <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 px-3 py-1 rounded-xl shrink-0">
-                <ShieldCheck size={16} className="text-[#4F46E5]" />
-                <div>
-                  <div className="text-[10px] font-black uppercase text-[#4F46E5] tracking-wider leading-none">
-                    Level 4 Code Champion
+            const levelTitle = currentLevel >= 10 
+              ? "Level 10 Grandmaster" 
+              : currentLevel >= 5 
+              ? "Level 5 Tech Master" 
+              : currentLevel >= 3 
+              ? "Level 3 Code Warrior" 
+              : "Level 1 Code Novice";
+
+            // Dynamic Attribute Power Scores (0% for new users)
+            const dsaPower = stats?.chaptersPercentage ?? 0;
+            const quizAccuracyPower = stats?.quizAccuracy ?? 0;
+            const aiCollabPower = Math.min((weeklyGoals?.aiSessions?.current ?? 0) * 20, 100);
+            const streakPower = Math.min((stats?.streak ?? 0) * 20, 100);
+
+            const getTierName = (val: number) => {
+              if (val >= 85) return "Grandmaster";
+              if (val >= 70) return "Master";
+              if (val >= 50) return "Expert";
+              if (val >= 25) return "Warrior";
+              return "Novice";
+            };
+
+            // Dynamic Weekly XP Wave Chart (Extracted from heatmap current week)
+            const currentWeekDays = (heatmap && heatmap.length > 0) ? heatmap[heatmap.length - 1]?.days || [] : [];
+            const dailyActivityCounts = currentWeekDays.map((d: any) => d.count || 0);
+            const dailyXpList = dailyActivityCounts.map((count: number) => count * 40);
+            const maxDayXp = Math.max(...dailyXpList, 100);
+
+            // SVG Y coords (80 = 0 XP / bottom, 15 = max XP / top)
+            const yCoords = dailyXpList.length === 7
+              ? dailyXpList.map((xp: number) => 80 - Math.round((xp / maxDayXp) * 65))
+              : [80, 80, 80, 80, 80, 80, 80];
+
+            const totalWeeklyXp = dailyXpList.reduce((a: number, b: number) => a + b, 0);
+            const avgVelocity = Math.round(totalWeeklyXp / 7);
+
+            // Dynamic Badges Status
+            const isSpeedDemonUnlocked = (stats?.completedChaptersCount ?? 0) > 0;
+            const isStreakMasterUnlocked = (stats?.streak ?? 0) >= 3;
+            const isQuizTitanUnlocked = (stats?.quizAccuracy ?? 0) >= 80;
+            const isGrandChampionUnlocked = (stats?.completedChaptersCount ?? 0) >= (stats?.totalChaptersCount ?? 999) && (stats?.totalChaptersCount ?? 0) > 0;
+
+            return (
+              <div className="xl:col-span-3 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative space-y-3">
+                
+                {/* Header: Gamified Level & XP Velocity */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-black text-sm shadow-md shrink-0 animate-pulse">
+                      ⚡
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                        Skill Mastery & XP Journey Matrix 🎮
+                      </h3>
+                      <p className="text-[10px] text-slate-500 font-bold">
+                        Real-time gamified performance tracking & XP growth curve
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-[9px] font-mono font-extrabold text-slate-600 mt-0.5">
-                    {stats?.completedChaptersCount ? stats.completedChaptersCount * 250 + 450 : 1450} / 2,000 XP
+
+                  {/* Player Level Badge */}
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 px-3 py-1 rounded-xl shrink-0">
+                    <ShieldCheck size={16} className="text-[#4F46E5]" />
+                    <div>
+                      <div className="text-[10px] font-black uppercase text-[#4F46E5] tracking-wider leading-none">
+                        {levelTitle}
+                      </div>
+                      <div className="text-[9px] font-mono font-extrabold text-slate-600 mt-0.5">
+                        {currentXp} / {targetXp} XP
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Main Content Grid: Skill Radar Breakdown (Left) + Weekly XP Area Wave Chart (Right) */}
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center min-h-0">
-              
-              {/* Left Column: Multi-Attribute Skill Mastery Meters */}
-              <div className="space-y-2.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                <div className="flex items-center justify-between text-[11px] font-black text-slate-900 border-b border-slate-200/60 pb-1">
-                  <span>⚡ Attribute Power Breakdown</span>
-                  <span className="text-[9px] text-indigo-600 uppercase font-mono font-bold">Live Status</span>
+                {/* Main Content Grid: Skill Radar Breakdown (Left) + Weekly XP Area Wave Chart (Right) */}
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center min-h-0">
+                  
+                  {/* Left Column: Multi-Attribute Skill Mastery Meters */}
+                  <div className="space-y-2.5 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between text-[11px] font-black text-slate-900 border-b border-slate-200/60 pb-1">
+                      <span>⚡ Attribute Power Breakdown</span>
+                      <span className="text-[9px] text-indigo-600 uppercase font-mono font-bold">Live Status</span>
+                    </div>
+
+                    {/* Skill 1: DSA & Logic */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                        <span className="flex items-center gap-1">🧠 Logic & DSA Power</span>
+                        <span className="text-[#4F46E5]">{dsaPower}% • {getTierName(dsaPower)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-blue-500 to-[#4F46E5] rounded-full transition-all duration-500" style={{ width: `${dsaPower}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Skill 2: Quiz Accuracy */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                        <span className="flex items-center gap-1">🎯 Quiz Accuracy & Retention</span>
+                        <span className="text-purple-600">{quizAccuracyPower}% • {getTierName(quizAccuracyPower)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-500" style={{ width: `${quizAccuracyPower}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Skill 3: AI Collaboration */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                        <span className="flex items-center gap-1">🤖 AI Prompting & Debugging</span>
+                        <span className="text-emerald-600">{aiCollabPower}% • {getTierName(aiCollabPower)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-600 rounded-full transition-all duration-500" style={{ width: `${aiCollabPower}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Skill 4: Streak Consistency */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
+                        <span className="flex items-center gap-1">🔥 Consistency & Streak</span>
+                        <span className="text-amber-600">{stats?.streak || 0} Days • {getTierName(streakPower)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-500" style={{ width: `${streakPower}%` }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Weekly XP Velocity Area Wave Chart */}
+                  <div className="flex flex-col justify-between h-full bg-slate-50/70 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-slate-900 flex items-center gap-1">
+                        📈 Weekly XP Growth Wave
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-mono text-[9px] font-black uppercase">
+                        2x XP Weekend 🔥
+                      </span>
+                    </div>
+
+                    {/* Dynamic SVG Area Curve Chart */}
+                    <div className="h-28 w-full relative pt-2">
+                      <svg className="w-full h-full overflow-visible" viewBox="0 0 300 90">
+                        <defs>
+                          <linearGradient id="xpGradientDynamic" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Horizontal Grid lines */}
+                        <line x1="0" y1="20" x2="300" y2="20" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+                        <line x1="0" y1="50" x2="300" y2="50" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
+
+                        {/* Dynamic Area Fill under curve */}
+                        <path
+                          d={`M 0 ${yCoords[0]} L 50 ${yCoords[1]} L 100 ${yCoords[2]} L 150 ${yCoords[3]} L 200 ${yCoords[4]} L 250 ${yCoords[5]} L 300 ${yCoords[6]} L 300 85 L 0 85 Z`}
+                          fill="url(#xpGradientDynamic)"
+                        />
+
+                        {/* Dynamic Smooth Wave Line */}
+                        <path
+                          d={`M 0 ${yCoords[0]} L 50 ${yCoords[1]} L 100 ${yCoords[2]} L 150 ${yCoords[3]} L 200 ${yCoords[4]} L 250 ${yCoords[5]} L 300 ${yCoords[6]}`}
+                          fill="none"
+                          stroke="#4F46E5"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+
+                        {/* Dynamic Interactive Points */}
+                        <circle cx="0" cy={yCoords[0]} r="4" fill="#4F46E5" />
+                        <circle cx="50" cy={yCoords[1]} r="4" fill="#4F46E5" />
+                        <circle cx="100" cy={yCoords[2]} r="4" fill="#4F46E5" />
+                        <circle cx="150" cy={yCoords[3]} r="4" fill="#4F46E5" />
+                        <circle cx="200" cy={yCoords[4]} r="4" fill="#4F46E5" />
+                        <circle cx="250" cy={yCoords[5]} r="5" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
+                        <circle cx="300" cy={yCoords[6]} r="4" fill="#4F46E5" />
+                      </svg>
+
+                      {/* Days Labels */}
+                      <div className="flex justify-between text-[9px] font-mono font-extrabold text-slate-400 pt-1">
+                        <span>MON</span>
+                        <span>TUE</span>
+                        <span>WED</span>
+                        <span>THU</span>
+                        <span>FRI</span>
+                        <span className="text-amber-600 font-black">SAT</span>
+                        <span>SUN</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600 pt-1 border-t border-slate-200/60">
+                      <span>Velocity: <strong className="text-[#4F46E5]">+{avgVelocity} XP / day</strong></span>
+                      <span className="text-emerald-600 font-black">Total: +{totalWeeklyXp} XP</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Skill 1: DSA & Logic */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
-                    <span className="flex items-center gap-1">🧠 Logic & DSA Power</span>
-                    <span className="text-[#4F46E5]">88% • Tier 3</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-blue-500 to-[#4F46E5] rounded-full" style={{ width: "88%" }} />
-                  </div>
-                </div>
-
-                {/* Skill 2: Quiz Accuracy */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
-                    <span className="flex items-center gap-1">🎯 Quiz Accuracy & Retention</span>
-                    <span className="text-purple-600">{stats?.quizAccuracy || 80}% • {stats?.quizAccuracy > 70 ? "Master" : "Pro"}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full" style={{ width: `${Math.max(stats?.quizAccuracy || 80, 20)}%` }} />
-                  </div>
-                </div>
-
-                {/* Skill 3: AI Collaboration */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
-                    <span className="flex items-center gap-1">🤖 AI Prompting & Debugging</span>
-                    <span className="text-emerald-600">92% • Grandmaster</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-600 rounded-full" style={{ width: "92%" }} />
-                  </div>
-                </div>
-
-                {/* Skill 4: Streak Consistency */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-[10px] font-black text-slate-700">
-                    <span className="flex items-center gap-1">🔥 Consistency & Streak</span>
-                    <span className="text-amber-600">{stats?.streak || 2} Days • Warrior</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-slate-200/70 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full" style={{ width: `${Math.min((stats?.streak || 2) * 20, 100)}%` }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Weekly XP Velocity Area Wave Chart */}
-              <div className="flex flex-col justify-between h-full bg-slate-50/70 p-3 rounded-xl border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black text-slate-900 flex items-center gap-1">
-                    📈 Weekly XP Growth Wave
+                {/* Dynamic Achievement Badges Footer Strip */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-shrink-0 text-xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    🏆 Achievements Status
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-mono text-[9px] font-black uppercase">
-                    2x XP Weekend 🔥
-                  </span>
-                </div>
-
-                {/* Interactive SVG Area Curve Chart */}
-                <div className="h-28 w-full relative pt-2">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 300 90">
-                    <defs>
-                      <linearGradient id="xpGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Horizontal Grid lines */}
-                    <line x1="0" y1="20" x2="300" y2="20" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
-                    <line x1="0" y1="50" x2="300" y2="50" stroke="#E2E8F0" strokeDasharray="3 3" strokeWidth="1" />
-
-                    {/* Area Fill under curve */}
-                    <path
-                      d="M 0 75 Q 40 45, 80 60 T 160 30 T 240 15 T 300 25 L 300 85 L 0 85 Z"
-                      fill="url(#xpGradient)"
-                    />
-
-                    {/* Smooth Area Wave Line */}
-                    <path
-                      d="M 0 75 Q 40 45, 80 60 T 160 30 T 240 15 T 300 25"
-                      fill="none"
-                      stroke="#4F46E5"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-
-                    {/* Interactive Points */}
-                    <circle cx="0" cy="75" r="4" fill="#4F46E5" />
-                    <circle cx="50" cy="50" r="4" fill="#4F46E5" />
-                    <circle cx="100" cy="62" r="4" fill="#4F46E5" />
-                    <circle cx="150" cy="35" r="4" fill="#4F46E5" />
-                    <circle cx="200" cy="22" r="4" fill="#4F46E5" />
-                    <circle cx="250" cy="15" r="5" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
-                    <circle cx="300" cy="25" r="4" fill="#4F46E5" />
-                  </svg>
-
-                  {/* Days Labels */}
-                  <div className="flex justify-between text-[9px] font-mono font-extrabold text-slate-400 pt-1">
-                    <span>MON</span>
-                    <span>TUE</span>
-                    <span>WED</span>
-                    <span>THU</span>
-                    <span>FRI</span>
-                    <span className="text-amber-600 font-black">SAT</span>
-                    <span>SUN</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center gap-1 border ${
+                      isSpeedDemonUnlocked
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        : "bg-slate-100 border-slate-200 text-slate-400 opacity-60"
+                    }`}>
+                      {isSpeedDemonUnlocked ? "⚡ Speed Demon" : "🔒 Speed Demon"}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center gap-1 border ${
+                      isStreakMasterUnlocked
+                        ? "bg-indigo-50 border-indigo-200 text-[#4F46E5]"
+                        : "bg-slate-100 border-slate-200 text-slate-400 opacity-60"
+                    }`}>
+                      {isStreakMasterUnlocked ? "🔥 Streak Master" : "🔒 Streak Master"}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center gap-1 border ${
+                      isQuizTitanUnlocked
+                        ? "bg-purple-50 border-purple-200 text-purple-700"
+                        : "bg-slate-100 border-slate-200 text-slate-400 opacity-60"
+                    }`}>
+                      {isQuizTitanUnlocked ? "🎯 Quiz Titan" : "🔒 Quiz Titan"}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black flex items-center gap-1 border ${
+                      isGrandChampionUnlocked
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
+                        : "bg-slate-100 border-slate-200 text-slate-400 opacity-60"
+                    }`}>
+                      {isGrandChampionUnlocked ? "👑 Grand Champion" : "🔒 Grand Champion"}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600 pt-1 border-t border-slate-200/60">
-                  <span>Current Velocity: <strong className="text-[#4F46E5]">+420 XP / day</strong></span>
-                  <span className="text-emerald-600 font-black">↑ +28% vs last week</span>
-                </div>
               </div>
-            </div>
-
-            {/* Achievement Badges Footer Strip */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-shrink-0 text-xs">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                🏆 Unlocked Achievements
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black flex items-center gap-1">
-                  ⚡ Speed Demon
-                </span>
-                <span className="px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-[#4F46E5] text-[10px] font-black flex items-center gap-1">
-                  🔥 Streak Master
-                </span>
-                <span className="px-2 py-0.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-[10px] font-black flex items-center gap-1">
-                  🎯 Quiz Titan
-                </span>
-                <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 text-[10px] font-black flex items-center gap-1">
-                  🔒 Grand Champion
-                </span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         {/* Bottom Row: Donut Chart, Goals, Heatmap */}
