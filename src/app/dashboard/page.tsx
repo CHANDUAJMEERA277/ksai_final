@@ -8,7 +8,7 @@ import {
   BookOpen, Star, Sparkles, Trophy, Settings, LogOut, ChevronLeft, ChevronRight,
   TrendingUp, Award, Play, CheckCircle2, AlertTriangle, ArrowRight,
   Terminal, ShieldCheck, Flame, Send, Bot, MessageSquare, GraduationCap, Code2,
-  Bell, Search, Check, CheckSquare, Target, Edit3, X, RefreshCw
+  Bell, Search, Check, CheckSquare, Target, Edit3, X, RefreshCw, Lock
 } from "lucide-react";
 
 interface CourseSlide {
@@ -72,12 +72,31 @@ export default function DashboardPage() {
   const [chatLoading, setChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Weekly Goals modal state
+  // Weekly Goals modal & lock state
   const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
   const [editTargetChapters, setEditTargetChapters] = useState(2);
   const [editTargetQuizzes, setEditTargetQuizzes] = useState(10);
   const [editTargetAIChats, setEditTargetAIChats] = useState(5);
   const [savingGoals, setSavingGoals] = useState(false);
+  const [isGoalsLocked, setIsGoalsLocked] = useState(false);
+  const [lockAlertMessage, setLockAlertMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const lockedUntil = localStorage.getItem("ksai_goals_locked_until");
+      if (lockedUntil) {
+        const lockTime = parseInt(lockedUntil, 10);
+        if (Date.now() < lockTime) {
+          setIsGoalsLocked(true);
+        } else {
+          localStorage.removeItem("ksai_goals_locked_until");
+          setIsGoalsLocked(false);
+        }
+      }
+    } catch {
+      setIsGoalsLocked(false);
+    }
+  }, []);
 
   const handleSaveGoals = () => {
     setSavingGoals(true);
@@ -94,9 +113,20 @@ export default function DashboardPage() {
       };
     });
 
+    // Calculate next Monday timestamp
+    const d = new Date();
+    const day = d.getDay();
+    const daysUntilMonday = (7 - day + 1) % 7 || 7;
+    const nextMonday = new Date(d.setDate(d.getDate() + daysUntilMonday));
+    nextMonday.setHours(0, 0, 0, 0);
+
+    localStorage.setItem("ksai_goals_locked_until", nextMonday.getTime().toString());
+    setIsGoalsLocked(true);
+
     setTimeout(() => {
       setSavingGoals(false);
       setIsGoalsModalOpen(false);
+      setLockAlertMessage("🔒 Weekly goals set and locked for this week! Customization unlocks next Monday.");
     }, 300);
   };
 
@@ -1071,20 +1101,29 @@ export default function DashboardPage() {
           {/* Goals Widget */}
           <div className="p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden relative select-none h-full">
             <div className="flex items-center justify-between pb-1 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                This Week&apos;s Goals
+              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                This Week&apos;s Goals {isGoalsLocked && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">LOCKED</span>}
               </h3>
               <button
                 type="button"
                 onClick={() => {
+                  if (isGoalsLocked) {
+                    setLockAlertMessage("🔒 Weekly goals are locked for the current week to maintain your learning focus. Customization will unlock next Monday!");
+                    return;
+                  }
                   setEditTargetChapters(weeklyGoals?.chapters?.target ?? 2);
                   setEditTargetQuizzes(weeklyGoals?.quizzes?.target ?? 10);
                   setEditTargetAIChats(weeklyGoals?.aiSessions?.target ?? 5);
                   setIsGoalsModalOpen(true);
                 }}
-                className="text-[11px] font-extrabold text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer"
+                className={`text-[11px] font-extrabold flex items-center gap-1 cursor-pointer transition ${
+                  isGoalsLocked
+                    ? "text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200"
+                    : "text-[#4F46E5] hover:underline"
+                }`}
               >
-                <Edit3 size={11} /> Edit Goals
+                {isGoalsLocked ? <Lock size={11} className="text-amber-600" /> : <Edit3 size={11} />}
+                {isGoalsLocked ? "Locked until Monday" : "Edit Goals"}
               </button>
             </div>
             
@@ -1330,9 +1369,31 @@ export default function DashboardPage() {
                   disabled={savingGoals}
                   className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  {savingGoals ? <RefreshCw size={14} className="animate-spin" /> : "Save Goals"}
+                  {savingGoals ? <RefreshCw size={14} className="animate-spin" /> : "Save Goals & Lock for Week"}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lock Alert Notice Modal */}
+        {lockAlertMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
+            <div className="bg-white rounded-3xl border border-amber-200 p-6 max-w-md w-full shadow-2xl space-y-4 text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-sm">
+                <Lock size={28} />
+              </div>
+              <h3 className="text-base font-black text-slate-900">Weekly Goals Locked 🔒</h3>
+              <p className="text-xs font-medium text-slate-600 leading-relaxed px-2">
+                {lockAlertMessage}
+              </p>
+              <button
+                type="button"
+                onClick={() => setLockAlertMessage(null)}
+                className="w-full py-2.5 rounded-xl text-xs font-black text-white bg-amber-600 hover:bg-amber-700 transition-all shadow-sm cursor-pointer"
+              >
+                Got It, Keep Learning!
+              </button>
             </div>
           </div>
         )}
