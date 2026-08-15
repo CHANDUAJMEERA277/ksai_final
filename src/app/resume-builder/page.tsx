@@ -160,9 +160,11 @@ export default function ProfessionalResumeStudio() {
 
         // Check if user has unlocked the module
         if (currentUser.email) {
-          const unlocked = localStorage.getItem(`codenthra_resume_unlocked_${currentUser.email}`);
+          const unlocked = localStorage.getItem(`ksai_resume_builder_unlocked_${currentUser.email}`);
           if (unlocked === "true") {
             setIsUnlocked(true);
+          } else {
+            setIsUnlocked(false);
           }
         }
       } else {
@@ -221,7 +223,7 @@ export default function ProfessionalResumeStudio() {
 
       if (isMock) {
         alert("🔧 Razorpay Payment Simulation (₹1 INR). Click OK to confirm payment & unlock Codenthra AI Resume Studio!");
-        localStorage.setItem(`codenthra_resume_unlocked_${user.email}`, "true");
+        localStorage.setItem(`ksai_resume_builder_unlocked_${user.email}`, "true");
         setIsUnlocked(true);
       } else {
         const options = {
@@ -232,7 +234,7 @@ export default function ProfessionalResumeStudio() {
           description: "Lifetime Access to AI Resume Builder & FAANG ATS Optimizer (₹1)",
           order_id: data.order.id,
           handler: async function () {
-            localStorage.setItem(`codenthra_resume_unlocked_${user.email}`, "true");
+            localStorage.setItem(`ksai_resume_builder_unlocked_${user.email}`, "true");
             setIsUnlocked(true);
           },
           prefill: {

@@ -144,9 +144,11 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
 
   useEffect(() => {
     if (typeof window !== "undefined" && session?.user?.email) {
-      const unlocked = localStorage.getItem(`codenthra_resume_unlocked_${session.user.email}`);
+      const unlocked = localStorage.getItem(`ksai_resume_builder_unlocked_${session.user.email}`);
       if (unlocked === "true") {
         setHasResumeUnlocked(true);
+      } else {
+        setHasResumeUnlocked(false);
       }
     }
   }, [session]);
@@ -327,7 +329,9 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
                 <span className="truncate">{item.label}</span>
               )}
               {isLocked ? (
-                <Lock size={12} className="ml-auto text-slate-400 shrink-0" />
+                <span className="ml-auto flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[10px] font-black border border-amber-500/40 shrink-0">
+                  <Lock size={10} className="text-amber-400" /> ₹1
+                </span>
               ) : (
                 isActive && !collapsed && (
                   <span className={`w-1.5 h-1.5 rounded-full ml-auto animate-pulse ${
