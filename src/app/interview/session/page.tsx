@@ -2599,7 +2599,7 @@ console.log(
                 />
 
                 <span className="font-bold text-sm">
-                  CodeXAI Interviewer
+                  Codenthra AI Interviewer
                 </span>
 
               </div>
@@ -2788,7 +2788,7 @@ console.log(
                   <div className="flex flex-wrap items-center gap-2">
 
                     <h2 className="font-bold">
-                      CodeXAI
+                      Codenthra AI
                     </h2>
 
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400 font-bold">
@@ -2887,7 +2887,7 @@ console.log(
 
 
               <p className="text-xs text-slate-600 mt-5">
-                Explain your reasoning clearly. CodeXAI may ask
+                Explain your reasoning clearly. Codenthra AI may ask
                 follow-up questions based on your answer.
               </p>
 
@@ -3483,7 +3483,7 @@ console.log(
                 <div>
 
                   <p className="text-xs font-bold">
-                    CodeXAI
+                    Codenthra AI
                   </p>
 
                   <p className="text-[10px] text-emerald-400">
@@ -3731,7 +3731,7 @@ function InterviewComplete({
 
 
         <p className="text-sm text-slate-500 mt-4 max-w-lg mx-auto leading-relaxed">
-          You've completed your CodeXAI interview session.
+          You've completed your Codenthra AI interview session.
           Your detailed performance report can now analyze your
           technical knowledge, communication, and interview readiness.
         </p>

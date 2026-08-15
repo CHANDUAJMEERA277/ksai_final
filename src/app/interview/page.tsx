@@ -129,13 +129,13 @@ export default function InterviewPage() {
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-xs font-black uppercase tracking-wider backdrop-blur-md">
-                <Sparkles size={13} /> CodeXAI Interview Engine v3.0
+                <Sparkles size={13} /> Codenthra AI Interview Engine v3.0
               </div>
               <h1 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">
                 Prepare for your <span className="underline decoration-cyan-400 decoration-wavy">Next Tech Interview</span>
               </h1>
               <p className="text-xs text-blue-100 mt-1 max-w-2xl font-medium">
-                Practice real-time technical questions with CodeXAI. Receive instant feedback on your technical depth, communication, and response relevance.
+                Practice real-time technical questions with Codenthra AI. Receive instant feedback on your technical depth, communication, and response relevance.
               </p>
             </div>
 

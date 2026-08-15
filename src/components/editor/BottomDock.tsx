@@ -134,7 +134,7 @@ export default function BottomDock() {
             );
 
             setResult(
-                "⚠️ CodeXAI Guide could not process your code. Please try again."
+                "⚠️ Codenthra AI Guide could not process your code. Please try again."
             );
 
         } finally {

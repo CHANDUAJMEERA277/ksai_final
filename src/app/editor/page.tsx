@@ -134,7 +134,7 @@ function EditorLayout() {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <MessageSquare size={14} /> CodeXAI Copilot
+                <MessageSquare size={14} /> Codenthra AI
               </button>
             </div>
 

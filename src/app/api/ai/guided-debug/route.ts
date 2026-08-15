@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const fallbackDebug = `### 🛠️ CodeXAI Guided Debugger
+    const fallbackDebug = `### 🛠️ Codenthra AI Guided Debugger
 
 #### Error Diagnosis
 ${errorOutput ? `\`\`\`\n${errorOutput}\n\`\`\`` : "No active error output detected."}

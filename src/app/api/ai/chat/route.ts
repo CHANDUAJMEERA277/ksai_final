@@ -17,10 +17,10 @@ export async function POST(request: Request) {
     if (apiKey) {
       try {
         const historyText = Array.isArray(history)
-          ? history.map((m: any) => `${m.role === "user" ? "User" : "CodeXAI"}: ${m.content}`).join("\n")
+          ? history.map((m: any) => `${m.role === "user" ? "User" : "Codenthra AI"}: ${m.content}`).join("\n")
           : "";
 
-        const prompt = `You are CodeXAI, an expert AI coding mentor.
+        const prompt = `You are Codenthra AI, an expert AI coding mentor.
 Current programming language: ${language}
 Active Code:
 \`\`\`${language}
@@ -61,7 +61,7 @@ Provide a helpful, precise, and well-structured answer with code snippets where 
     }
 
     // High-quality fallback chat response
-    const fallbackResponse = `### 🤖 CodeXAI Assistant Response
+    const fallbackResponse = `### 🤖 Codenthra AI Assistant Response
 
 Regarding your question about **"${question}"** in **${language.toUpperCase()}**:
 

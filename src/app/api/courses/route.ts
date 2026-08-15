@@ -8,7 +8,7 @@ const LANGUAGE_COURSES = [
     language: "c",
     price: 1499,
     validityDays: 90,
-    instructor: "Dr. Elena Rostova",
+    instructor: "Codenthra AI",
     level: "Beginner",
     category: "C Programming",
     thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80",
@@ -22,7 +22,7 @@ const LANGUAGE_COURSES = [
     language: "cpp",
     price: 1999,
     validityDays: 90,
-    instructor: "Marcus Vance",
+    instructor: "Codenthra AI",
     level: "Intermediate",
     category: "C++ Programming",
     thumbnail: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
@@ -36,7 +36,7 @@ const LANGUAGE_COURSES = [
     language: "python",
     price: 2499,
     validityDays: 90,
-    instructor: "Sophia Chen",
+    instructor: "Codenthra AI",
     level: "Beginner to Advanced",
     category: "Python Programming",
     thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
@@ -50,7 +50,7 @@ const LANGUAGE_COURSES = [
     language: "java",
     price: 1999,
     validityDays: 90,
-    instructor: "Alex Rivera",
+    instructor: "Codenthra AI",
     level: "Intermediate",
     category: "Java Programming",
     thumbnail: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80",
@@ -62,6 +62,11 @@ const LANGUAGE_COURSES = [
 
 export async function GET() {
   try {
+    // Update existing course instructor DB entries to Codenthra AI
+    await db.course.updateMany({
+      data: { instructor: "Codenthra AI" }
+    });
+
     let courses = await db.course.findMany({
       orderBy: { createdAt: "desc" },
       include: { chapters: true },

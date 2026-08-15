@@ -27,8 +27,8 @@ export async function POST(request: Request) {
       }
     }
 
-    const fallbackCode = `// Generated CodeXAI AutoCode Snippet (${language.toUpperCase()})
-${code || `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from CodeXAI!");\n    }\n}`}`;
+    const fallbackCode = `// Generated Codenthra AI AutoCode Snippet (${language.toUpperCase()})
+${code || `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from Codenthra AI!");\n    }\n}`}`;
 
     return NextResponse.json({ success: true, response: fallbackCode, generatedCode: fallbackCode });
   } catch (error) {

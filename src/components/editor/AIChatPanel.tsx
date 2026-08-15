@@ -256,7 +256,7 @@ useEffect(() => {
                 : "text-gray-900"
             }`}
           >
-            CodeXAI Chat
+            Codenthra AI Chat
           </span>
 
         </div>
@@ -316,7 +316,7 @@ useEffect(() => {
                     : "text-gray-700"
                 }`}
               >
-                👋 Welcome to CodeXAI.
+                👋 Welcome to Codenthra AI.
 
                 <br />
                 <br />
@@ -454,7 +454,7 @@ useEffect(() => {
             }
             onKeyDown={handleKeyDown}
             disabled={loading}
-            placeholder="Ask CodeXAI..."
+            placeholder="Ask Codenthra AI..."
             className={`flex-1 rounded-xl px-4 py-3 outline-none border transition ${
               darkMode
                 ? "bg-[#1A1D26] border-white/10 text-white placeholder:text-slate-400"

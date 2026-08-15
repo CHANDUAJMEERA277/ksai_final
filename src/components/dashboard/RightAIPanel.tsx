@@ -129,19 +129,21 @@ export function RightAIPanel() {
           </div>
         </div>
 
-        {/* Today's AI Recommendations */}
-        <div className="glass-panel p-3.5 rounded-2xl border border-white/10 space-y-2">
-          <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Lightbulb size={14} className="text-yellow-400" /> AI Recommendations
+        {/* AI Recommendations */}
+        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+            <span className="flex items-center gap-1.5">
+              <Sparkles size={12} className="text-cyan-400" /> AI Recommendations
+            </span>
           </div>
-          <ul className="space-y-1.5 text-xs text-slate-300">
-            <li className="flex items-start gap-2">
-              <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-              <span>Complete System Design Chapter 4</span>
+          <ul className="space-y-1.5 text-xs text-slate-400 font-medium">
+            <li className="flex items-center gap-2 hover:text-white cursor-pointer transition-colors">
+              <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />
+              <span className="truncate">Complete System Design Chapter 4</span>
             </li>
-            <li className="flex items-start gap-2">
-              <Code2 size={14} className="text-blue-400 shrink-0 mt-0.5" />
-              <span>Refactor Async Event Loop in Java</span>
+            <li className="flex items-center gap-2 hover:text-white cursor-pointer transition-colors">
+              <Code2 size={12} className="text-cyan-400 shrink-0" />
+              <span className="truncate">Refactor Async Event Loop in Java</span>
             </li>
           </ul>
         </div>
@@ -149,7 +151,7 @@ export function RightAIPanel() {
         {/* Live Conversation Stream */}
         <div className="space-y-2">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Copilot Chat Stream</span>
+            <span>Codenthra Chat Stream</span>
             <Sparkles size={12} className="text-purple-400" />
           </div>
 
@@ -178,7 +180,7 @@ export function RightAIPanel() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Copilot anything..."
+          placeholder="Ask Codenthra AI anything..."
           className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400"
         />
         <button

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     if (apiKey) {
       try {
-        const prompt = `You are CodeXAI, an expert AI programming assistant. Explain the following ${language} code clearly, line-by-line, highlighting key concepts, execution flow, and potential optimizations in clean markdown format:\n\n\`\`\`${language}\n${code}\n\`\`\``;
+        const prompt = `You are Codenthra AI, an expert AI programming assistant. Explain the following ${language} code clearly, line-by-line, highlighting key concepts, execution flow, and potential optimizations in clean markdown format:\n\n\`\`\`${language}\n${code}\n\`\`\``;
 
         const geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     // High-quality deterministic fallback explanation
-    const fallbackResponse = `### 💡 CodeXAI Analysis & Explanation (${language.toUpperCase()})
+    const fallbackResponse = `### 💡 Codenthra AI Analysis & Explanation (${language.toUpperCase()})
 
 #### 1. Overview
 The provided code is written in **${language.toUpperCase()}**. It initializes essential variables and executes standard program logic.

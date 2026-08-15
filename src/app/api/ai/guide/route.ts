@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const fallbackGuide = `### 🗺️ CodeXAI Interactive Learning Guide (${language.toUpperCase()})
+    const fallbackGuide = `### 🗺️ Codenthra AI Interactive Learning Guide (${language.toUpperCase()})
 
 #### Step 1: Understand the Goal
 Target language is **${language.toUpperCase()}**. Ensure your syntax matches language standards.

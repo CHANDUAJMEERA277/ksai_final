@@ -448,14 +448,14 @@ const currentDictatorStep =
     `}
 >
     {mode === "guide"
-    ? "CodeXAI Guide"
+    ? "Codenthra AI Guide"
     : mode === "dictator"
-        ? "CodeXAI Dictator"
+        ? "Codenthra AI Dictator"
         : mode === "autocode"
-            ? "CodeXAI Auto Code"
+            ? "Codenthra AI Auto Code"
             : mode === "error"
-                ? "CodeXAI Error Analysis"
-                : "CodeXAI Explanation"}
+                ? "Codenthra AI Error Analysis"
+                : "Codenthra AI Explanation"}
 </span>
 
                 </div>
