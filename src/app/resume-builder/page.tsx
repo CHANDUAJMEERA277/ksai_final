@@ -26,7 +26,8 @@ import {
   GraduationCap,
   ArrowLeft,
   FileCheck,
-  Check
+  Check,
+  File
 } from "lucide-react";
 
 // Initial Candidate Data
@@ -106,6 +107,7 @@ export default function SimpleResumeBuilder() {
   // Step 1 State: Job Description
   const [jdText, setJdText] = useState(SAMPLE_JDS[0].text);
   const [jdFileName, setJdFileName] = useState<string | null>(null);
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
 
   // Step 2 State: Candidate Info
   const [candidate, setCandidate] = useState(DEFAULT_CANDIDATE);
@@ -154,17 +156,28 @@ export default function SimpleResumeBuilder() {
     else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
   };
 
-  // Handle PDF / Text File Upload for JD
+  // Handle PDF / Text File Upload for JD cleanly
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setJdFileName(file.name);
+    if (!file) return;
+
+    setJdFileName(file.name);
+
+    if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setPdfBase64(result);
+        setJdText(`📄 PDF Document Attached: "${file.name}"\n\n(Codenthra AI will read and extract all job requirements and technical keywords directly from this PDF file).`);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Plain text or doc file
+      setPdfBase64(null);
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
-        if (content) {
-          setJdText(content);
-        }
+        if (content) setJdText(content);
       };
       reader.readAsText(file);
     }
@@ -182,6 +195,7 @@ export default function SimpleResumeBuilder() {
         body: JSON.stringify({
           action: "align_with_jd",
           jobDescription: jdText,
+          pdfBase64: pdfBase64,
           targetRole: candidate.jobTitle,
           company: "Target Employer",
           resumeData: candidate,
@@ -344,7 +358,7 @@ export default function SimpleResumeBuilder() {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-sm">
-                    {jdFileName ? `Uploaded: ${jdFileName}` : "Click to Upload Job Description PDF / TXT"}
+                    {jdFileName ? `Attached File: ${jdFileName}` : "Click to Upload Job Description PDF / TXT"}
                   </h3>
                   <p className="text-xs text-slate-400 font-medium mt-1">
                     Supports .pdf, .txt, .docx files
@@ -364,6 +378,7 @@ export default function SimpleResumeBuilder() {
                       onClick={() => {
                         setJdText(s.text);
                         setJdFileName(null);
+                        setPdfBase64(null);
                       }}
                       className="px-3.5 py-2 rounded-xl bg-white hover:bg-blue-50 border border-slate-200 text-blue-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shadow-xs"
                     >
@@ -375,13 +390,21 @@ export default function SimpleResumeBuilder() {
 
               {/* JD Text Area */}
               <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-2 shadow-xs">
-                <label className="text-xs font-black text-slate-900 block">
-                  Job Description Requirements Text
+                <label className="text-xs font-black text-slate-900 block flex items-center justify-between">
+                  <span>Job Description Status / Requirements Text</span>
+                  {pdfBase64 && (
+                    <span className="text-[10px] text-emerald-600 font-extrabold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ PDF Attached Natively
+                    </span>
+                  )}
                 </label>
                 <textarea
                   rows={6}
                   value={jdText}
-                  onChange={(e) => setJdText(e.target.value)}
+                  onChange={(e) => {
+                    setJdText(e.target.value);
+                    if (pdfBase64) setPdfBase64(null);
+                  }}
                   className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white leading-relaxed custom-scrollbar"
                   placeholder="Paste the target job description requirements here..."
                 />

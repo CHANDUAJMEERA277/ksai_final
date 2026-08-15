@@ -10,25 +10,21 @@ export async function POST(request: Request) {
       targetRole = "Software Engineer",
       jobDescription = "",
       company = "Target Company",
+      pdfBase64 = null,
     } = body;
 
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (action === "align_with_jd") {
-      if (apiKey && jobDescription) {
+      if (apiKey && (jobDescription || pdfBase64)) {
         try {
-          const prompt = `You are Codenthra AI, an elite FAANG Career Strategist and ATS Optimizer.
-Given the following Target Job Description for a ${targetRole} role at ${company}:
-"""
-${jobDescription}
-"""
-
-And the candidate's current resume data:
+          const promptText = `You are Codenthra AI, an elite FAANG Career Strategist and ATS Optimizer.
+Given the Target Job Description provided (in text or attached PDF) for a ${targetRole} role at ${company}, and the candidate's current resume data:
 """
 ${JSON.stringify(resumeData)}
 """
 
-Analyze the JD and generate a tailored resume enhancement plan in JSON format with key structure:
+Analyze the Job Description requirements thoroughly and generate a tailored resume enhancement plan in JSON format with exact key structure:
 {
   "score": 95, (number 85-98 based on match)
   "tailoredSummary": "A 3-sentence powerful executive summary engineered specifically for this target job.",
@@ -37,12 +33,25 @@ Analyze the JD and generate a tailored resume enhancement plan in JSON format wi
   "feedback": ["Array of 3-4 strategic advice notes on how this resume matches the JD"]
 }`;
 
+          const parts: any[] = [];
+          if (pdfBase64) {
+            // Remove data URL prefix if present
+            const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, "");
+            parts.push({
+              inline_data: {
+                mime_type: "application/pdf",
+                data: cleanBase64,
+              },
+            });
+          }
+          parts.push({ text: promptText });
+
           const geminiRes = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+              body: JSON.stringify({ contents: [{ parts }] }),
             }
           );
           if (geminiRes.ok) {
