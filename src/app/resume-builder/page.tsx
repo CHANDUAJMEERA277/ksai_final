@@ -600,28 +600,55 @@ export default function ProfessionalResumeStudio() {
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900"
                     />
                   </div>
+                </div>
+
+                {/* Email, Phone, Location, GitHub */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] font-extrabold text-slate-600 block mb-1">Email Address</label>
+                    <label className="text-[11px] font-extrabold text-slate-600 block mb-1">Location</label>
                     <input
-                      type="email"
-                      value={resumeData.personalInfo.email}
-                      onChange={(e) => handlePersonalInfoChange("email", e.target.value)}
+                      type="text"
+                      value={resumeData.personalInfo.location}
+                      onChange={(e) => handlePersonalInfoChange("location", e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900"
+                      placeholder="Hyderabad, India"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-extrabold text-slate-600 block mb-1">Phone Number</label>
+                    <label className="text-[11px] font-extrabold text-slate-600 block mb-1">GitHub / Portfolio URL</label>
                     <input
                       type="text"
-                      value={resumeData.personalInfo.phone}
-                      onChange={(e) => handlePersonalInfoChange("phone", e.target.value)}
+                      value={resumeData.personalInfo.githubUrl}
+                      onChange={(e) => handlePersonalInfoChange("githubUrl", e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900"
+                      placeholder="github.com/myusername"
                     />
                   </div>
                 </div>
 
+                {/* Summary */}
+                <div className="space-y-1 pt-2 border-t border-slate-100">
+                  <label className="text-xs font-black text-slate-900 block flex items-center justify-between">
+                    <span>Professional Summary</span>
+                    <button
+                      type="button"
+                      onClick={handleEnhanceSummary}
+                      disabled={isEnhancingSummary}
+                      className="px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <Wand2 size={12} className={isEnhancingSummary ? "animate-spin" : ""} /> ✨ AI Polish
+                    </button>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={resumeData.summary}
+                    onChange={(e) => setResumeData((prev) => ({ ...prev, summary: e.target.value }))}
+                    className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 leading-relaxed"
+                  />
+                </div>
+
                 {/* Skills */}
-                <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="space-y-3 pt-2 border-t border-slate-100">
                   <label className="text-xs font-black text-slate-900 block flex items-center justify-between">
                     <span>Core Skills & Technologies</span>
                     <span className="text-[10px] text-slate-400 font-bold">Press Enter to Add</span>
@@ -636,6 +663,7 @@ export default function ProfessionalResumeStudio() {
                       className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900"
                     />
                     <button
+                      type="button"
                       onClick={() => handleAddSkill(newSkillInput)}
                       className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
                     >
@@ -647,10 +675,175 @@ export default function ProfessionalResumeStudio() {
                     {resumeData.skills.map((s, idx) => (
                       <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-extrabold text-blue-700">
                         {s}
-                        <button onClick={() => handleRemoveSkill(s)} className="hover:text-rose-600 font-bold">&times;</button>
+                        <button type="button" onClick={() => handleRemoveSkill(s)} className="hover:text-rose-600 font-bold">&times;</button>
                       </span>
                     ))}
                   </div>
+                </div>
+
+                {/* Experience */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-slate-900 block flex items-center gap-2">
+                      <Briefcase size={16} className="text-emerald-600" /> Work Experience
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setResumeData((prev) => ({
+                          ...prev,
+                          experience: [
+                            ...prev.experience,
+                            {
+                              id: `exp-${Date.now()}`,
+                              company: "Tech Solutions",
+                              role: "Software Developer",
+                              startDate: "2024",
+                              endDate: "Present",
+                              description: "Built scalable web apps.",
+                              bullets: ["Engineered REST APIs reducing latency by 25%."],
+                            },
+                          ],
+                        }))
+                      }
+                      className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold hover:bg-emerald-100 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={14} /> Add Experience
+                    </button>
+                  </div>
+
+                  {resumeData.experience.map((exp) => (
+                    <div key={exp.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setResumeData((prev) => ({
+                            ...prev,
+                            experience: prev.experience.filter((i) => i.id !== exp.id),
+                          }))
+                        }
+                        className="absolute top-3 right-3 text-slate-400 hover:text-rose-600"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={exp.company}
+                          onChange={(e) =>
+                            setResumeData((prev) => ({
+                              ...prev,
+                              experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, company: e.target.value } : i)),
+                            }))
+                          }
+                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="Company Name"
+                        />
+                        <input
+                          type="text"
+                          value={exp.role}
+                          onChange={(e) =>
+                            setResumeData((prev) => ({
+                              ...prev,
+                              experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, role: e.target.value } : i)),
+                            }))
+                          }
+                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="Role Title"
+                        />
+                      </div>
+                      {exp.bullets.map((b, bIdx) => (
+                        <input
+                          key={bIdx}
+                          type="text"
+                          value={b}
+                          onChange={(e) => {
+                            const newB = [...exp.bullets];
+                            newB[bIdx] = e.target.value;
+                            setResumeData((prev) => ({
+                              ...prev,
+                              experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, bullets: newB } : i)),
+                            }));
+                          }}
+                          className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-800"
+                          placeholder="Accomplishment bullet point..."
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Projects */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-slate-900 block flex items-center gap-2">
+                      <Globe size={16} className="text-blue-600" /> Featured Projects
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setResumeData((prev) => ({
+                          ...prev,
+                          projects: [
+                            ...prev.projects,
+                            {
+                              id: `proj-${Date.now()}`,
+                              title: "AI Web Platform",
+                              techStack: "Next.js, Python, PostgreSQL",
+                              description: "Built real-time web app.",
+                              bullets: ["Designed responsive user interface and backend APIs."],
+                            },
+                          ],
+                        }))
+                      }
+                      className="px-3 py-1 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={14} /> Add Project
+                    </button>
+                  </div>
+
+                  {resumeData.projects.map((proj) => (
+                    <div key={proj.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setResumeData((prev) => ({
+                            ...prev,
+                            projects: prev.projects.filter((i) => i.id !== proj.id),
+                          }))
+                        }
+                        className="absolute top-3 right-3 text-slate-400 hover:text-rose-600"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={proj.title}
+                          onChange={(e) =>
+                            setResumeData((prev) => ({
+                              ...prev,
+                              projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, title: e.target.value } : i)),
+                            }))
+                          }
+                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                          placeholder="Project Title"
+                        />
+                        <input
+                          type="text"
+                          value={proj.techStack}
+                          onChange={(e) =>
+                            setResumeData((prev) => ({
+                              ...prev,
+                              projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, techStack: e.target.value } : i)),
+                            }))
+                          }
+                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-blue-600"
+                          placeholder="Tech Stack"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -924,6 +1117,186 @@ export default function ProfessionalResumeStudio() {
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 4: Work Experience */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                <button
+                  onClick={() => setActiveAccordion(activeAccordion === "experience" ? "" : "experience")}
+                  className="w-full p-4 flex items-center justify-between bg-slate-50/60 font-black text-slate-900 text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <Briefcase size={16} className="text-emerald-600" /> Work Experience
+                  </span>
+                  {activeAccordion === "experience" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+
+                {activeAccordion === "experience" && (
+                  <div className="p-4 space-y-3 border-t border-slate-100 bg-white">
+                    {resumeData.experience.map((exp) => (
+                      <div key={exp.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setResumeData((prev) => ({
+                              ...prev,
+                              experience: prev.experience.filter((i) => i.id !== exp.id),
+                            }))
+                          }
+                          className="absolute top-3 right-3 text-slate-400 hover:text-rose-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={exp.company}
+                            onChange={(e) =>
+                              setResumeData((prev) => ({
+                                ...prev,
+                                experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, company: e.target.value } : i)),
+                              }))
+                            }
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                            placeholder="Company Name"
+                          />
+                          <input
+                            type="text"
+                            value={exp.role}
+                            onChange={(e) =>
+                              setResumeData((prev) => ({
+                                ...prev,
+                                experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, role: e.target.value } : i)),
+                              }))
+                            }
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                            placeholder="Role Title"
+                          />
+                        </div>
+                        {exp.bullets.map((b, bIdx) => (
+                          <textarea
+                            key={bIdx}
+                            rows={2}
+                            value={b}
+                            onChange={(e) => {
+                              const newB = [...exp.bullets];
+                              newB[bIdx] = e.target.value;
+                              setResumeData((prev) => ({
+                                ...prev,
+                                experience: prev.experience.map((i) => (i.id === exp.id ? { ...i, bullets: newB } : i)),
+                              }));
+                            }}
+                            className="w-full p-2 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-800 leading-relaxed"
+                          />
+                        ))}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setResumeData((prev) => ({
+                          ...prev,
+                          experience: [
+                            ...prev.experience,
+                            {
+                              id: `exp-${Date.now()}`,
+                              company: "Tech Corp",
+                              role: "Software Engineer",
+                              startDate: "2024",
+                              endDate: "Present",
+                              description: "Software dev.",
+                              bullets: ["Engineered responsive UI and APIs."],
+                            },
+                          ],
+                        }))
+                      }
+                      className="w-full py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold hover:bg-emerald-100 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={14} /> Add Experience Item
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 5: Featured Projects */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                <button
+                  onClick={() => setActiveAccordion(activeAccordion === "projects" ? "" : "projects")}
+                  className="w-full p-4 flex items-center justify-between bg-slate-50/60 font-black text-slate-900 text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <Globe size={16} className="text-blue-600" /> Featured Projects
+                  </span>
+                  {activeAccordion === "projects" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+
+                {activeAccordion === "projects" && (
+                  <div className="p-4 space-y-3 border-t border-slate-100 bg-white">
+                    {resumeData.projects.map((proj) => (
+                      <div key={proj.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setResumeData((prev) => ({
+                              ...prev,
+                              projects: prev.projects.filter((i) => i.id !== proj.id),
+                            }))
+                          }
+                          className="absolute top-3 right-3 text-slate-400 hover:text-rose-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={proj.title}
+                            onChange={(e) =>
+                              setResumeData((prev) => ({
+                                ...prev,
+                                projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, title: e.target.value } : i)),
+                              }))
+                            }
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                            placeholder="Project Title"
+                          />
+                          <input
+                            type="text"
+                            value={proj.techStack}
+                            onChange={(e) =>
+                              setResumeData((prev) => ({
+                                ...prev,
+                                projects: prev.projects.map((i) => (i.id === proj.id ? { ...i, techStack: e.target.value } : i)),
+                              }))
+                            }
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-blue-600"
+                            placeholder="Tech Stack"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setResumeData((prev) => ({
+                          ...prev,
+                          projects: [
+                            ...prev.projects,
+                            {
+                              id: `proj-${Date.now()}`,
+                              title: "Portfolio Web App",
+                              techStack: "Next.js, Python",
+                              description: "Built web app.",
+                              bullets: ["Engineered user dashboard."],
+                            },
+                          ],
+                        }))
+                      }
+                      className="w-full py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={14} /> Add Project Item
+                    </button>
                   </div>
                 )}
               </div>
