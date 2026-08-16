@@ -10,21 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id              String            @id @default(uuid())
+  id              String  @id @default(uuid())
   name            String
-  email           String            @unique
-  emailVerified   Boolean           @default(false)
+  email           String  @unique
+  emailVerified   Boolean @default(false)
   image           String?
   passwordHash    String?
   phone           String?
   college         String?
   department      String?
   currentYear     String?
-  role            String            @default("Student") // Student | Employee | Admin | Recruiter | Company
-  country         String?           @default("United States")
-  provider        String            @default("CREDENTIALS")
+  role            String  @default("Student") // Student | Employee | Admin | Recruiter | Company
+  country         String? @default("United States")
+  provider        String  @default("CREDENTIALS")
   googleId        String?
   activeSessionId String?
 
@@ -45,6 +44,11 @@ model User {
   notifications              Notification[]
   weeklyGoals                WeeklyGoal[]
   submissions                Submission[]
+  lessonProgresses           LessonProgress[]
+  learningNotes              LearningNote[]
+  learningEvents             LearningEvent[]
+  learningMemories           LearningMemory[]
+  topicProgresses            TopicProgress[]
 }
 
 model Contest {
@@ -66,7 +70,7 @@ model Challenge {
   title       String
   description String
   difficulty  String       @default("EASY") // EASY | MEDIUM | HARD
-  testCases   String       // JSON string of test cases
+  testCases   String // JSON string of test cases
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   submissions Submission[]
@@ -80,12 +84,11 @@ model Submission {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   code        String
   language    String    @default("javascript")
-  status      String    // PASSED | FAILED
+  status      String // PASSED | FAILED
   xpAwarded   Int       @default(0)
   errorDetail String?
   createdAt   DateTime  @default(now())
 }
-
 
 model Session {
   id        String   @id @default(uuid())
@@ -138,13 +141,13 @@ model Otp {
 
 model Course {
   id             String          @id @default(uuid())
-  title          String          // C Programming | C++ Mastery | Python AI | Java Enterprise
+  title          String // C Programming | C++ Mastery | Python AI | Java Enterprise
   description    String
   language       String          @default("cpp") // c | cpp | python | java
-  price          Float           // e.g. 1999
+  price          Float // e.g. 1999
   validityDays   Int             @default(90) // 90 Days validity
   instructor     String
-  level          String          // Beginner | Intermediate | Advanced
+  level          String // Beginner | Intermediate | Advanced
   category       String
   thumbnail      String
   duration       String
@@ -154,19 +157,22 @@ model Course {
   chapters       Chapter[]
   enrollments    Enrollment[]
   xpTransactions XpTransaction[]
+  learningNotes  LearningNote[]
 }
 
 model Chapter {
-  id          String            @id @default(uuid())
-  courseId    String
-  course      Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  orderNumber Int               // 1, 2, 3, 4...
-  title       String            // e.g. "Topic 1: Variables & Data Types"
-  explanation String            // Full text content for AI Speech Synthesis
-  quizData    String            // JSON string of 5-10 quiz questions
-  challenges  String            // JSON string of Easy, Medium, Hard coding problems
-  createdAt   DateTime          @default(now())
-  progresses  ChapterProgress[]
+  id               String            @id @default(uuid())
+  courseId         String
+  course           Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  orderNumber      Int // 1, 2, 3, 4...
+  title            String // e.g. "Topic 1: Variables & Data Types"
+  explanation      String // Full text content for AI Speech Synthesis
+  quizData         String // JSON string of 5-10 quiz questions
+  challenges       String // JSON string of Easy, Medium, Hard coding problems
+  createdAt        DateTime          @default(now())
+  progresses       ChapterProgress[]
+  lessonProgresses LessonProgress[]
+  learningNotes    LearningNote[]
 }
 
 model ChapterProgress {
@@ -190,7 +196,7 @@ model Enrollment {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   paidAmount Float
-  paymentId  String   // Razorpay Payment ID (e.g. pay_Rzp987123)
+  paymentId  String // Razorpay Payment ID (e.g. pay_Rzp987123)
   progress   Int      @default(0)
   createdAt  DateTime @default(now())
 }
@@ -200,7 +206,7 @@ model XpTransaction {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount    Int
-  source    String   // e.g. chapter_complete | quiz_pass | challenge_solved | streak_bonus | accuracy_bonus
+  source    String // e.g. chapter_complete | quiz_pass | challenge_solved | streak_bonus | accuracy_bonus
   courseId  String?
   course    Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
@@ -254,11 +260,152 @@ model WeeklyGoal {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-
 model Practice {
   id        String   @id @default(cuid())
   userEmail String
   courseId  String
   meta      String
   createdAt DateTime @default(now())
+}
+
+model LessonProgress {
+  id             String   @id @default(uuid())
+  userId         String
+  chapterId      String
+  lesson         String
+  status         String   @default("NOT_STARTED")
+  attempts       Int      @default(0)
+  correctAnswers Int      @default(0)
+  totalQuestions Int      @default(0)
+  lastScore      Int      @default(0)
+  lastActivity   DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId, lesson])
+  @@index([userId])
+  @@index([chapterId])
+}
+
+model LearningNote {
+  id String @id @default(uuid())
+
+  userId    String
+  courseId  String
+  chapterId String
+
+  topic    String
+  title    String
+  type     String // EXPLANATION | EXAMPLE | QUESTION | CORRECTION | CODE | VISUAL | TIP | MISTAKE | PRACTICE
+  content  String
+  metadata String?
+
+  importance Int     @default(1)
+  isPinned   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([chapterId])
+  @@index([userId, chapterId])
+}
+
+model LearningEvent {
+  id String @id @default(uuid())
+
+  userId    String
+  courseId  String
+  chapterId String
+
+  topic     String
+  eventType String // EXPLANATION | EXAMPLE | QUESTION | ANSWER | MISTAKE | CORRECTION | VISUAL | PRACTICE | CHAT
+  content   String
+  metadata  String?
+
+  shouldSave Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([chapterId])
+  @@index([userId, chapterId])
+  @@index([createdAt])
+}
+
+model TopicProgress {
+  id String @id @default(uuid())
+
+  userId    String
+  courseId  String
+  chapterId String
+
+  topic String
+
+  status String @default("NOT_STARTED")
+  // NOT_STARTED | LEARNING | PRACTICED | NEEDS_REVIEW | MASTERED
+
+  attempts       Int @default(0)
+  correctAnswers Int @default(0)
+  totalQuestions Int @default(0)
+
+  masteryScore Int @default(0)
+
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId, topic])
+  @@index([userId])
+  @@index([courseId])
+  @@index([chapterId])
+}
+
+model LearningMemory {
+  id String @id @default(uuid())
+
+  userId    String
+  courseId  String
+  chapterId String
+
+  topic String
+
+  memoryType String
+  // STRUGGLE | STRENGTH | PREFERENCE | MISTAKE | MASTERY | REVIEW
+
+  key     String
+  content String
+
+  confidence Int @default(50)
+  priority   Int @default(1)
+
+  occurrences Int @default(1)
+
+  lastObserved DateTime  @default(now())
+  lastReviewed DateTime?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topic, memoryType, key])
+  @@index([userId])
+  @@index([courseId])
+  @@index([chapterId])
+  @@index([userId, topic])
 }

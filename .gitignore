@@ -45,3 +45,19 @@ next-env.d.ts
 *.db-journal
 /src/generated
 
+
+# Python virtual environment
+backend/venv/
+
+# Python virtual environment
+backend/venv/
+
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+backend/db.sqlite3
+.env
+.env.*
+.next/
+node_modules/

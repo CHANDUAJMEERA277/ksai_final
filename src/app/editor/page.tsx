@@ -23,7 +23,7 @@ import { EditorSettingsProvider } from "@/components/editor/EditorSettingsContex
 import { EditorProvider } from "@/components/editor/EditorContext";
 import { AIResultProvider } from "@/components/editor/AIResultContext";
 import { AIChatProvider } from "@/components/editor/AIChatContext";
-import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
+
 import { Sparkles, MessageSquare, Bot, BookOpen } from "lucide-react";
 
 export default function EditorPage() {
@@ -51,29 +51,14 @@ export default function EditorPage() {
 }
 
 function EditorLayout() {
-  const router = useRouter();
+  
   const { darkMode } = useEditorTheme();
   const [showTerminal, setShowTerminal] = useState(true);
   const [rightPanelTab, setRightPanelTab] = useState<"chat" | "explanation">("explanation");
 
   return (
     <div className={`h-screen flex overflow-hidden font-sans antialiased ${darkMode ? "bg-[#09090B] text-white" : "bg-slate-100 text-slate-900"}`}>
-      {/* Unified Left Sidebar */}
-      <LeftSidebar
-        activeTab="Editor"
-        onTabChange={(tab) => {
-          if (tab === "Dashboard") router.push("/dashboard");
-          else if (tab === "Explore Courses") router.push("/courses/catalog");
-          else if (tab === "Courses") router.push("/courses");
-          else if (tab === "Leaderboard") router.push("/leaderboard");
-          else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
-          else if (tab === "Editor" || tab === "Workspace") router.push("/editor");
-          else if (tab === "Certificates") router.push("/certificates");
-          else if (tab === "Interview Prep") router.push("/interview");
-          else if (tab === "Settings") router.push("/settings");
-        }}
-        fullHeight={true}
-      />
+      
 
       {/* Main IDE Workspace */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">

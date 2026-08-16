@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef
+} from "react";
+
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { renderMarkdown } from "@/lib/markdown";
@@ -37,6 +42,22 @@ interface ProgressItem {
   chapterId: string;
   isCompleted: boolean;
   quizScore: number;
+}
+
+type LearningStatus =
+  | "NOT_STARTED"
+  | "LEARNING"
+  | "PRACTICED"
+  | "NEEDS_REVIEW"
+  | "MASTERED";
+
+interface LessonProgress {
+  lesson: string;
+  status: LearningStatus;
+  score: number;
+  attempts: number;
+  questionsAsked: number;
+  correctAnswers: number;
 }
 
 interface QuizQuestion {
@@ -189,6 +210,8 @@ function stripMarkdown(md: string): string {
 }
 
 export default function PythonChapterPage() {
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+
   const router = useRouter();
   const params = useParams();
   const chapterIdStr = params?.id ? String(params.id) : "0";
@@ -232,94 +255,228 @@ export default function PythonChapterPage() {
     { sender: "ai", text: "Hi! Ask me any questions or doubts about this chapter's notes, and I will explain them using details from the text." }
   ]);
 
-  const generateChapterSummary = (notes: string): string => {
-    if (!notes) return "No notes available to summarize.";
-    const lines = notes.split("\n");
-    const headings = lines
-      .filter(l => l.startsWith("## ") || l.startsWith("### "))
-      .map(l => l.replace(/^[#\s]+/, "").trim());
-    
-    let summary = "### Key Concepts Covered:\n";
-    if (headings.length > 0) {
-      headings.slice(0, 5).forEach(h => {
-        summary += `- **${h}**\n`;
-      });
-    } else {
-      summary += "- Core programming syntax & structures.\n- Operational mechanisms.\n";
-    }
-    
-    summary += "\n### Condensed Summary:\n";
-    if (notes.toLowerCase().includes("compiled")) {
-      summary += "This chapter contrasts compiled and interpreted languages, introduces Python's execution model (via Bytecode and PVM), walks through installing python and setting up an IDE, and shows how to write a simple print statement.\n";
-    } else {
-      summary += "A condensed outline of the chapter lessons, focusing on syntax conventions, execution paths, scope rules, and coding practices to help you pass the assessment quiz.\n";
-    }
-    return summary;
-  };
+  
 
-  const getSummaryBullets = (notes: string): string[] => {
-    if (!notes) return ["No key points available."];
-    const lines = notes.split("\n");
-    const headings = lines
-      .filter(l => l.startsWith("## ") || l.startsWith("### "))
-      .map(l => l.replace(/^[#\s]+/, "").trim());
-    if (headings.length > 0) {
-      return headings.map(h => `Key concept: ${h}`);
-    }
-    return [
-      "Python syntax conventions and execution options",
-      "Translating code into bytecode vs compilation to machine instructions",
-      "Configuring local virtual environments, paths, and workspace tools",
-      "Writing print statements and executing your first simple scripts"
-    ];
-  };
+  
 
-  const generateGroundedResponse = (question: string, notes: string): string => {
-    const q = question.toLowerCase();
-    if (q.includes("python") && q.includes("what")) {
-      return "Based on Chapter notes, Python is a high-level, interpreted programming language known for its clear syntax and readability. It was created by Guido van Rossum and released in 1991.";
-    }
-    if (q.includes("compiled") || q.includes("interpreted")) {
-      return "According to the notes, compiled languages (like C) translate code into machine instructions before execution, while interpreted languages (like Python) execute code line-by-line using an interpreter, which makes development faster but execution slightly slower.";
-    }
-    if (q.includes("applications") || q.includes("used for")) {
-      return "The notes state that Python is used in Machine Learning/AI, Web Development, Automation, Data Science, and Cybersecurity.";
-    }
-    if (q.includes("install") || q.includes("ide")) {
-      return "The notes recommend installing Python from python.org and using an IDE/editor like VS Code or PyCharm to write and test your programs.";
-    }
-    if (q.includes("first program") || q.includes("hello world")) {
-      return "Your first Python program is written as: print('Hello, World!'). The print() function displays the text argument inside single or double quotes.";
+  const [chatLoading, setChatLoading] = useState(false);
+  const [currentLesson, setCurrentLesson] = useState<string | null>(null);
+const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+const [lessonProgress, setLessonProgress] =
+  useState<Record<string, LessonProgress>>({});
+const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+
+
+const handleTeachingRequest = async (
+  question: string,
+  mode: string = "chat"
+) => {
+  if (!question.trim() || chatLoading) return;
+
+if (!currentChapter) return;
+
+markLessonLearning();
+
+  // Show student's message immediately
+  setChatMessages((prev) => [
+    ...prev,
+    {
+      sender: "user",
+      text: question,
+    },
+  ]);
+
+  setChatInput("");
+  setChatLoading(true);
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/ai/teach/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          course: "Python",
+          chapter: currentChapter.title,
+          topic: currentLesson || currentChapter.title,
+          content: getLessonContent(),
+
+          question: `
+Student request:
+${question}
+
+Learning progress:
+Completed lessons:
+${
+  completedLessons.length > 0
+    ? completedLessons.join("\n")
+    : "None"
+}
+
+Current lesson:
+${currentLesson || "Not selected"}
+
+Remaining lessons:
+${getLessons()
+  .filter(
+    (lesson) => !completedLessons.includes(lesson)
+  )
+  .join("\n")}
+`,
+
+          mode: mode,
+          history: chatMessages,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message || "Teaching request failed."
+      );
     }
 
-    const lines = notes.split("\n");
-    const matchedLine = lines.find(l => {
-      const words = q.split(" ").filter(w => w.length > 4);
-      return words.some(w => l.toLowerCase().includes(w));
+    const aiResponse =
+      data.data?.response ??
+      data.response ??
+      "";
+
+    if (!aiResponse) {
+      throw new Error(
+        "CodeXAI returned an empty response."
+      );
+    }
+
+    // Display AI response
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: aiResponse,
+      },
+    ]);
+
+    // 🔊 Speak AI response
+    speakMentor(aiResponse);
+
+  } catch (error) {
+
+    console.error(
+      "CodeXAI Teaching Error:",
+      error
+    );
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text:
+          "⚠️ I couldn't connect to the teaching engine right now. Please try again.",
+      },
+    ]);
+
+  } finally {
+    setChatLoading(false);
+  }
+};
+
+const initializeLessonProgress = () => {
+  const lessons = getLessons();
+
+  setLessonProgress((prev) => {
+    const next = { ...prev };
+
+    lessons.forEach((lesson) => {
+      if (!next[lesson]) {
+        next[lesson] = {
+          lesson,
+          status: "NOT_STARTED",
+          score: 0,
+          attempts: 0,
+          questionsAsked: 0,
+          correctAnswers: 0,
+        };
+      }
     });
 
-    if (matchedLine) {
-      return `From Chapter Notes: "${matchedLine.replace(/[#*`]/g, "").trim()}". Let me know if you would like me to explain this in more detail!`;
-    }
-    return `I parsed the Chapter notes for "${question}". The notes focus on the core fundamentals of this chapter. Can you specify if you are asking about coding examples, syntax details, or execution behavior?`;
-  };
+    return next;
+  });
+};
 
-  const handleSendChatMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    
-    const question = chatInput;
-    setChatMessages(prev => [...prev, { sender: "user", text: question }]);
-    setChatInput("");
 
-    setTimeout(() => {
-      const grounded = generateGroundedResponse(question, currentChapter?.content || "");
-      setChatMessages(prev => [...prev, { sender: "ai", text: grounded }]);
-    }, 600);
-  };
+const getLessons = () => {
+  return (CHAPTER_SECTIONS[chapterOrder] || []).filter(
+    (section) => section !== "Quiz Assessment"
+  );
+};
+
+const totalLessons = getLessons().length;
+
+const masteredLessons = Object.values(lessonProgress).filter(
+  (item) => item.status === "MASTERED"
+).length;
+
+const learningPercentage =
+  totalLessons > 0
+    ? Math.round((masteredLessons / totalLessons) * 100)
+    : 0;
+
+const getLessonContent = () => {
+  if (!currentChapter?.content) return "";
+
+  const lesson = currentLesson;
+
+  if (!lesson) {
+    return currentChapter.content;
+  }
+
+  const content = currentChapter.content;
+
+  // Try to find the selected lesson heading in the chapter content.
+  const startIndex = content.toLowerCase().indexOf(lesson.toLowerCase());
+
+  if (startIndex === -1) {
+    return content;
+  }
+
+  const lessons = getLessons();
+
+  const lessonIndex = lessons.indexOf(lesson);
+
+  if (lessonIndex === -1 || lessonIndex === lessons.length - 1) {
+    return content.slice(startIndex);
+  }
+
+  const nextLesson = lessons[lessonIndex + 1];
+
+  const endIndex = content
+    .toLowerCase()
+    .indexOf(nextLesson.toLowerCase(), startIndex + lesson.length);
+
+  if (endIndex === -1) {
+    return content.slice(startIndex);
+  }
+
+  return content.slice(startIndex, endIndex);
+};
 
   // Expandable chapters state
   const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({ [chapterOrder]: true });
+
+
+  useEffect(() => {
+  if (!chatScrollRef.current) return;
+
+  chatScrollRef.current.scrollTo({
+    top: chatScrollRef.current.scrollHeight,
+    behavior: "smooth",
+  });
+}, [chatMessages, chatLoading]);
+
 
   // Update expanded chapters state on load / chapterOrder changes
   useEffect(() => {
@@ -395,8 +552,210 @@ export default function PythonChapterPage() {
   };
 
   useEffect(() => {
-    loadPageData();
-  }, [chapterOrder]);
+  loadPageData();
+}, [chapterOrder]);
+
+useEffect(() => {
+  const sections = getLessons();
+
+  initializeLessonProgress();
+
+  if (sections.length > 0 && !currentLesson) {
+    setCurrentLesson(sections[0]);
+    setCurrentLessonIndex(0);
+  }
+}, [chapterOrder, currentLesson]);
+
+const markLessonLearning = () => {
+  if (!currentLesson) return;
+
+  setLessonProgress((prev) => ({
+    ...prev,
+    [currentLesson]: {
+      ...(prev[currentLesson] || {
+        lesson: currentLesson,
+        score: 0,
+        attempts: 0,
+        questionsAsked: 0,
+        correctAnswers: 0,
+      }),
+      status: "LEARNING",
+    },
+  }));
+};
+
+
+const markLessonCompleted = () => {
+  if (!currentLesson) return;
+
+  setCompletedLessons((prev) => {
+    if (prev.includes(currentLesson)) {
+      return prev;
+    }
+
+    return [...prev, currentLesson];
+  });
+};
+
+const getLessonStatus = (
+  lesson: string
+): LearningStatus => {
+  return (
+    lessonProgress[lesson]?.status ||
+    "NOT_STARTED"
+  );
+};
+
+const getLessonStatusLabel = (
+  lesson: string
+): string => {
+  const status = getLessonStatus(lesson);
+
+  switch (status) {
+    case "LEARNING":
+      return "Learning";
+
+    case "PRACTICED":
+      return "Practiced";
+
+    case "NEEDS_REVIEW":
+      return "Needs Review";
+
+    case "MASTERED":
+      return "Mastered";
+
+    default:
+      return "Not Started";
+  }
+};
+
+const markLessonMastered = () => {
+  if (!currentLesson) return;
+
+  setLessonProgress((prev) => ({
+    ...prev,
+    [currentLesson]: {
+      ...(prev[currentLesson] || {
+        lesson: currentLesson,
+        score: 0,
+        attempts: 0,
+        questionsAsked: 0,
+        correctAnswers: 0,
+      }),
+      status: "MASTERED",
+      score: 100,
+    },
+  }));
+};
+
+const [isMentorSpeaking, setIsMentorSpeaking] =
+  useState(false);
+
+const speakMentor = (text: string) => {
+  if (
+    typeof window === "undefined" ||
+    !("speechSynthesis" in window)
+  ) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const cleanText = text
+    .replace(/```[\s\S]*?```/g, "code example")
+    .replace(/[*#_>`]/g, "")
+    .replace(/\n+/g, " ")
+    .trim();
+
+  if (!cleanText) return;
+
+  const utterance =
+    new SpeechSynthesisUtterance(cleanText);
+
+  utterance.lang = "en-US";
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  utterance.onstart = () => {
+    setIsMentorSpeaking(true);
+  };
+
+  utterance.onend = () => {
+    setIsMentorSpeaking(false);
+  };
+
+  utterance.onerror = () => {
+    setIsMentorSpeaking(false);
+  };
+
+  window.speechSynthesis.speak(utterance);
+};
+
+const stopMentorSpeaking = () => {
+  if (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window
+  ) {
+    window.speechSynthesis.cancel();
+  }
+
+  setIsMentorSpeaking(false);
+};
+
+
+const [isListening, setIsListening] =
+  useState(false);
+
+const startMentorListening = () => {
+  if (typeof window === "undefined") return;
+
+  const SpeechRecognition =
+    (window as any).SpeechRecognition ||
+    (window as any).webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert(
+      "Voice input is not supported in this browser."
+    );
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+
+  recognition.lang = "en-US";
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  recognition.onstart = () => {
+    setIsListening(true);
+  };
+
+  recognition.onresult = (event: any) => {
+    let transcript = "";
+
+    for (
+      let i = event.resultIndex;
+      i < event.results.length;
+      i++
+    ) {
+      transcript +=
+        event.results[i][0].transcript;
+    }
+
+    setChatInput(transcript);
+  };
+
+  recognition.onerror = () => {
+    setIsListening(false);
+  };
+
+  recognition.onend = () => {
+    setIsListening(false);
+  };
+
+  recognition.start();
+};
 
   const handleBuyCourse = async () => {
     if (!courseId) return;
@@ -544,13 +903,13 @@ export default function PythonChapterPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-all flex items-center gap-1.5"
+            className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm transition-all flex items-center gap-1.5"
           >
             <ArrowLeft size={13} /> Back to Dashboard
           </button>
           
           <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
               {user?.name?.charAt(0) || "N"}
             </div>
             <ChevronDown size={14} className="text-slate-500" />
@@ -569,7 +928,7 @@ export default function PythonChapterPage() {
             leftSidebarExpanded ? "justify-between" : "justify-center"
           }`}>
             {leftSidebarExpanded && (
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2">
                 <GraduationCap size={16} className="text-blue-600" />
                 Course Chapters
               </h3>
@@ -627,7 +986,7 @@ export default function PythonChapterPage() {
                       <div className="text-[9px] font-bold uppercase tracking-wider font-mono text-blue-600">
                         CHAPTER {ch.orderNumber}
                       </div>
-                      <div className={`text-xs font-bold truncate leading-snug ${active ? "text-slate-900" : "text-slate-700"}`}>
+                      <div className={`text-sm font-bold truncate leading-snug ${active ? "text-slate-900" : "text-slate-700"}`}>
                         {ch.title.replace(/^Chapter \d+:\s*/, "").replace(/^Topic \d+:\s*/, "")}
                       </div>
                     </div>
@@ -644,22 +1003,49 @@ export default function PythonChapterPage() {
                     <div className="pl-9 pr-2 py-1 space-y-2 border-l border-slate-200 ml-5">
                       {(CHAPTER_SECTIONS[ch.orderNumber] || []).map((sec, secIdx) => {
                         const isQuiz = sec === "Quiz Assessment";
+                        const status = isQuiz
+                          ? "NOT_STARTED"
+                          : getLessonStatus(sec);
                         return (
                           <button
                             key={secIdx}
                             onClick={() => {
-                              if (isQuiz) {
-                                router.push(`/courses/python/chapter/${ch.orderNumber}/quiz`);
-                              }
-                            }}
+  if (isQuiz) {
+    router.push(`/courses/python/chapter/${ch.orderNumber}/quiz`);
+    return;
+  }
+
+  setCurrentLesson(sec);
+setCurrentLessonIndex(secIdx);
+}}
                             className={`w-full text-left text-[11px] leading-relaxed flex items-center gap-1.5 py-0.5 transition-all ${
                               isQuiz
                                 ? "text-purple-600 font-bold hover:underline"
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
-                            <span className="truncate">{sec}</span>
+                            <span
+  className={`w-2 h-2 rounded-full shrink-0 ${
+    status === "MASTERED"
+      ? "bg-emerald-500"
+      : status === "PRACTICED"
+      ? "bg-blue-500"
+      : status === "LEARNING"
+      ? "bg-amber-500"
+      : status === "NEEDS_REVIEW"
+      ? "bg-red-500"
+      : "bg-slate-300"
+  }`}
+/>
+                            <span className="truncate flex-1">
+                              {sec}
+                            </span>
+
+                            {!isQuiz && (
+                              <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
+                                {getLessonStatusLabel(sec)}
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -675,7 +1061,7 @@ export default function PythonChapterPage() {
         <main data-lenis-prevent className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto w-full bg-slate-50 custom-scrollbar">
           
           {/* Breadcrumb Navigation */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 max-w-4xl mx-auto w-full">
+          <div className="flex items-center gap-1.5 text-sm text-slate-500 max-w-6xl mx-auto w-full">
             <button
               onClick={() => router.push("/dashboard")}
               className="hover:text-slate-800 transition-colors"
@@ -703,7 +1089,7 @@ export default function PythonChapterPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-600 animate-spin" />
-              <div className="text-slate-400 text-xs font-mono">Initializing Learning Chapter...</div>
+              <div className="text-slate-400 text-sm font-mono">Initializing Learning Chapter...</div>
             </div>
           ) : error ? (
             <div className="bg-white p-10 rounded-2xl border border-red-200 text-center space-y-4 max-w-md mx-auto shadow-sm">
@@ -711,16 +1097,16 @@ export default function PythonChapterPage() {
                 <AlertCircle size={24} />
               </div>
               <h3 className="text-base font-bold text-slate-800">Error Loading Chapter</h3>
-              <p className="text-xs text-slate-500">{error}</p>
+              <p className="text-sm text-slate-500">{error}</p>
               <button
                 onClick={loadPageData}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200"
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200"
               >
                 Retry Request
               </button>
             </div>
           ) : (
-            <div className="space-y-6 animate-fade-in max-w-4xl mx-auto w-full pb-10">
+            <div className="space-y-6 animate-fade-in max-w-5xl mx-auto w-full pb-10">
 
               {/* Step A: AI Voice Explainer Card */}
               {currentChapter && (
@@ -749,7 +1135,7 @@ export default function PythonChapterPage() {
                       </h2>
                     </div>
 
-                    <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold flex items-center gap-1.5 text-slate-600">
+                    <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono font-bold flex items-center gap-1.5 text-slate-600">
                       <Clock size={14} className="text-blue-600" />
                       <span>{currentChapter.estimatedTime || "15 mins"}</span>
                     </div>
@@ -762,7 +1148,7 @@ export default function PythonChapterPage() {
 
                   {/* Complete Action at the bottom */}
                   <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="text-xs text-slate-500">
+                    <div className="text-sm text-slate-500">
                       {isCompleted ? (
                         <span className="flex items-center gap-1 text-emerald-600 font-bold font-mono">
                           <CheckCircle2 size={15} /> Chapter Passed &amp; Completed!
@@ -775,7 +1161,7 @@ export default function PythonChapterPage() {
                     {quizQuestions.length > 0 ? (
                       <button
                         onClick={() => router.push(`/courses/python/chapter/${chapterOrder}/quiz`)}
-                        className="px-6 py-3.5 rounded-xl font-extrabold text-xs text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
+                        className="px-6 py-3.5 rounded-xl font-extrabold text-sm text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-95 transition-opacity flex items-center gap-1.5 shadow-md shadow-blue-500/10"
                       >
                         <HelpCircle size={14} /> Take Chapter Assessment Quiz
                       </button>
@@ -783,7 +1169,7 @@ export default function PythonChapterPage() {
                       <button
                         onClick={handleMarkChapterComplete}
                         disabled={completing}
-                        className="px-6 py-3.5 rounded-xl font-extrabold text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 disabled:opacity-55 transition-opacity flex items-center gap-1.5 shadow-md shadow-emerald-500/10"
+                        className="px-6 py-3.5 rounded-xl font-extrabold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 disabled:opacity-55 transition-opacity flex items-center gap-1.5 shadow-md shadow-emerald-500/10"
                       >
                         <CheckCircle2 size={14} /> {completing ? "Completing..." : "Mark Chapter Complete"}
                       </button>
@@ -796,124 +1182,373 @@ export default function PythonChapterPage() {
           )}
         </main>
 
-        {/* Right Collapsible AI Side Panel (Reserved Space) */}
-        <aside className={`h-full border-l border-slate-200 flex flex-col shrink-0 transition-all duration-300 select-none overflow-hidden bg-slate-50 ${
-          rightPanelExpanded ? "w-80" : "w-14"
-        }`}>
-          {rightPanelExpanded ? (
-            <div className="w-full h-full flex flex-col p-4 space-y-4 overflow-hidden bg-slate-50">
-              
-              {/* Top Half Card: Chapter Summary */}
-              <div className="h-[calc(50%-0.5rem)] flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                    <FileText size={14} className="text-blue-600" />
-                    Chapter Summary
-                  </h4>
-                  <button
-                    onClick={() => setRightPanelExpanded(false)}
-                    className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200 transition-all"
-                    title="Collapse Panel"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <ul className="space-y-2.5 text-[11px] text-slate-600 text-left">
-                      {(expandedSummary 
-                        ? getSummaryBullets(currentChapter?.content || "") 
-                        : getSummaryBullets(currentChapter?.content || "").slice(0, 3)
-                      ).map((b, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-                          <span className="leading-normal">{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <button
-                    onClick={() => setExpandedSummary(!expandedSummary)}
-                    className="mt-3 w-full py-2 px-4 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition-all flex items-center justify-center gap-1.5 shrink-0"
-                  >
-                    {expandedSummary ? "Show Less" : "View Full Summary"}
-                    <ChevronRight size={12} className={`transition-transform duration-200 ${expandedSummary ? "rotate-90" : ""}`} />
-                  </button>
-                </div>
-              </div>
+        {/* Right Learning Assistant Panel */}
+<aside
+  className={`h-full border-l border-slate-200 flex flex-col shrink-0 transition-all duration-300 select-none overflow-hidden bg-slate-50 ${
+    rightPanelExpanded ? "w-[460px]" : "w-14"
+  }`}
+>
+  {rightPanelExpanded ? (
+    <div className="w-full h-full flex flex-col p-4 gap-4 overflow-hidden bg-slate-50">
 
-              {/* Bottom Half Card: Chatbot */}
-              <div className="h-[calc(50%-0.5rem)] flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden justify-between">
-                <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2.5 shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                    <Bot size={16} />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                      Mentor AI
-                    </h4>
-                    <span className="text-[9px] text-slate-500 block leading-none">Your AI learning assistant</span>
-                  </div>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
-                  {chatMessages.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-3 rounded-2xl text-[11px] text-left leading-relaxed ${
-                        m.sender === "ai"
-                          ? "bg-slate-100/80 text-slate-800 rounded-tl-none"
-                          : "bg-blue-600 text-white rounded-tr-none ml-6 shadow-sm"
-                      }`}
-                    >
-                      {m.text}
-                    </div>
-                  ))}
-                </div>
+      {/* ========================================= */}
+      {/* MY LEARNING NOTES */}
+      {/* ========================================= */}
+      <button
+        type="button"
+        onClick={() => router.push("/notes")}
+        className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-blue-300 hover:shadow-md transition-all group"
+      >
+        <div className="flex items-center gap-3">
 
-                <div className="p-3 border-t border-slate-200 bg-slate-50/30 flex flex-col shrink-0">
-                  <form onSubmit={handleSendChatMessage} className="flex gap-1.5">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Ask a doubt..."
-                      className="flex-1 px-4 py-2 rounded-full bg-slate-100 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                    />
-                    <button
-                      type="submit"
-                      className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shadow-sm shrink-0"
-                      title="Send Question"
-                    >
-                      <Send size={12} className="text-white" />
-                    </button>
-                  </form>
-                  <p className="text-[9px] text-slate-400 mt-2 text-center leading-none">
-                    AI responses may vary. Please verify important information.
-                  </p>
-                </div>
-              </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-100 transition-colors shrink-0">
+            <BookOpen size={19} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-extrabold text-slate-800">
+              My Learning Notes
+            </h3>
+
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              Open your notes
+            </p>
+          </div>
+
+          <ChevronRight
+            size={16}
+            className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all"
+          />
+
+        </div>
+      </button>
+
+
+      {/* ========================================= */}
+      {/* CODEXAI MENTOR */}
+      {/* ========================================= */}
+      <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+        {/* Mentor Header */}
+        <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-purple-50 shrink-0">
+
+
+
+          <div className="flex items-center gap-3">
+
+            <div className="w-10 h-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+              <Bot size={19} />
             </div>
-          ) : (
-            /* Vertically stacked toggle tabs bar */
-            <div className="mentor-sidebar-tabs w-full h-full flex flex-col gap-2 py-4 items-center bg-slate-50 border-l border-slate-200 justify-start shrink-0">
-              <button
-                onClick={() => setRightPanelExpanded(true)}
-                title="Toggle Chapter Assistant"
-                className="p-2.5 rounded-xl transition-all text-slate-400 hover:bg-slate-200 hover:text-slate-800"
-              >
-                <FileText size={18} />
-              </button>
-              <button
-                onClick={() => setRightPanelExpanded(true)}
-                title="Toggle Chapter Assistant"
-                className="p-2.5 rounded-xl transition-all text-slate-400 hover:bg-slate-200 hover:text-slate-800"
-              >
-                <MessageSquare size={18} />
-              </button>
+
+            <div>
+              <h3 className="text-sm font-black text-slate-800">
+                CodeXAI Mentor
+              </h3>
+
+              <p className="text-[10px] text-slate-500">
+                Personal learning guide
+              </p>
             </div>
-          )}
-        </aside>
+
+          </div>
+
+          {isMentorSpeaking && (
+  <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+    <div className="flex items-center gap-2 text-[11px] font-semibold text-blue-600">
+      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+      CodeXAI is speaking...
+    </div>
+
+    <button
+      type="button"
+      onClick={stopMentorSpeaking}
+      className="text-[10px] font-bold text-slate-500 hover:text-red-500"
+    >
+      Stop
+    </button>
+  </div>
+)}
+
+          
+
+        </div>
+
+        {/* ========================================= */}
+{/* CODEXAI MENTOR SCROLL AREA */}
+{/* ========================================= */}
+
+<div
+  ref={chatScrollRef}
+  className="flex-1 min-h-0 overflow-y-auto custom-scrollbar"
+>
+
+  {/* Teaching Conversation */}
+  <div className="p-4 space-y-3">
+
+    {chatMessages.map((message, index) => (
+      <div
+        key={index}
+        className={`flex ${
+          message.sender === "user"
+            ? "justify-end"
+            : "justify-start"
+        }`}
+      >
+        <div
+          className={`max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+            message.sender === "user"
+              ? "bg-blue-600 text-white rounded-br-md"
+              : "bg-slate-100 text-slate-700 border border-slate-200 rounded-bl-md"
+          }`}
+        >
+          {message.text}
+        </div>
+      </div>
+    ))}
+
+    {chatLoading && (
+      <div className="flex justify-start">
+        <div className="bg-slate-100 border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 text-sm text-slate-500">
+          CodeXAI is teaching...
+        </div>
+      </div>
+    )}
+
+  </div>
+
+
+  {/* Learning Actions */}
+  <div className="p-4">
+
+    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+      How can I help you?
+    </p>
+
+    <div className="space-y-2">
+
+      {/* Explain */}
+      <button
+        type="button"
+        onClick={() =>
+          handleTeachingRequest(
+            "Explain this topic in a simple way.",
+            "explain"
+          )
+        }
+        disabled={chatLoading}
+        className="w-full text-left px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm font-semibold text-slate-700 disabled:opacity-50"
+      >
+        💡 Explain this topic
+      </button>
+
+
+      {/* Example */}
+      <button
+        type="button"
+        onClick={() =>
+          handleTeachingRequest(
+            "Give me a simple example of this topic.",
+            "example"
+          )
+        }
+        disabled={chatLoading}
+        className="w-full text-left px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm font-semibold text-slate-700 disabled:opacity-50"
+      >
+        📝 Give me an example
+      </button>
+
+
+      {/* Visual */}
+      <button
+        type="button"
+        onClick={() =>
+          handleTeachingRequest(
+            "Show me this concept visually. Use a simple flow, diagram, or structured explanation if appropriate.",
+            "visual"
+          )
+        }
+        disabled={chatLoading}
+        className="w-full text-left px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm font-semibold text-slate-700 disabled:opacity-50"
+      >
+        🎨 Show me visually
+      </button>
+
+
+      {/* Question */}
+      <button
+        type="button"
+        onClick={() =>
+          handleTeachingRequest(
+            "Ask me one question about this topic to check my understanding. Do not give me the answer immediately.",
+            "question"
+          )
+        }
+        disabled={chatLoading}
+        className="w-full text-left px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm font-semibold text-slate-700 disabled:opacity-50"
+      >
+        ❓ Ask me a question
+      </button>
+
+
+      {/* Confused */}
+      <button
+        type="button"
+        onClick={() =>
+          handleTeachingRequest(
+            "I'm confused about this topic. Explain it differently using simpler intuition and a small example.",
+            "confused"
+          )
+        }
+        disabled={chatLoading}
+        className="w-full text-left px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm font-semibold text-slate-700 disabled:opacity-50"
+      >
+        🤔 I'm confused
+      </button>
+
+    </div>
+
+
+    {/* Current Learning Context */}
+    <div className="mt-5 p-3 rounded-xl bg-blue-50 border border-blue-100">
+
+      <div className="flex items-center gap-2 mb-1.5">
+
+        <Sparkles
+          size={13}
+          className="text-blue-600"
+        />
+
+        <span className="text-[10px] font-black uppercase tracking-wider text-blue-700">
+          Currently Learning
+        </span>
+
+      </div>
+
+
+      <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+        {currentLesson ||
+          currentChapter?.title ||
+          `Chapter ${chapterOrder}`}
+      </p>
+
+      {currentLesson && (
+  <div className="mt-2 flex items-center gap-2">
+    <span
+      className={`w-2 h-2 rounded-full ${
+        getLessonStatus(currentLesson) === "MASTERED"
+          ? "bg-emerald-500"
+          : getLessonStatus(currentLesson) === "LEARNING"
+          ? "bg-amber-500"
+          : getLessonStatus(currentLesson) === "PRACTICED"
+          ? "bg-blue-500"
+          : getLessonStatus(currentLesson) === "NEEDS_REVIEW"
+          ? "bg-red-500"
+          : "bg-slate-300"
+      }`}
+    />
+
+    <span className="text-[10px] font-semibold text-slate-500">
+      {getLessonStatusLabel(currentLesson)}
+    </span>
+  </div>
+)}
+
+
+      <div className="mt-3 flex items-center justify-between text-[10px]">
+
+        <span className="text-slate-500">
+          Lesson progress
+        </span>
+
+        <span className="font-bold text-blue-600">
+          {completedLessons.length}/
+          {(CHAPTER_SECTIONS[chapterOrder] || []).filter(
+            (section) => section !== "Quiz Assessment"
+          ).length}
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+     
+
+
+        {/* Ask Mentor */}
+        <div className="p-3 border-t border-slate-200 bg-slate-50/50 shrink-0">
+
+          <form
+  onSubmit={(e) => {
+    e.preventDefault();
+    handleTeachingRequest(chatInput, "chat");
+  }}
+  className="flex items-center gap-2"
+>
+  <input
+    type="text"
+    value={chatInput}
+    onChange={(e) => setChatInput(e.target.value)}
+    placeholder="Ask about this lesson..."
+    className="flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+  />
+
+  <button
+    type="submit"
+    disabled={!chatInput.trim() || chatLoading}
+    className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shadow-sm shrink-0 disabled:opacity-50"
+    title="Ask CodeXAI"
+  >
+    <Send size={13} />
+  </button>
+</form>
+
+          <p className="text-[9px] text-slate-400 mt-2 text-center">
+            CodeXAI uses this lesson as context.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      {/* ========================================= */}
+      {/* COLLAPSE BUTTON */}
+      {/* ========================================= */}
+      <button
+        type="button"
+        onClick={() => setRightPanelExpanded(false)}
+        className="absolute"
+        aria-label="Collapse learning assistant"
+      />
+
+    </div>
+  ) : (
+    <div className="w-full h-full flex flex-col gap-2 py-4 items-center bg-slate-50">
+
+      <button
+        onClick={() => setRightPanelExpanded(true)}
+        title="Open Learning Assistant"
+        className="p-2.5 rounded-xl transition-all text-slate-400 hover:bg-blue-50 hover:text-blue-600"
+      >
+        <Sparkles size={18} />
+      </button>
+
+      <button
+        onClick={() => setRightPanelExpanded(true)}
+        title="Open My Learning Notes"
+        className="p-2.5 rounded-xl transition-all text-slate-400 hover:bg-blue-50 hover:text-blue-600"
+      >
+        <BookOpen size={18} />
+      </button>
+
+    </div>
+  )}
+</aside>
 
       </div>
     </div>
