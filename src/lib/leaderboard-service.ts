@@ -129,14 +129,14 @@ export async function computeLeaderboardData({
   college,
   dateStart,
   dateEnd,
-  limit = 10,
+  limit = 50,
 }: ComputeParams) {
   // 1. Build date filter for XpTransaction
   const dateFilter: any = {};
   if (dateStart) dateFilter.gte = dateStart;
   if (dateEnd) dateFilter.lte = dateEnd;
 
-  // 2. Build scope filter
+  // 2. Build scope filter for XpTransaction
   const txWhere: any = {};
   if (Object.keys(dateFilter).length > 0) {
     txWhere.createdAt = dateFilter;
@@ -148,21 +148,39 @@ export async function computeLeaderboardData({
     txWhere.user = { college: college };
   }
 
-  // 3. Aggregate total XP per user
+  // 3. Aggregate total XP per user from transactions
   const xpGrouped = await db.xpTransaction.groupBy({
     by: ["userId"],
     where: txWhere,
     _sum: {
       amount: true,
     },
-    orderBy: {
-      _sum: {
-        amount: "desc",
-      },
+  });
+
+  const txXpMap = new Map<string, number>();
+  for (const x of xpGrouped) {
+    txXpMap.set(x.userId, x._sum.amount ?? 0);
+  }
+
+  // 4. Fetch ALL matching users from db.user to guarantee every real user is included with real streak
+  const userWhere: any = {};
+  if (scope === "college" && college) {
+    userWhere.college = college;
+  }
+
+  const allUsers = await db.user.findMany({
+    where: userWhere,
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      currentStreak: true,
+      college: true,
+      xp: true,
     },
   });
 
-  // 4. Aggregate challenge completion count per user
+  // 5. Aggregate challenge completion count per user
   const challengeWhere = {
     ...txWhere,
     source: "challenge_solved",
@@ -180,7 +198,7 @@ export async function computeLeaderboardData({
     challengeMap.set(c.userId, c._count.id);
   }
 
-  // 5. Total chapters count for calculating completionPct
+  // Total chapters count
   let totalChapters = 0;
   if (scope === "course" && courseId) {
     totalChapters = await db.chapter.count({ where: { courseId } });
@@ -188,20 +206,7 @@ export async function computeLeaderboardData({
     totalChapters = await db.chapter.count();
   }
 
-  // 6. Fetch user details for all ranked users
-  const userIds = xpGrouped.map((x) => x.userId);
-  const users = await db.user.findMany({
-    where: { id: { in: userIds } },
-    select: {
-      id: true,
-      name: true,
-      image: true,
-      currentStreak: true,
-      college: true,
-    },
-  });
-
-  const userMap = new Map(users.map((u) => [u.id, u]));
+  const userIds = allUsers.map((u) => u.id);
 
   // Fetch completed chapter counts per user
   const completedProgresses = await db.chapterProgress.groupBy({
@@ -221,28 +226,34 @@ export async function computeLeaderboardData({
     completedMap.set(p.userId, p._count.id);
   }
 
-  // 7. Assemble full ranked entries list
-  const entries: LeaderboardUserEntry[] = xpGrouped.map((xpItem, index) => {
-    const userId = xpItem.userId;
-    const userObj = userMap.get(userId);
-    const xp = xpItem._sum.amount ?? 0;
-    const challengesSolved = challengeMap.get(userId) ?? 0;
-    const completedCount = completedMap.get(userId) ?? 0;
-    const completionPct =
-      totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
+  // 6. Assemble full ranked entries list with real user.xp and user.currentStreak
+  let entries: LeaderboardUserEntry[] = allUsers.map((u) => {
+    const txXp = txXpMap.get(u.id) ?? 0;
+    // For weekly/monthly windows with transactions, use txXp if present; otherwise fallback to u.xp
+    const xp = (window !== "alltime" && txXp > 0) ? txXp : (u.xp ?? 0);
+    const challengesSolved = challengeMap.get(u.id) ?? 0;
+    const completedCount = completedMap.get(u.id) ?? 0;
+    const completionPct = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
 
     return {
-      rank: index + 1,
-      userId,
-      name: userObj?.name ?? "Anonymous Student",
-      avatar: userObj?.image ?? null,
+      rank: 0,
+      userId: u.id,
+      name: u.name ?? "Student Coder",
+      avatar: u.image ?? null,
       xp,
-      streak: userObj?.currentStreak ?? 0,
+      streak: u.currentStreak ?? 0,
       challengesSolved,
       completionPct,
-      college: userObj?.college ?? null,
+      college: u.college ?? null,
     };
   });
+
+  // Sort by XP descending and assign rank
+  entries.sort((a, b) => b.xp - a.xp);
+  entries = entries.map((e, index) => ({
+    ...e,
+    rank: index + 1,
+  }));
 
   return {
     entries,

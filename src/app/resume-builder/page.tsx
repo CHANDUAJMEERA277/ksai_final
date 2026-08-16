@@ -99,8 +99,8 @@ export default function ProfessionalResumeStudio() {
   // 4 = Interactive Studio & Live A4 Preview
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Module Lock & Razorpay Payment State (₹1 INR)
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  // Module Lock & Razorpay Payment State (₹1 INR) - Set to true for now as requested
+  const [isUnlocked, setIsUnlocked] = useState(true);
   const [isBuying, setIsBuying] = useState(false);
 
   // Step 1 State: Job Description (Starts empty for user input)
@@ -158,15 +158,8 @@ export default function ProfessionalResumeStudio() {
           },
         }));
 
-        // Check if user has unlocked the module
-        if (currentUser.email) {
-          const unlocked = localStorage.getItem(`ksai_resume_builder_unlocked_${currentUser.email}`);
-          if (unlocked === "true") {
-            setIsUnlocked(true);
-          } else {
-            setIsUnlocked(false);
-          }
-        }
+        // Always unlocked for now as requested
+        setIsUnlocked(true);
       } else {
         router.push("/auth");
       }
@@ -221,9 +214,11 @@ export default function ProfessionalResumeStudio() {
 
       const { isMock } = data;
 
+      const unlockKey = user.email ? `ksai_resume_module_paid_v2_${user.email}` : "ksai_resume_module_paid_v2_guest";
+
       if (isMock) {
         alert("🔧 Razorpay Payment Simulation (₹1 INR). Click OK to confirm payment & unlock Codenthra AI Resume Studio!");
-        localStorage.setItem(`ksai_resume_builder_unlocked_${user.email}`, "true");
+        localStorage.setItem(unlockKey, "true");
         setIsUnlocked(true);
       } else {
         const options = {
@@ -234,7 +229,7 @@ export default function ProfessionalResumeStudio() {
           description: "Lifetime Access to AI Resume Builder & FAANG ATS Optimizer (₹1)",
           order_id: data.order.id,
           handler: async function () {
-            localStorage.setItem(`ksai_resume_builder_unlocked_${user.email}`, "true");
+            localStorage.setItem(unlockKey, "true");
             setIsUnlocked(true);
           },
           prefill: {
@@ -472,44 +467,50 @@ export default function ProfessionalResumeStudio() {
             </div>
           </div>
 
-          {/* Step Stepper Pills */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
-            <button
-              onClick={() => setStep(1)}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
-                step === 1 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Upload size={13} /> 1. Upload JD
-            </button>
-            <span className="text-slate-300 text-[10px]">➔</span>
-            <button
-              onClick={() => setStep(2)}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
-                step === 2 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <User size={13} /> 2. Enter Profile
-            </button>
-            <span className="text-slate-300 text-[10px]">➔</span>
-            <button
-              onClick={() => setStep(3)}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
-                step === 3 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Target size={13} /> 3. AI JD Match
-            </button>
-            <span className="text-slate-300 text-[10px]">➔</span>
-            <button
-              onClick={() => setStep(4)}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
-                step === 4 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <FileCheck size={13} /> 4. Resume Studio
-            </button>
-          </div>
+          {/* Step Stepper Pills (Only visible when unlocked) */}
+          {isUnlocked ? (
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
+              <button
+                onClick={() => setStep(1)}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                  step === 1 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Upload size={13} /> 1. Upload JD
+              </button>
+              <span className="text-slate-300 text-[10px]">➔</span>
+              <button
+                onClick={() => setStep(2)}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                  step === 2 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <User size={13} /> 2. Enter Profile
+              </button>
+              <span className="text-slate-300 text-[10px]">➔</span>
+              <button
+                onClick={() => setStep(3)}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                  step === 3 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Target size={13} /> 3. AI JD Match
+              </button>
+              <span className="text-slate-300 text-[10px]">➔</span>
+              <button
+                onClick={() => setStep(4)}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                  step === 4 ? "bg-blue-600 text-white shadow-sm font-black" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <FileCheck size={13} /> 4. Resume Studio
+              </button>
+            </div>
+          ) : (
+            <div className="px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-black flex items-center gap-2 shadow-xs">
+              <Lock size={14} className="text-amber-600" /> Module Locked &bull; ₹1 Payment Required
+            </div>
+          )}
         </div>
 
         {/* Locked Module Screen / Full Pipeline */}

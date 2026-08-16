@@ -38,6 +38,7 @@ export default function ExploreCoursesCatalogPage() {
   const [enrollments, setEnrollments] = useState<EnrollmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [buyingCourseId, setBuyingCourseId] = useState<string | null>(null);
+  const [notifiedCourses, setNotifiedCourses] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{
     id: string;
@@ -265,99 +266,269 @@ export default function ExploreCoursesCatalogPage() {
           <div className="text-center py-8 text-slate-500 text-xs font-medium">{error}</div>
         ) : (
           /* Courses Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {courses.map((course) => {
-              const isEnrolled = enrollments.some((e) => e.courseId === course.id);
-              const isBuying = buyingCourseId === course.id;
+          <div className="space-y-8">
+            {/* Active Available Courses */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen size={16} className="text-indigo-600" /> Active Enrolment Courses ({courses.length})
+                </h2>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Instant Access Ready
+                </span>
+              </div>
 
-              return (
-                <div
-                  key={course.id}
-                  className="glass-panel rounded-2xl border border-slate-200/90 bg-white hover:border-[#4F46E5]/50 transition-all duration-300 shadow-xs flex flex-col justify-between overflow-hidden group hover:shadow-md"
-                >
-                  <div
-                    onClick={() => {
-                      if (isEnrolled) {
-                        router.push(`/courses/${course.language.toLowerCase()}`);
-                      } else {
-                        router.push(`/courses/${course.language.toLowerCase()}/curriculum`);
-                      }
-                    }}
-                    className="cursor-pointer"
-                  >
-                    {/* Thumbnail Banner */}
-                    <div className="relative h-28 w-full overflow-hidden">
-                      <img
-                        src={course.thumbnail}
-                        alt={course.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                      <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
-                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 uppercase">
-                          {course.level}
-                        </span>
-                        <div className="flex items-center gap-1 text-[11px] text-amber-400 font-extrabold bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full">
-                          <Star size={11} className="fill-amber-400 text-amber-400" />
-                          <span>{course.rating}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {courses.map((course) => {
+                  const isEnrolled = enrollments.some((e) => e.courseId === course.id);
+                  const isBuying = buyingCourseId === course.id;
+
+                  return (
+                    <div
+                      key={course.id}
+                      className="glass-panel rounded-2xl border border-slate-200/90 bg-white hover:border-[#4F46E5]/50 transition-all duration-300 shadow-xs flex flex-col justify-between overflow-hidden group hover:shadow-md"
+                    >
+                      <div
+                        onClick={() => {
+                          if (isEnrolled) {
+                            router.push(`/courses/${course.language.toLowerCase()}`);
+                          } else {
+                            router.push(`/courses/${course.language.toLowerCase()}/curriculum`);
+                          }
+                        }}
+                        className="cursor-pointer"
+                      >
+                        {/* Thumbnail Banner */}
+                        <div className="relative h-28 w-full overflow-hidden">
+                          <img
+                            src={course.thumbnail}
+                            alt={course.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                          <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
+                            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 uppercase">
+                              {course.level}
+                            </span>
+                            <div className="flex items-center gap-1 text-[11px] text-amber-400 font-extrabold bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full">
+                              <Star size={11} className="fill-amber-400 text-amber-400" />
+                              <span>{course.rating}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Body Content */}
+                        <div className="p-3.5 space-y-1">
+                          <span className="text-[9px] font-mono font-black text-[#4F46E5] uppercase tracking-wider block">
+                            {course.category}
+                          </span>
+                          <h3 className="text-sm font-extrabold text-slate-900 leading-snug group-hover:text-[#4F46E5] transition-colors truncate">
+                            {course.title}
+                          </h3>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug font-medium">
+                            {course.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Footer specs & purchase triggers */}
+                      <div className="px-3.5 py-2 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
+                        <div className="flex flex-col text-[9px] text-slate-500 font-mono leading-tight">
+                          <span className="flex items-center gap-1 font-bold">
+                            <Clock size={11} className="text-slate-400" /> {course.lessons} Lessons
+                          </span>
+                          <span className="truncate max-w-[120px]">By {course.instructor}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xs font-black text-slate-900">
+                            ₹{course.price}
+                          </span>
+                          
+                          {isEnrolled ? (
+                            <button
+                              onClick={() => router.push(`/courses/${course.language.toLowerCase()}`)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 shadow-xs flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <CheckCircle size={12} />
+                              Learn Now
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBuyCourse(course);
+                              }}
+                              disabled={isBuying}
+                              className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 disabled:opacity-50 shadow-md shadow-blue-500/15 flex items-center gap-1"
+                            >
+                              <Sparkles size={12} className="animate-pulse" />
+                              {isBuying ? "Connecting..." : "Subscribe"}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                    {/* Body Content */}
-                    <div className="p-3.5 space-y-1">
-                      <span className="text-[9px] font-mono font-black text-[#4F46E5] uppercase tracking-wider block">
-                        {course.category}
-                      </span>
-                      <h3 className="text-sm font-extrabold text-slate-900 leading-snug group-hover:text-[#4F46E5] transition-colors truncate">
-                        {course.title}
-                      </h3>
-                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug font-medium">
-                        {course.description}
-                      </p>
-                    </div>
+            {/* UPCOMING COURSES SECTION - EXACT COLOR GRADING & CARD STYLING */}
+            <div className="space-y-3 pt-6 border-t border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold border border-blue-100">
+                    <Sparkles size={12} /> Next-Gen Curriculum &bull; Coming Soon
                   </div>
-
-                  {/* Footer specs & purchase triggers */}
-                  <div className="px-3.5 py-2 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
-                    <div className="flex flex-col text-[9px] text-slate-500 font-mono leading-tight">
-                      <span className="flex items-center gap-1 font-bold">
-                        <Clock size={11} className="text-slate-400" /> {course.lessons} Lessons
-                      </span>
-                      <span className="truncate max-w-[120px]">By {course.instructor}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xs font-black text-slate-900">
-                        ₹{course.price}
-                      </span>
-                      
-                      {isEnrolled ? (
-                        <button
-                          onClick={() => router.push(`/courses/${course.language.toLowerCase()}`)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 shadow-xs flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <CheckCircle size={12} />
-                          Learn Now
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBuyCourse(course);
-                          }}
-                          disabled={isBuying}
-                          className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 disabled:opacity-50 shadow-md shadow-blue-500/15 flex items-center gap-1"
-                        >
-                          <Sparkles size={12} className="animate-pulse" />
-                          {isBuying ? "Connecting..." : "Subscribe"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    Upcoming Specialization Paths ⏳
+                  </h2>
                 </div>
-              );
-            })}
+                <span className="text-xs font-bold text-slate-500 hidden sm:inline">
+                  Pre-register for early launch access
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {[
+                  {
+                    id: "upcoming-dbms",
+                    title: "DBMS & Distributed SQL Systems",
+                    category: "DATABASE ENGINEERING",
+                    description: "Master Relational Databases, Complex SQL Queries, Indexing, Transactions (ACID), Normalization, and NoSQL Architecture.",
+                    level: "INTERMEDIATE",
+                    instructor: "Codenthra AI",
+                    thumbnail: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=800&auto=format&fit=crop",
+                    lessons: 24,
+                    price: "₹1999",
+                    rating: "4.90"
+                  },
+                  {
+                    id: "upcoming-dsa",
+                    title: "Data Structures & Algorithms (DS Mastery)",
+                    category: "CORE COMPUTER SCIENCE",
+                    description: "Master Arrays, Linked Lists, Trees, Graphs, Dynamic Programming, and System Optimization with LeetCode Problem Solving.",
+                    level: "BEGINNER TO ADVANCED",
+                    instructor: "Codenthra AI",
+                    thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800&auto=format&fit=crop",
+                    lessons: 32,
+                    price: "₹2499",
+                    rating: "4.98"
+                  },
+                  {
+                    id: "upcoming-ml",
+                    title: "Machine Learning & Deep Neural Networks (ML)",
+                    category: "ARTIFICIAL INTELLIGENCE",
+                    description: "Hands-on ML with Python, Supervised & Unsupervised Learning, PyTorch, Model Deployment, and LLM Engineering.",
+                    level: "ADVANCED",
+                    instructor: "Codenthra AI",
+                    thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop",
+                    lessons: 30,
+                    price: "₹2999",
+                    rating: "4.95"
+                  },
+                  {
+                    id: "upcoming-webdev",
+                    title: "Full-Stack Web Architecture (Next.js & Node)",
+                    category: "WEB DEVELOPMENT",
+                    description: "Build production-ready web apps with Next.js, Node.js, Prisma ORM, WebSockets, TailwindCSS, and Cloud Deployment.",
+                    level: "INTERMEDIATE",
+                    instructor: "Codenthra AI",
+                    thumbnail: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=800&auto=format&fit=crop",
+                    lessons: 28,
+                    price: "₹1999",
+                    rating: "4.92"
+                  }
+                ].map((item) => {
+                  const isNotified = notifiedCourses.has(item.id);
+                  return (
+                    <div
+                      key={item.id}
+                      className="glass-panel rounded-2xl border border-slate-200/90 bg-white hover:border-[#4F46E5]/50 transition-all duration-300 shadow-xs flex flex-col justify-between overflow-hidden group hover:shadow-md"
+                    >
+                      <div>
+                        {/* Thumbnail Banner - Identical to active cards */}
+                        <div className="relative h-28 w-full overflow-hidden">
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                          <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
+                            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 uppercase">
+                              {item.level}
+                            </span>
+                            <div className="flex items-center gap-1 text-[11px] text-amber-400 font-extrabold bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full">
+                              <Star size={11} className="fill-amber-400 text-amber-400" />
+                              <span>{item.rating}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Body Content - Identical fonts & colors */}
+                        <div className="p-3.5 space-y-1">
+                          <span className="text-[9px] font-mono font-black text-[#4F46E5] uppercase tracking-wider block">
+                            {item.category}
+                          </span>
+                          <h3 className="text-sm font-extrabold text-slate-900 leading-snug group-hover:text-[#4F46E5] transition-colors truncate">
+                            {item.title}
+                          </h3>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug font-medium">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Footer specs & purchase triggers - Identical colors & buttons */}
+                      <div className="px-3.5 py-2 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
+                        <div className="flex flex-col text-[9px] text-slate-500 font-mono leading-tight">
+                          <span className="flex items-center gap-1 font-bold">
+                            <Clock size={11} className="text-slate-400" /> {item.lessons} Lessons
+                          </span>
+                          <span className="truncate max-w-[120px]">By {item.instructor}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xs font-black text-slate-900">
+                            {item.price}
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              setNotifiedCourses((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(item.id)) next.delete(item.id);
+                                else next.add(item.id);
+                                return next;
+                              });
+                            }}
+                            className={`px-4 py-2 rounded-xl text-xs font-black text-white transition-all shadow-md shadow-blue-500/15 flex items-center gap-1 cursor-pointer ${
+                              isNotified
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95"
+                                : "bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95"
+                            }`}
+                          >
+                            {isNotified ? (
+                              <>
+                                <CheckCircle size={12} />
+                                Notified
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles size={12} className="animate-pulse" />
+                                Pre-Register 🔔
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </main>

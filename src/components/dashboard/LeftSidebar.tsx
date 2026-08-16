@@ -133,7 +133,7 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
   const [paymentMethod, setPaymentMethod] = useState<"card" | "upi">("card");
 
   const [isProState, setIsProState] = useState<boolean | null>(null);
-  const [hasResumeUnlocked, setHasResumeUnlocked] = useState(false);
+  const [hasResumeUnlocked, setHasResumeUnlocked] = useState(true);
 
   useEffect(() => {
     const isProSession = sessionStorage.getItem("is_pro") === "true";
@@ -143,15 +143,8 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && session?.user?.email) {
-      const unlocked = localStorage.getItem(`ksai_resume_builder_unlocked_${session.user.email}`);
-      if (unlocked === "true") {
-        setHasResumeUnlocked(true);
-      } else {
-        setHasResumeUnlocked(false);
-      }
-    }
-  }, [session]);
+    setHasResumeUnlocked(true);
+  }, []);
 
   const [localProfile, setLocalProfile] = useState<{
     name: string;
