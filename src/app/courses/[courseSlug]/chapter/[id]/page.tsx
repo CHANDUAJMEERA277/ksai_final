@@ -273,7 +273,15 @@ function stripMarkdown(md: string): string {
 export default function ChapterPage() {
   const router = useRouter();
   const params = useParams();
-  const courseSlug = params?.courseSlug ? String(params.courseSlug) : "python";
+  const routePath = typeof window !== "undefined" ? window.location.pathname : "";
+  const inferredSlug = routePath.includes("/courses/java")
+    ? "java"
+    : routePath.includes("/courses/cpp")
+    ? "cpp"
+    : routePath.includes("/courses/c")
+    ? "c"
+    : "python";
+  const courseSlug = params?.courseSlug ? String(params.courseSlug) : inferredSlug;
   const chapterIdStr = params?.id ? String(params.id) : "0";
   const chapterOrder = parseInt(chapterIdStr, 10);
 
@@ -284,6 +292,10 @@ export default function ChapterPage() {
   const [courseTitle, setCourseTitle] = useState(
     courseSlug === "c"
       ? "C Language Mastery & System Programming"
+      : courseSlug === "java"
+      ? "Java Enterprise & Object-Oriented Architecture"
+      : courseSlug === "cpp"
+      ? "C++ Object-Oriented & STL Masterclass"
       : "Python AI & Data Structures Architecture"
   );
   const [courseId, setCourseId] = useState("");
