@@ -807,114 +807,164 @@ export default function DashboardPage() {
         {/* Middle Row: Continue Learning (Carousel), Course Completion (Carousel), and AI Teacher */}
         <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-5 gap-3 overflow-hidden">
           
-          {/* Continue Learning Carousel */}
-          <div className="xl:col-span-2 p-4 rounded-2xl border border-slate-200/80 bg-white flex flex-col justify-between overflow-hidden shadow-sm relative">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
-              <h3 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                <Play size={14} className="text-[#4F46E5] fill-[#4F46E5]" /> Continue Learning
-              </h3>
+          {/* Continue Learning Carousel - Ultra-Premium Modern Card */}
+          <div className="xl:col-span-2 p-5 rounded-2xl border-2 border-indigo-100 bg-gradient-to-b from-slate-50/50 via-white to-indigo-50/20 flex flex-col justify-between overflow-hidden shadow-xs relative group">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-xs">
+                  <Play size={13} className="text-white fill-white ml-0.5" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">
+                    Continue Learning
+                  </h3>
+                  <span className="text-[10px] text-slate-500 font-medium block">
+                    Pick up right where you left off
+                  </span>
+                </div>
+              </div>
+
               {continueLearningCourses.length > 1 && (
-                <span className="text-[10px] text-slate-400 font-mono font-bold">
-                  {currentLearnIndex + 1}/{continueLearningCourses.length}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                    Track {currentLearnIndex + 1} of {continueLearningCourses.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => triggerManualLearnSelect((currentLearnIndex - 1 + continueLearningCourses.length) % continueLearningCourses.length)}
+                      className="w-6 h-6 rounded-lg bg-white shadow-xs border border-slate-200 flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:border-indigo-300 transition-all cursor-pointer"
+                    >
+                      <ChevronLeft size={13} />
+                    </button>
+                    <button 
+                      onClick={() => triggerManualLearnSelect((currentLearnIndex + 1) % continueLearningCourses.length)}
+                      className="w-6 h-6 rounded-lg bg-white shadow-xs border border-slate-200 flex items-center justify-center text-slate-700 hover:text-indigo-600 hover:border-indigo-300 transition-all cursor-pointer"
+                    >
+                      <ChevronRight size={13} />
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
             {continueLearningCourses.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-4 space-y-2">
-                <span className="text-2xl">🎓</span>
-                <div className="text-xs font-bold text-slate-900">No courses in progress</div>
-                <p className="text-[11px] text-slate-500 max-w-xs">
-                  Subscribe to a language curriculum to start coding.
-                </p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl shadow-xs">
+                  🎓
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-black text-slate-900">No active course in progress</div>
+                  <p className="text-[11px] text-slate-500 max-w-xs">
+                    Choose from our Python, Java, C++, or C curricula to start learning.
+                  </p>
+                </div>
                 <button 
-                  onClick={() => router.push("/dashboard")}
-                  className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors cursor-pointer shadow-md"
+                  onClick={() => router.push("/courses/catalog")}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 transition-opacity cursor-pointer shadow-md shadow-blue-500/20"
                 >
-                  Browse Catalog
+                  Explore Course Catalog
                 </button>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col justify-between min-h-0 pt-2.5 relative">
-                {continueLearningCourses.length > 1 && (
-                  <>
-                    <button 
-                      onClick={() => triggerManualLearnSelect((currentLearnIndex - 1 + continueLearningCourses.length) % continueLearningCourses.length)}
-                      className="absolute left-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-                    <button 
-                      onClick={() => triggerManualLearnSelect((currentLearnIndex + 1) % continueLearningCourses.length)}
-                      className="absolute right-0 top-[40%] -translate-y-1/2 w-6 h-6 rounded-full bg-white shadow-md border border-slate-200 flex items-center justify-center text-slate-700 hover:text-[#4F46E5] transition-all hover:scale-105 z-10 cursor-pointer"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                  </>
-                )}
-
+              <div className="flex-1 flex flex-col justify-between min-h-0 pt-3 relative space-y-3">
                 {continueLearningCourses.map((course: CourseSlide, idx: number) => {
                   if (idx !== currentLearnIndex) return null;
+
+                  const lang = (course.courseLanguage || "python").toLowerCase();
+                  const langTag =
+                    lang === "java"
+                      ? { label: "Java Enterprise", bg: "bg-amber-50 text-amber-700 border-amber-200" }
+                      : lang === "cpp"
+                      ? { label: "Modern C++", bg: "bg-indigo-50 text-indigo-700 border-indigo-200" }
+                      : lang === "c"
+                      ? { label: "C Language", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+                      : { label: "Python AI", bg: "bg-cyan-50 text-cyan-700 border-cyan-200" };
+
                   return (
-                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-2 px-1">
-                      <div className="flex gap-3 items-center">
-                        <img 
-                          src={course.courseThumbnail} 
-                          alt={course.courseTitle}
-                          className="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm shrink-0"
-                        />
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <h4 className="text-xs sm:text-sm font-black text-slate-900 truncate leading-snug">
+                    <div key={course.courseId} className="flex-1 flex flex-col justify-between min-h-0 space-y-3">
+                      {/* Course Card Top Row */}
+                      <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex gap-3.5 items-start">
+                        <div className="relative shrink-0">
+                          <img 
+                            src={course.courseThumbnail} 
+                            alt={course.courseTitle}
+                            className="w-16 h-16 rounded-xl object-cover border border-slate-200 shadow-xs"
+                          />
+                          <span className={`absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md text-[9px] font-mono font-black border uppercase ${langTag.bg}`}>
+                            {lang.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full border ${langTag.bg}`}>
+                              {langTag.label}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-slate-500">
+                              {course.completedChaptersCount}/{course.totalChaptersCount || 11} Ch.
+                            </span>
+                          </div>
+
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 truncate tracking-tight leading-snug">
                             {course.courseTitle}
                           </h4>
-                          <div className="text-xs text-slate-700 font-extrabold truncate">
-                            {course.currentChapter?.title || "Overview"}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-medium truncate">
-                            Chapter {course.currentChapter?.orderNumber ?? 1} • {course.currentChapter?.description || "Concept overview"}
+
+                          <div className="text-xs font-black text-indigo-700 flex items-center gap-1 truncate">
+                            <Sparkles size={12} className="text-indigo-600 shrink-0" />
+                            <span>Chapter {course.currentChapter?.orderNumber ?? 1}: {course.currentChapter?.title || "Concept Overview"}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[11px] font-bold text-slate-600">
-                          <span>Course Progress</span>
-                          <span className="font-mono text-[#4F46E5] font-black">{course.progressPercent}%</span>
+                      {/* Progress Bar Section */}
+                      <div className="space-y-1.5 px-0.5">
+                        <div className="flex justify-between items-center text-[11px] font-black text-slate-700">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                            Current Completion
+                          </span>
+                          <span className="font-mono text-indigo-600 font-black text-xs bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                            {course.progressPercent}%
+                          </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-2 rounded-full bg-slate-100 p-0.5 border border-slate-200/60 overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-blue-500 to-[#4F46E5] rounded-full transition-all duration-500"
-                            style={{ width: `${course.progressPercent}%` }}
+                            className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-400 rounded-full transition-all duration-500 shadow-xs"
+                            style={{ width: `${Math.max(5, course.progressPercent)}%` }}
                           />
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 pt-0.5">
+                      {/* Action Buttons */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
                         <button 
                           onClick={() => router.push(`/courses/${course.courseLanguage}/chapter/${course.currentChapter?.orderNumber ?? 1}`)}
-                          className="flex-1 py-2 rounded-xl text-xs font-black text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors text-center cursor-pointer shadow-sm shadow-indigo-500/10"
+                          className="py-2.5 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 transition-all text-center cursor-pointer shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 active:scale-[0.98]"
                         >
-                          Continue Learning
+                          <span>Resume Learning</span>
+                          <ArrowRight size={14} />
                         </button>
                         <button 
                           onClick={() => router.push(`/courses/${course.courseLanguage}/curriculum`)}
-                          className="px-3 py-2 rounded-xl text-xs font-extrabold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                          className="py-2.5 px-4 rounded-xl text-xs font-black text-slate-800 bg-white border-2 border-slate-200/90 hover:bg-slate-50 hover:border-slate-300 transition-all text-center cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 active:scale-[0.98]"
                         >
-                          View Curriculum
+                          <BookOpen size={14} className="text-slate-600" />
+                          <span>Full Curriculum</span>
                         </button>
                       </div>
                     </div>
                   );
                 })}
 
+                {/* Dot Pagination */}
                 {continueLearningCourses.length > 1 && (
-                  <div className="flex justify-center items-center gap-1.5 pt-1.5">
+                  <div className="flex justify-center items-center gap-1.5 pt-1">
                     {continueLearningCourses.map((_course: CourseSlide, dIdx: number) => (
                       <button
                         key={dIdx}
                         onClick={() => triggerManualLearnSelect(dIdx)}
                         className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                          dIdx === currentLearnIndex ? "bg-[#4F46E5] w-3" : "bg-slate-200 w-1.5"
+                          dIdx === currentLearnIndex ? "bg-indigo-600 w-5 shadow-xs" : "bg-slate-300 hover:bg-slate-400 w-1.5"
                         }`}
                       />
                     ))}
