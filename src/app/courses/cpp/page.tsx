@@ -13,8 +13,6 @@ import {
   BarChart3,
   Compass,
   ArrowLeft,
-  CheckCircle2,
-  Lock,
 } from "lucide-react";
 
 interface ChapterItem {
@@ -31,10 +29,12 @@ interface ProgressItem {
 
 export default function CppOverviewPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const sessionData = useSession();
+  const session = (sessionData?.data as any) ?? null;
 
+  // State Variables
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
-  const [courseTitle, setCourseTitle] = useState("Modern C++ Architecture & Performance Masterclass");
+  const [courseTitle, setCourseTitle] = useState("C++ Object-Oriented & STL Masterclass");
   const [courseId, setCourseId] = useState("");
   const [coursePrice, setCoursePrice] = useState(1999);
   const [isEnrolled, setIsEnrolled] = useState(true);
@@ -43,6 +43,7 @@ export default function CppOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // User resolution
   useEffect(() => {
     if (session?.user) {
       setUser({
@@ -53,6 +54,7 @@ export default function CppOverviewPage() {
     }
   }, [session]);
 
+  // Fetch course metadata
   useEffect(() => {
     const fetchOverviewData = async () => {
       setLoading(true);
@@ -81,10 +83,12 @@ export default function CppOverviewPage() {
     fetchOverviewData();
   }, []);
 
+  // Calculate Progress Stats
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
   const totalChaptersCount = chapters.length || 15;
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
+  // Continue Learning Logic
   const handleContinueLearning = () => {
     const nextChapter = chapters.find((c) => {
       const p = progresses.find((prog) => prog.chapterId === c.id);
@@ -99,148 +103,168 @@ export default function CppOverviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Sticky Top Header with Navigation & Course Switcher */}
-      <header className="sticky top-0 z-50 bg-[#09090B]/90 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xl">
+    <div className="min-h-screen bg-[#09090B] text-white flex flex-col selection:bg-cyan-500 selection:text-black">
+      {/* Custom Top Bar - Identical to Python */}
+      <header className="w-full border-b border-white/10 bg-[#09090D] px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-black text-white text-sm shadow-md">
+            KS
+          </div>
+          <div>
+            <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">LEARNING STUDIO</span>
+            <span className="text-sm font-extrabold text-white">KnowledgeStream AI &bull; C++ Course</span>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
+          <CourseSwitcher currentLanguage="CPP" />
           <button
             onClick={() => router.push("/dashboard")}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all flex items-center gap-2 text-xs font-semibold"
+            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Dashboard</span>
+            <ArrowLeft size={14} /> Back to Dashboard
           </button>
-          <div className="h-4 w-[1px] bg-slate-800 hidden sm:block" />
-          <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/50" />
-            Modern C++ Masterclass (C++17/20/23)
-          </h1>
         </div>
-
-        {/* Reusable Course Switcher */}
-        <CourseSwitcher currentLanguage="CPP" />
       </header>
 
-      {/* Main Body Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 space-y-8">
-        {/* Banner Section */}
-        <div className="relative rounded-3xl overflow-hidden border border-indigo-500/20 bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 p-6 sm:p-10 shadow-2xl">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 space-y-6 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold border border-indigo-500/20">
-              <Sparkles size={13} /> 15 Modern Chapters &bull; C++17, C++20 & C++23 Standards
-            </div>
-
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-              {courseTitle}
-            </h1>
-
-            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-              Master modern C++ systems architecture: Memory Layout, Smart Pointers, RAII, OOP, Vectors, Templates, Exception Guarantees, Multithreading, Move Semantics, Concepts, Ranges, Coroutines, Modules, and C++23 High Performance.
-            </p>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-2">
-              <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Chapters</span>
-                <span className="text-lg font-black text-indigo-400 font-mono">15 Chapters</span>
-              </div>
-              <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">Access Duration</span>
-                <span className="text-lg font-black text-white font-mono">90 Days</span>
-              </div>
-              <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">Completed</span>
-                <span className="text-lg font-black text-emerald-400 font-mono">{completedChaptersCount} / {totalChaptersCount}</span>
-              </div>
-              <div className="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">Overall Progress</span>
-                <span className="text-lg font-black text-cyan-400 font-mono">{progressPercentage}%</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button
-                onClick={handleContinueLearning}
-                className="px-8 py-4 rounded-2xl font-black text-sm text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 hover:brightness-110 transition-all shadow-xl shadow-indigo-500/20 flex items-center gap-2.5 scale-100 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <BookOpen size={18} />
-                <span>{completedChaptersCount > 0 ? "Resume Learning" : "Start C++ Course"}</span>
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
+      {/* Main Workspace Content Area - Identical to Python */}
+      <main data-lenis-prevent className="flex-1 p-4 sm:p-5 lg:p-6 space-y-4 max-w-5xl mx-auto w-full overflow-hidden h-[calc(100vh-4rem)] flex flex-col justify-between">
+        {/* Breadcrumbs */}
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            My Courses
+          </button>
+          <span>&bull;</span>
+          <span className="text-cyan-400 font-mono">C++ Course Overview</span>
         </div>
 
-        {/* Chapters Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-              <BookOpen size={20} className="text-indigo-400" />
-              C++ Course Syllabus
-            </h2>
-            <span className="text-xs font-semibold text-slate-500">15 Modern C++ Markdown Lessons</span>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4 flex-1">
+            <div className="w-12 h-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 animate-spin" />
+            <div className="text-slate-400 text-xs font-mono">Loading Course Details...</div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {chapters.map((ch) => {
-              const prog = progresses.find((p) => p.chapterId === ch.id);
-              const isCompleted = prog?.isCompleted;
-              const prevCh = chapters.find((c) => c.orderNumber === ch.orderNumber - 1);
-              const isUnlocked =
-                ch.orderNumber === 1 ||
-                (prevCh && progresses.some((p) => p.chapterId === prevCh.id && p.isCompleted));
-
-              return (
-                <div
-                  key={ch.id}
-                  onClick={() => router.push(`/courses/cpp/chapter/${ch.orderNumber}`)}
-                  className={`group relative p-5 rounded-2xl border transition-all cursor-pointer shadow-lg space-y-3 ${
-                    isUnlocked
-                      ? "bg-slate-900/70 border-slate-800/80 hover:border-indigo-500/50 hover:bg-slate-900"
-                      : "bg-slate-950/40 border-slate-900/80 hover:border-slate-800 opacity-80"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border font-mono ${
-                        isUnlocked
-                          ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                          : "bg-slate-800/50 text-slate-500 border-slate-800"
-                      }`}
-                    >
-                      CH {ch.orderNumber}
-                    </span>
-                    {isCompleted ? (
-                      <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
-                        <CheckCircle2 size={14} /> Complete
-                      </span>
-                    ) : !isUnlocked ? (
-                      <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                        <Lock size={13} /> Locked (Exam Req.)
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-semibold text-slate-500 group-hover:text-slate-300 transition-colors flex items-center gap-1">
-                        Read Lesson <ArrowRight size={12} />
-                      </span>
-                    )}
-                  </div>
-
-                  <h3
-                    className={`text-base font-bold transition-colors line-clamp-2 ${
-                      isUnlocked ? "text-white group-hover:text-indigo-300" : "text-slate-400"
-                    }`}
-                  >
-                    {ch.title}
-                  </h3>
+        ) : error ? (
+          <div className="glass-panel p-10 rounded-3xl border border-red-500/30 text-center space-y-4 max-w-md mx-auto flex-1 flex flex-col justify-center">
+            <h3 className="text-base font-bold text-white">Error</h3>
+            <p className="text-xs text-slate-400">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-white/5 hover:bg-white/10 border border-white/10 cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4 animate-fade-in flex-1 flex flex-col justify-between">
+            {/* Course Title and Hero Details */}
+            <div className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/10 bg-gradient-to-r from-blue-950/30 via-[#0C0C16] to-purple-950/30 space-y-3 shadow-2xl relative overflow-hidden shrink-0">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-tr from-purple-500/10 to-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-cyan-300 text-[10px] font-semibold border border-blue-500/20">
+                  <Sparkles size={11} className="text-cyan-400" /> Premium Path &bull; Modern C++
                 </div>
-              );
-            })}
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  {courseTitle}
+                </h1>
+                <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
+                  Master modern C++ systems architecture: Memory Layout, Smart Pointers, RAII, OOP, Vectors, Templates, Exception Guarantees, Multithreading, Move Semantics, Concepts, and Ranges.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-white/10">
+                <div className="space-y-0.5">
+                  <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Difficulty</div>
+                  <div className="text-xs font-bold text-cyan-300 flex items-center gap-1">
+                    <BarChart3 size={12} /> Intermediate
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Estimated Time</div>
+                  <div className="text-xs font-bold text-purple-300 flex items-center gap-1">
+                    <Clock size={12} /> 30 Hours Access
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Chapters</div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1">
+                    <BookOpen size={12} /> {totalChaptersCount} Total Chapters
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <div className="text-[9px] text-slate-400 font-mono uppercase tracking-wider">Estimated Time per Chapter</div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1">
+                    <Clock size={12} /> 15-30 Mins
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Summary Card - Identical to Python */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 items-stretch py-1">
+              <div className="glass-panel p-4 rounded-3xl border border-white/10 bg-gradient-to-b from-[#0A0A10] to-[#0D0D18] flex flex-col justify-between items-center text-center space-y-2.5 shadow-xl md:col-span-1">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Your Progress</h3>
+                
+                {/* Progress ring */}
+                <div className="relative w-24 h-24">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="48" cy="48" r="40" className="stroke-white/10 fill-none" strokeWidth="6" />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      className="stroke-cyan-400 fill-none transition-all duration-1000 ease-out"
+                      strokeWidth="6"
+                      strokeDasharray={2 * Math.PI * 40}
+                      strokeDashoffset={2 * Math.PI * 40 - (progressPercentage / 100) * (2 * Math.PI * 40)}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-black text-white font-mono">{progressPercentage}%</span>
+                    <span className="text-[8px] text-slate-400 font-mono uppercase">Completed</span>
+                  </div>
+                </div>
+
+                <span className="text-[11px] font-mono text-cyan-300">
+                  {completedChaptersCount} of {totalChaptersCount} Chapters Passed
+                </span>
+              </div>
+
+              {/* Navigation Actions Card */}
+              <div className="glass-panel p-5 rounded-3xl border border-white/10 bg-gradient-to-b from-[#0A0A10] to-[#0D0D18] flex flex-col justify-center space-y-4 shadow-xl md:col-span-2">
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <Compass className="text-cyan-400" size={18} />
+                    Ready to Begin?
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Choose between picking up exactly where you left off or jumping to the full curriculum timeline to browse unlocked chapters and quizzes.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <button
+                    onClick={handleContinueLearning}
+                    className="py-3 px-5 rounded-xl font-extrabold text-xs text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-90 transition-opacity glow-btn flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 cursor-pointer"
+                  >
+                    Continue Learning <ArrowRight size={14} />
+                  </button>
+                  <button
+                    onClick={() => router.push("/courses/cpp/curriculum")}
+                    className="py-3 px-5 rounded-xl font-extrabold text-xs text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    Go to Curriculum <BookOpen size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
 }
+

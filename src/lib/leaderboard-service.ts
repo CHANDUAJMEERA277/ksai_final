@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { calculateUserStreak } from "@/lib/streak-service";
 
 export type LeaderboardScope = "global" | "course" | "college";
 export type LeaderboardWindow = "weekly" | "monthly" | "alltime";
@@ -226,7 +227,14 @@ export async function computeLeaderboardData({
     completedMap.set(p.userId, p._count.id);
   }
 
-  // 6. Assemble full ranked entries list with real user.xp and user.currentStreak
+  // 6. Calculate dynamic user activity streak from shared calculateUserStreak service
+  const userStreakMap = new Map<string, number>();
+  for (const u of allUsers) {
+    const computedStreak = await calculateUserStreak(u.id);
+    userStreakMap.set(u.id, computedStreak);
+  }
+
+  // 7. Assemble full ranked entries list with real user.xp and real synchronized streak
   let entries: LeaderboardUserEntry[] = allUsers.map((u) => {
     const txXp = txXpMap.get(u.id) ?? 0;
     // For weekly/monthly windows with transactions, use txXp if present; otherwise fallback to u.xp
@@ -234,6 +242,7 @@ export async function computeLeaderboardData({
     const challengesSolved = challengeMap.get(u.id) ?? 0;
     const completedCount = completedMap.get(u.id) ?? 0;
     const completionPct = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
+    const streak = userStreakMap.get(u.id) ?? (u.currentStreak ?? 0);
 
     return {
       rank: 0,
@@ -241,7 +250,7 @@ export async function computeLeaderboardData({
       name: u.name ?? "Student Coder",
       avatar: u.image ?? null,
       xp,
-      streak: u.currentStreak ?? 0,
+      streak,
       challengesSolved,
       completionPct,
       college: u.college ?? null,

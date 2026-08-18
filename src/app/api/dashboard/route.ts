@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
+import { calculateUserStreak } from "@/lib/streak-service";
 
 export const dynamic = "force-dynamic";
 
@@ -101,54 +102,8 @@ export async function GET(req: Request) {
       quizImprovement = Math.max(0, Math.round(avg2 - avg1));
     }
 
-    // D. Learning Streak (Requires 15 minutes of active learning per day)
-    const activityLogsForStreak = await db.activityLog.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "asc" }
-    });
-
-    const dateActiveMinutes: { [dateStr: string]: number } = {};
-    for (const log of activityLogsForStreak) {
-      const dateStr = new Date(log.createdAt).toISOString().split("T")[0];
-      let weight = 1;
-      if (log.actionType === "CHAPTER_COMPLETE") weight = 5;
-      else if (log.actionType === "QUIZ_SUBMIT") weight = 5;
-      else if (log.actionType === "AI_CHAT") weight = 2;
-      else if (log.actionType.startsWith("EDITOR_")) weight = 3;
-      
-      dateActiveMinutes[dateStr] = (dateActiveMinutes[dateStr] || 0) + weight;
-    }
-
-    const qualifyingDates = Object.keys(dateActiveMinutes)
-      .filter(dateStr => dateActiveMinutes[dateStr] >= 15)
-      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // descending order
-
-    let streak = 0;
-    if (qualifyingDates.length > 0) {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-      const hasTodayActivity = (dateActiveMinutes[todayStr] || 0) > 0;
-      const isTodayQualifying = dateActiveMinutes[todayStr] >= 15;
-      const isYesterdayQualifying = dateActiveMinutes[yesterdayStr] >= 15;
-
-      if (isTodayQualifying || isYesterdayQualifying || (hasTodayActivity && isYesterdayQualifying)) {
-        streak = 1;
-        let checkDate = new Date(isTodayQualifying ? todayStr : yesterdayStr);
-        
-        while (true) {
-          checkDate.setDate(checkDate.getDate() - 1);
-          const checkDateStr = checkDate.toISOString().split("T")[0];
-          if (dateActiveMinutes[checkDateStr] >= 15) {
-            streak++;
-          } else {
-            break;
-          }
-        }
-      }
-    }
+    // D. Learning Streak (Single source of truth via calculateUserStreak)
+    const streak = await calculateUserStreak(user.id);
 
     // E. Enrolled In-Progress Courses List (Continue Learning Carousels)
     const continueLearningCourses = [];
