@@ -113,6 +113,7 @@ class AIOrchestrator:
     mode,
     history=None,
     asked_question="",
+    content_type="general",
 ):
 
         history = history or []
@@ -126,8 +127,8 @@ class AIOrchestrator:
     mode=mode,
     history=history,
     asked_question=asked_question,
+    content_type=content_type,
 )
-
         print()
         print("========== AI TEACHING REQUEST ==========")
         print("Provider :", "Google Gemini")
@@ -150,7 +151,30 @@ class AIOrchestrator:
         teaching_system_prompt = """
 You are CodeXAI Mentor inside KnowledgeStream AI.
 
-You are a real programming teacher.
+You are a real AI teacher inside KnowledgeStream AI.
+
+You teach the subject currently being studied by the
+student.
+
+The subject is determined by the COURSE, CHAPTER, TOPIC,
+and LESSON CONTENT provided in the request.
+
+Adapt your teaching style to the subject.
+
+For programming:
+use code and programming examples when appropriate.
+
+For mathematics:
+use formulas, reasoning, worked examples, and step-by-step
+problem solving when appropriate.
+
+For theoretical subjects:
+use explanations, analogies, comparisons, examples, and
+structured reasoning.
+
+For any other subject:
+follow the structure and terminology supported by the
+provided lesson content.
 
 Your job is to help the student UNDERSTAND,
 not simply give them answers.
@@ -307,17 +331,100 @@ MORE TEACHING.
 
 
 
-        ai_response = generate_teaching_response(
-    prompt=prompt,
-    system_instruction=teaching_system_prompt,
-)
+               # -------------------------------------------------
+        # SEND TEACHING REQUEST
+        # -------------------------------------------------
+
+        try:
+
+            print()
+            print("========== LIVE TEACHER ==========")
+            print("Provider : Google Gemini")
+            print("Model    : gemini-3.6-flash")
+            print("===================================")
+
+            ai_response = generate_teaching_response(
+                prompt=prompt,
+                system_instruction=teaching_system_prompt,
+            )
+
+            print()
+            print("========== LIVE TEACHER SUCCESS ==========")
+            print("Provider : Google Gemini")
+            print("==========================================")
+
+        except Exception as gemini_error:
+
+            # =================================================
+            # GEMINI FAILED
+            # =================================================
+
+            print()
+            print("========== GEMINI TEACHING FAILED ==========")
+            print("ERROR:", gemini_error)
+            print("============================================")
+
+            print()
+            print("========== LIVE TEACHER FALLBACK ==========")
+            print("Provider : Ollama")
+            print("Model    :", GUIDE_MODEL)
+            print("Reason   : Gemini unavailable")
+            print("===========================================")
+
+            # -------------------------------------------------
+            # FALLBACK TEACHER PROMPT
+            # -------------------------------------------------
+
+            fallback_system_prompt = teaching_system_prompt + """
+
+==================================================
+LIVE TEACHER FALLBACK MODE
+==================================================
+
+You are currently acting as the Live Teacher fallback
+because the primary AI provider is temporarily unavailable.
+
+Continue teaching normally.
+
+Do not mention:
+- API errors
+- providers
+- quotas
+- Gemini
+- Ollama
+- fallback systems
+- technical failures
+
+Speak directly to the student as their teacher.
+
+Keep the explanation:
+- concise
+- natural
+- beginner-friendly
+- focused on the current section
+- suitable for live teaching
+
+Teach only the current content.
+Do not jump ahead to future sections.
+"""
+
+            ai_response = generate_qwen_response(
+                prompt=prompt,
+                history=history,
+                system_prompt=fallback_system_prompt,
+                model=GUIDE_MODEL,
+            )
+
+            print()
+            print("========== FALLBACK SUCCESS ==========")
+            print("Live Teacher continued using Ollama.")
+            print("======================================")
 
         return {
             "intent": "teach",
             "mode": mode,
             "response": ai_response,
         }
-
 
     # =====================================================
     # GUIDE

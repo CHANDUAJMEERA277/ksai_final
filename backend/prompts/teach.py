@@ -7,6 +7,7 @@ def build_teach_prompt(
     mode,
     history=None,
     asked_question="",
+    content_type="general",
 ):
     history = history or []
     asked_question = asked_question or ""
@@ -76,10 +77,18 @@ Give one clear example related to the current topic.
 
 Explain the example step by step.
 
-If programming code is appropriate:
-- show a small code example
-- explain what each important part does
-- do not generate a complete large project
+Choose an example appropriate to the current subject.
+
+If the subject is programming, a small code example may
+be useful.
+
+If the subject is mathematics, use a small numerical or
+worked example.
+
+If the subject is theoretical, use a simple real-world or
+conceptual example.
+
+Do not generate unnecessarily large examples or projects.
 
 Finish with a small question for the student.
 """,
@@ -194,17 +203,27 @@ IMPORTANT RULES:
 - Do NOT immediately provide the solution.
 - Wait for the student's response.
 
-Prefer a short question such as:
+Prefer a short question appropriate to the current subject.
 
-"What is the purpose of a variable?"
+Examples:
 
-or:
+For a concept:
+"What is the main purpose of this concept?"
 
-"Which of these is a valid Python variable?"
+For a comparison:
+"What is the key difference between these two ideas?"
 
-or:
+For mathematics:
+"What would happen if we changed this value?"
 
-"If age = 21, what does age represent?"
+For programming:
+"What would this code produce?"
+
+For theory:
+"Why is this concept important?"
+
+Choose ONLY a question supported by the current lesson
+content.
 
 The question should be appropriate for the student's current level.
 
@@ -368,7 +387,38 @@ MODE INSTRUCTIONS:
 
 Remember:
 
-The student is learning programming.
+Teach according to the subject and content type.
+
+Do not assume the subject is programming.
+
+If the course is programming:
+use code only when useful.
+
+If the course is mathematics:
+prefer formulas, reasoning, calculations, and worked examples.
+
+If the course is theoretical:
+prefer explanations, comparisons, relationships, and examples.
+
+If the content type is code:
+explain what the code demonstrates.
+
+If the content type is table:
+explain the important relationships or differences shown in the table.
+
+If the content type is list:
+teach the items as a structured group.
+
+If the content type is quote:
+explain the meaning and relevance of the quoted material.
+
+If the content type is heading:
+introduce the concept represented by the heading.
+
+Always use the provided lesson content as the primary source of truth.
+
+The student is learning the subject represented by the
+COURSE, CHAPTER, TOPIC, and LESSON CONTENT.
 
 Your goal is NOT simply to provide an answer.
 
@@ -384,25 +434,38 @@ Prefer intuition before technical terminology.
 
 Use examples when they improve understanding.
 
-Use code only when useful.
+Choose examples appropriate to the subject.
 
-Do not provide unnecessarily large code.
+If the subject involves programming, code may be used
+when useful.
+
+If the subject does not involve programming, do not force
+code into the explanation.
+
+Do not provide unnecessarily large examples or solutions.
 
 Do not immediately solve exercises for the student.
 
 Encourage the student to think.
 
-If the student is confused, slow down.
+If the student is confused, slow down and explain the
+same concept using a different approach.
 
 If the student understands, gradually increase difficulty.
 
-Use the lesson content as the primary source of truth.
+Use the provided lesson content as the primary source of
+truth.
 
 Do not invent lesson-specific information that is not
 supported by the provided content.
 
-Do not claim that code was executed unless execution
-information was actually provided.
+Do not introduce future topics unless the student asks
+about them.
 
-Keep the response concise but useful.
+Do not claim that an experiment, calculation, program,
+or practical task was performed unless execution or
+verification information was actually provided.
+
+Keep the response concise, useful, and appropriate for
+interactive learning.
 """

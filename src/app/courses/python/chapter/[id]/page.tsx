@@ -5,11 +5,15 @@ import React, {
   useEffect,
   useRef
 } from "react";
+import LiveTeacher, {
+  LiveTeacherHandle,
+} from "@/components/learning/LiveTeacher";
 
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { renderMarkdown } from "@/lib/markdown";
-import { ChapterExplanationSpeech } from "@/components/learning/ChapterExplanationSpeech";
+
+
 import {
   AlertCircle,
   Clock,
@@ -211,6 +215,9 @@ function stripMarkdown(md: string): string {
 
 export default function PythonChapterPage() {
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const lessonContentRef = useRef<HTMLElement | null>(null);
+  const liveTeacherRef = useRef<LiveTeacherHandle | null>(null);
+  
 
   const router = useRouter();
   const params = useParams();
@@ -267,6 +274,250 @@ const [lessonProgress, setLessonProgress] =
 const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
 
 
+const explainLiveTeacherUnit = async (
+  content: string,
+  title: string
+): Promise<string> => {
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/ai/teach/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          course: "Python",
+          chapter: currentChapter?.title || "Python Chapter",
+          topic: title,
+          content,
+
+          question: `
+You are the Live Teacher inside KnowledgeStream AI.
+
+You are teaching one section of a chapter to a student in real time.
+
+CHAPTER:
+${currentChapter?.title || "Python Chapter"}
+
+SECTION:
+${title}
+
+SOURCE CONTENT:
+${content}
+
+Your job is to teach this section, NOT simply summarize it.
+
+Teaching behavior:
+
+1. Start with the core idea.
+2. Explain it in simple student-friendly language.
+3. Assume the student is learning this concept for the first time.
+4. Connect the idea to something familiar when useful.
+5. Give ONE small practical example when useful.
+6. Explain why this concept matters.
+7. Do not explain future sections.
+8. Do not repeat the source content word-for-word.
+9. Do not dump large amounts of information.
+10. Keep the explanation focused on the current section.
+11. Sound like a teacher speaking directly to one student.
+12. Avoid unnecessary markdown.
+13. Do not ask a question yet. Checkpoints will be handled separately.
+
+Structure your explanation naturally:
+
+Core idea:
+Explain the main concept.
+
+Why it matters:
+Explain why the student should care.
+
+Example:
+Give one small example when appropriate.
+
+Key takeaway:
+End with one short sentence the student should remember.
+
+Keep the entire explanation concise enough for live classroom teaching.
+`,
+
+          mode: "live-teaching",
+          history: [],
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message || "Live teaching failed."
+      );
+    }
+
+    return (
+      data.data?.response ||
+      data.response ||
+      "Let's understand this section step by step."
+    );
+  } catch (error) {
+    console.error(
+      "Live Teacher AI error:",
+      error
+    );
+
+    return "Let's understand this section step by step. Focus on the highlighted part first, and then we'll connect it to the bigger concept.";
+  }
+};
+
+
+const generateResumeRecap = async (
+  resumeTitle: string
+): Promise<{ recap: string; questions: string[] }> => {
+  if (!currentChapter) {
+    return {
+      recap: `Welcome back! You stopped at ${resumeTitle}.`,
+      questions: [`What do you remember about ${resumeTitle}?`],
+    };
+  }
+
+  const completed = getLessons().filter((lesson) =>
+    completedLessons.includes(lesson)
+  );
+
+  const prompt = `
+You are the KnowledgeStream AI Live Teacher.
+
+A student has returned to a Python chapter after leaving a previous live teaching session.
+Do NOT restart the chapter.
+Do NOT teach the resume section yet.
+
+CHAPTER:
+${currentChapter.title}
+
+TOPICS THE STUDENT ALREADY COMPLETED:
+${completed.length ? completed.join("\\n") : "No fully completed topic was recorded."}
+
+THE STUDENT'S SAVED RESUME POINT:
+${resumeTitle}
+
+Create a short return-to-learning checkpoint.
+
+Return ONLY valid JSON in this exact shape:
+{
+  "recap": "2-4 short sentences summarizing what the student already learned.",
+  "questions": [
+    "Short question 1",
+    "Short question 2"
+  ]
+}
+
+Rules:
+- Ask 2 questions maximum.
+- Questions must test previously learned material, not future material.
+- Keep the recap concise and student-friendly.
+- Do not include markdown fences.
+`;
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course: "Python",
+        chapter: currentChapter.title,
+        topic: resumeTitle,
+        content: currentChapter.content,
+        question: prompt,
+        mode: "resume-check",
+        history: [],
+      }),
+    });
+
+    const data = await response.json();
+    const raw = data.data?.response ?? data.response ?? "";
+
+    if (!response.ok || !data.success || !raw) {
+      throw new Error(data.message || "Resume recap generation failed.");
+    }
+
+    const cleaned = raw
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      recap:
+        typeof parsed.recap === "string"
+          ? parsed.recap
+          : `Welcome back! You were learning ${resumeTitle}.`,
+      questions: Array.isArray(parsed.questions)
+        ? parsed.questions.filter((q: unknown) => typeof q === "string")
+        : [],
+    };
+  } catch (error) {
+    console.error("Resume recap generation error:", error);
+
+    return {
+      recap: completed.length
+        ? `Welcome back! You previously worked through ${completed.slice(-3).join(", ")}. You stopped at ${resumeTitle}. Let's quickly check what you remember before we continue.`
+        : `Welcome back! You stopped at ${resumeTitle}. Let's quickly check what you remember before we continue.`,
+      questions: [
+        completed.length
+          ? `What is one important idea you remember from ${completed[completed.length - 1]}?`
+          : `What do you remember about ${resumeTitle}?`,
+        `Why is ${completed.length ? completed[completed.length - 1] : resumeTitle} useful?`,
+      ],
+    };
+  }
+};
+
+const evaluateResumeAnswer = async (
+  question: string,
+  answer: string
+): Promise<string> => {
+  if (!currentChapter) return "Good attempt. Let's continue learning.";
+
+  const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      course: "Python",
+      chapter: currentChapter.title,
+      topic: currentLesson || currentChapter.title,
+      content: currentChapter.content,
+      question: `
+You are evaluating a student's return-to-learning answer.
+
+QUESTION:
+${question}
+
+STUDENT ANSWER:
+${answer}
+
+Evaluate the answer fairly and briefly.
+Start with exactly one of: "Correct", "Almost correct", or "Needs review".
+Then give one short reason.
+If needed, give one concise correction.
+Do not shame the student.
+Do not teach the upcoming lesson.
+`,
+      mode: "resume-answer-evaluation",
+      history: [],
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Answer evaluation failed.");
+  }
+
+  return data.data?.response ?? data.response ?? "Good attempt. Let's continue learning.";
+};
+
 const handleTeachingRequest = async (
   question: string,
   mode: string = "chat"
@@ -275,7 +526,40 @@ const handleTeachingRequest = async (
 
 if (!currentChapter) return;
 
+// Pause Live Teacher while the student is asking a question.
+liveTeacherRef.current?.pause();
+
 markLessonLearning();
+
+if (currentLesson) {
+  const current =
+    lessonProgress[currentLesson];
+
+  const questionsAsked =
+    (current?.questionsAsked ?? 0) + 1;
+
+  setLessonProgress((prev) => ({
+    ...prev,
+    [currentLesson]: {
+      ...(prev[currentLesson] || {
+        lesson: currentLesson,
+        status: "LEARNING",
+        score: 0,
+        attempts: 0,
+        questionsAsked: 0,
+        correctAnswers: 0,
+      }),
+      questionsAsked,
+    },
+  }));
+
+  void saveLessonProgress(
+    currentLesson,
+    {
+      questionsAsked,
+    }
+  );
+}
 
   // Show student's message immediately
   setChatMessages((prev) => [
@@ -301,7 +585,7 @@ markLessonLearning();
           course: "Python",
           chapter: currentChapter.title,
           topic: currentLesson || currentChapter.title,
-          content: getLessonContent(),
+          content: currentChapter.content,
 
           question: `
 Student request:
@@ -360,8 +644,7 @@ ${getLessons()
       },
     ]);
 
-    // 🔊 Speak AI response
-    speakMentor(aiResponse);
+    
 
   } catch (error) {
 
@@ -462,6 +745,161 @@ const getLessonContent = () => {
   }
 
   return content.slice(startIndex, endIndex);
+};
+
+// =========================================================
+// LESSON PROGRESS PERSISTENCE
+// =========================================================
+
+const loadLessonProgress = async () => {
+  if (!currentChapter?.id || !userEmail) return;
+
+  try {
+    const response = await fetch(
+      `/api/courses/python/chapters/${currentChapter.id}/lesson-progress?userEmail=${encodeURIComponent(
+        userEmail
+      )}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error(
+        "Failed to load lesson progress:",
+        data.error
+      );
+      return;
+    }
+
+    const progressMap: Record<string, LessonProgress> = {};
+
+    for (const item of data.progress || []) {
+      progressMap[item.lesson] = {
+        lesson: item.lesson,
+        status: item.status as LearningStatus,
+        score: item.lastScore ?? 0,
+        attempts: item.attempts ?? 0,
+        questionsAsked: 0,
+        correctAnswers: item.correctAnswers ?? 0,
+      };
+    }
+
+    setLessonProgress(progressMap);
+
+    const mastered = Object.values(progressMap)
+      .filter(
+        (item) =>
+          item.status === "MASTERED" ||
+          item.status === "PRACTICED"
+      )
+      .map((item) => item.lesson);
+
+    setCompletedLessons(mastered);
+
+    console.log(
+      "✅ Lesson progress restored:",
+      progressMap
+    );
+
+    const lessons = getLessons();
+
+const nextLesson = lessons.find(
+  (lesson) =>
+    progressMap[lesson]?.status !== "MASTERED" &&
+    progressMap[lesson]?.status !== "PRACTICED"
+);
+
+if (nextLesson) {
+  setCurrentLesson(nextLesson);
+  setCurrentLessonIndex(
+    lessons.indexOf(nextLesson)
+  );
+}
+  } catch (error) {
+    console.error(
+      "Lesson progress loading error:",
+      error
+    );
+  }
+};
+
+const saveLessonProgress = async (
+  lesson: string,
+  updates: Partial<LessonProgress>
+) => {
+  if (!currentChapter?.id || !userEmail || !lesson) {
+    return;
+  }
+
+  try {
+    const current =
+      lessonProgress[lesson];
+
+    const payload = {
+      userEmail,
+      lesson,
+
+      status:
+        updates.status ??
+        current?.status ??
+        "LEARNING",
+
+      attempts:
+        updates.attempts ??
+        current?.attempts ??
+        0,
+
+      correctAnswers:
+        updates.correctAnswers ??
+        current?.correctAnswers ??
+        0,
+
+      totalQuestions:
+        updates.questionsAsked ??
+        current?.questionsAsked ??
+        0,
+
+      lastScore:
+        updates.score ??
+        current?.score ??
+        0,
+    };
+
+    const response = await fetch(
+      `/api/courses/python/chapters/${currentChapter.id}/lesson-progress`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error(
+        "Failed to save lesson progress:",
+        data.error
+      );
+
+      return;
+    }
+
+    console.log(
+      "✅ Lesson progress saved:",
+      lesson,
+      payload.status
+    );
+  } catch (error) {
+    console.error(
+      "Lesson progress save error:",
+      error
+    );
+  }
 };
 
   // Expandable chapters state
@@ -566,6 +1004,16 @@ useEffect(() => {
   }
 }, [chapterOrder, currentLesson]);
 
+
+// Restore saved lesson progress from database
+useEffect(() => {
+  if (!currentChapter?.id || !userEmail) {
+    return;
+  }
+
+  loadLessonProgress();
+}, [currentChapter?.id, userEmail]);
+
 const markLessonLearning = () => {
   if (!currentLesson) return;
 
@@ -582,6 +1030,13 @@ const markLessonLearning = () => {
       status: "LEARNING",
     },
   }));
+
+  void saveLessonProgress(
+    currentLesson,
+    {
+      status: "LEARNING",
+    }
+  );
 };
 
 
@@ -595,6 +1050,29 @@ const markLessonCompleted = () => {
 
     return [...prev, currentLesson];
   });
+
+  setLessonProgress((prev) => ({
+    ...prev,
+
+    [currentLesson]: {
+      ...(prev[currentLesson] || {
+        lesson: currentLesson,
+        score: 0,
+        attempts: 0,
+        questionsAsked: 0,
+        correctAnswers: 0,
+      }),
+
+      status: "PRACTICED",
+    },
+  }));
+
+  void saveLessonProgress(
+    currentLesson,
+    {
+      status: "PRACTICED",
+    }
+  );
 };
 
 const getLessonStatus = (
@@ -637,6 +1115,7 @@ const markLessonMastered = () => {
     [currentLesson]: {
       ...(prev[currentLesson] || {
         lesson: currentLesson,
+        status: "LEARNING",
         score: 0,
         attempts: 0,
         questionsAsked: 0,
@@ -646,6 +1125,22 @@ const markLessonMastered = () => {
       score: 100,
     },
   }));
+
+  setCompletedLessons((prev) => {
+    if (prev.includes(currentLesson)) {
+      return prev;
+    }
+
+    return [...prev, currentLesson];
+  });
+
+  void saveLessonProgress(
+    currentLesson,
+    {
+      status: "MASTERED",
+      score: 100,
+    }
+  );
 };
 
 const [isMentorSpeaking, setIsMentorSpeaking] =
@@ -1108,17 +1603,86 @@ setCurrentLessonIndex(secIdx);
           ) : (
             <div className="space-y-6 animate-fade-in max-w-5xl mx-auto w-full pb-10">
 
-              {/* Step A: AI Voice Explainer Card */}
-              {currentChapter && (
-                <ChapterExplanationSpeech
-                  key={currentChapter.id}
-                  title={currentChapter.title}
-                  explanation={stripMarkdown(currentChapter.content)}
-                  onCompleteExplanation={() => {
-                    console.log("Speech finished");
-                  }}
-                />
-              )}
+              
+
+              <LiveTeacher
+                ref={liveTeacherRef}
+                contentRef={lessonContentRef}
+  chapterTitle={currentChapter?.title || "Live Chapter"}
+    course="Python"
+  onExplain={explainLiveTeacherUnit}
+  chapterContent={currentChapter?.content || ""}
+  onResumeRecap={generateResumeRecap}
+  onEvaluateResumeAnswer={evaluateResumeAnswer}
+  onLessonStart={(title: string) => {
+  const lesson = getLessons().find(
+    (item) =>
+      item.trim().toLowerCase() ===
+      title.trim().toLowerCase()
+  );
+
+  if (!lesson) return;
+
+  setCurrentLesson(lesson);
+
+  setLessonProgress((prev) => ({
+    ...prev,
+    [lesson]: {
+      ...(prev[lesson] || {
+        lesson,
+        status: "NOT_STARTED",
+        score: 0,
+        attempts: 0,
+        questionsAsked: 0,
+        correctAnswers: 0,
+      }),
+      status: "LEARNING",
+    },
+  }));
+
+  void saveLessonProgress(lesson, {
+    status: "LEARNING",
+  });
+}}
+  onLessonComplete={(title: string) => {
+    const lesson = getLessons().find(
+      (item) =>
+        item.trim().toLowerCase() ===
+        title.trim().toLowerCase()
+    );
+
+    if (!lesson) return;
+
+    setCurrentLesson(lesson);
+
+    setLessonProgress((prev) => ({
+      ...prev,
+      [lesson]: {
+        ...(prev[lesson] || {
+          lesson,
+          status: "NOT_STARTED",
+          score: 0,
+          attempts: 0,
+          questionsAsked: 0,
+          correctAnswers: 0,
+        }),
+        status: "PRACTICED",
+      },
+    }));
+
+    setCompletedLessons((prev) => {
+      if (prev.includes(lesson)) {
+        return prev;
+      }
+
+      return [...prev, lesson];
+    });
+
+    void saveLessonProgress(lesson, {
+      status: "PRACTICED",
+    });
+  }}
+/>
 
               {/* Lesson Body Card */}
               {currentChapter && (
@@ -1142,9 +1706,12 @@ setCurrentLessonIndex(secIdx);
                   </div>
 
                   {/* Render Markdown Notes */}
-                  <article className="prose prose-slate max-w-none text-slate-700 leading-relaxed text-sm">
-                    {renderMarkdown(currentChapter.content)}
-                  </article>
+                  <article
+  ref={lessonContentRef}
+  className="prose prose-slate max-w-none text-slate-700 leading-relaxed text-sm"
+>
+  {renderMarkdown(currentChapter.content)}
+</article>
 
                   {/* Complete Action at the bottom */}
                   <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1242,12 +1809,12 @@ setCurrentLessonIndex(secIdx);
 
             <div>
               <h3 className="text-sm font-black text-slate-800">
-                CodeXAI Mentor
-              </h3>
+  Ask AI
+</h3>
 
-              <p className="text-[10px] text-slate-500">
-                Personal learning guide
-              </p>
+<p className="text-[10px] text-slate-500">
+  Ask anything about this lesson
+</p>
             </div>
 
           </div>
@@ -1256,7 +1823,7 @@ setCurrentLessonIndex(secIdx);
   <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
     <div className="flex items-center gap-2 text-[11px] font-semibold text-blue-600">
       <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-      CodeXAI is speaking...
+      AI Teacher is speaking...
     </div>
 
     <button
@@ -1309,12 +1876,24 @@ setCurrentLessonIndex(secIdx);
     {chatLoading && (
       <div className="flex justify-start">
         <div className="bg-slate-100 border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 text-sm text-slate-500">
-          CodeXAI is teaching...
+          AI is thinking...
         </div>
       </div>
     )}
 
   </div>
+
+  {!chatLoading && (
+  <button
+    type="button"
+    onClick={() => {
+      liveTeacherRef.current?.resume();
+    }}
+    className="w-full mt-3 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all"
+  >
+    ▶ Resume Live Teacher
+  </button>
+)}
 
 
   {/* Learning Actions */}
@@ -1501,7 +2080,7 @@ setCurrentLessonIndex(secIdx);
     type="submit"
     disabled={!chatInput.trim() || chatLoading}
     className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shadow-sm shrink-0 disabled:opacity-50"
-    title="Ask CodeXAI"
+    title="Ask AI"
   >
     <Send size={13} />
   </button>
