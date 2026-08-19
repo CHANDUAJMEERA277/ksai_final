@@ -374,7 +374,19 @@ export default function DashboardPage() {
     }
   };
 
-  const { stats, continueLearningCourses = [], learningProgress, weeklyGoals, heatmap = [], recommended = [], notifications: rawNotifications = { unreadCount: 0, list: [] } } = data || {};
+  const {
+  stats,
+  continueLearningCourses = [],
+  learningProgress,
+  weeklyGoals,
+  dailyRecap,
+  heatmap = [],
+  recommended = [],
+  notifications: rawNotifications = {
+    unreadCount: 0,
+    list: [],
+  },
+} = data || {};
   const activeUser = data?.user || {};
   const firstName = activeUser.name ? activeUser.name.split(" ")[0] : "Student";
 
@@ -803,6 +815,165 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* ===================================================== */}
+{/* 13D — TODAY'S LEARNING RECAP */}
+{/* ===================================================== */}
+
+<div className="flex-shrink-0 p-3 rounded-2xl border border-blue-100 bg-gradient-to-r from-white via-blue-50/40 to-indigo-50/40 shadow-sm">
+
+  <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+
+    {/* Header */}
+    <div className="flex items-center gap-2 min-w-[180px]">
+      <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+        <TrendingUp size={15} />
+      </div>
+
+      <div>
+        <h3 className="text-xs font-black text-slate-900">
+          Today&apos;s Learning
+        </h3>
+
+        <p className="text-[9px] text-slate-500 font-medium">
+          Your daily learning recap
+        </p>
+      </div>
+    </div>
+
+    {/* Metrics */}
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 flex-1">
+
+      {/* Activities */}
+      <div className="px-2.5 py-2 rounded-xl bg-white border border-slate-200">
+        <div className="text-[8px] uppercase tracking-wider font-black text-slate-400">
+          Activity
+        </div>
+
+        <div className="text-sm font-black text-slate-900 mt-0.5">
+          {dailyRecap?.events?.total ?? 0}
+        </div>
+      </div>
+
+      {/* Questions */}
+      <div className="px-2.5 py-2 rounded-xl bg-white border border-blue-100">
+        <div className="text-[8px] uppercase tracking-wider font-black text-blue-500">
+          Questions
+        </div>
+
+        <div className="text-sm font-black text-slate-900 mt-0.5">
+          {dailyRecap?.events?.questions ?? 0}
+        </div>
+      </div>
+
+      {/* Practice */}
+      <div className="px-2.5 py-2 rounded-xl bg-white border border-emerald-100">
+        <div className="text-[8px] uppercase tracking-wider font-black text-emerald-500">
+          Practice
+        </div>
+
+        <div className="text-sm font-black text-slate-900 mt-0.5">
+          {dailyRecap?.events?.practice ?? 0}
+        </div>
+      </div>
+
+      {/* Mistakes */}
+      <div className="px-2.5 py-2 rounded-xl bg-white border border-red-100">
+        <div className="text-[8px] uppercase tracking-wider font-black text-red-500">
+          Mistakes
+        </div>
+
+        <div className="text-sm font-black text-slate-900 mt-0.5">
+          {dailyRecap?.events?.mistakes ?? 0}
+        </div>
+      </div>
+
+      {/* Corrections */}
+      <div className="px-2.5 py-2 rounded-xl bg-white border border-amber-100">
+        <div className="text-[8px] uppercase tracking-wider font-black text-amber-600">
+          Corrections
+        </div>
+
+        <div className="text-sm font-black text-slate-900 mt-0.5">
+          {dailyRecap?.events?.corrections ?? 0}
+        </div>
+      </div>
+
+      {/* Topics */}
+      <div className="px-2.5 py-2 rounded-xl bg-white border border-purple-100">
+        <div className="text-[8px] uppercase tracking-wider font-black text-purple-500">
+          Topics
+        </div>
+
+        <div className="text-sm font-black text-slate-900 mt-0.5">
+          {dailyRecap?.topicsCount ?? 0}
+        </div>
+      </div>
+
+    </div>
+
+    {/* Learning Summary */}
+    <div className="hidden xl:block max-w-[260px] min-w-[200px]">
+      <div className="text-[9px] uppercase tracking-wider font-black text-indigo-600">
+        AI Learning Summary
+      </div>
+
+      <p className="text-[10px] text-slate-600 font-medium leading-relaxed mt-0.5 line-clamp-2">
+        {dailyRecap?.summary ||
+          "Start learning today and your progress will appear here."}
+      </p>
+    </div>
+
+  </div>
+
+  {/* Strength / Weak Concept Strip */}
+  {(dailyRecap?.strengths?.length > 0 ||
+    dailyRecap?.weakConcepts?.length > 0) && (
+
+    <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-blue-100">
+
+      {dailyRecap?.strengths?.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-black text-emerald-600">
+            💪 Strength:
+          </span>
+
+          {dailyRecap.strengths
+            .slice(0, 3)
+            .map((topic: string) => (
+              <span
+                key={`strength-${topic}`}
+                className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-[9px] font-bold text-emerald-700"
+              >
+                {topic}
+              </span>
+            ))}
+        </div>
+      )}
+
+      {dailyRecap?.weakConcepts?.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-black text-red-600">
+            🔄 Review:
+          </span>
+
+          {dailyRecap.weakConcepts
+            .slice(0, 3)
+            .map((topic: string) => (
+              <span
+                key={`review-${topic}`}
+                className="px-2 py-0.5 rounded-full bg-red-50 border border-red-100 text-[9px] font-bold text-red-700"
+              >
+                {topic}
+              </span>
+            ))}
+        </div>
+      )}
+
+    </div>
+  )}
+
+</div>
 
         {/* Middle Row: Continue Learning (Carousel), Course Completion (Carousel), and AI Teacher */}
         <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-5 gap-3 overflow-hidden">

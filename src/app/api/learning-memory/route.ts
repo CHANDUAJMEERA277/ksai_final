@@ -145,3 +145,161 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    const {
+      userEmail,
+      courseId,
+      chapterId,
+      topic,
+      memoryType,
+      key,
+      content,
+      confidence = 50,
+      priority = 1,
+    } = body;
+
+    if (
+      !userEmail ||
+      !courseId ||
+      !chapterId ||
+      !topic ||
+      !memoryType ||
+      !key ||
+      !content
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Missing required learning memory fields.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const allowedMemoryTypes = [
+      "STRUGGLE",
+      "STRENGTH",
+      "PREFERENCE",
+      "MISTAKE",
+      "MASTERY",
+      "REVIEW",
+    ];
+
+    if (!allowedMemoryTypes.includes(memoryType)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid memoryType.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const user = await db.user.findUnique({
+      where: {
+        email: userEmail,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "User not found.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const existing =
+      await db.learningMemory.findUnique({
+        where: {
+          userId_topic_memoryType_key: {
+            userId: user.id,
+            topic,
+            memoryType,
+            key,
+          },
+        },
+      });
+
+    let memory;
+
+    if (existing) {
+      memory =
+        await db.learningMemory.update({
+          where: {
+            id: existing.id,
+          },
+          data: {
+            courseId,
+            chapterId,
+            content,
+            confidence: Math.max(
+              0,
+              Math.min(100, Number(confidence))
+            ),
+            priority: Math.max(
+              1,
+              Number(priority)
+            ),
+            occurrences: {
+              increment: 1,
+            },
+            lastObserved: new Date(),
+            isActive: true,
+          },
+        });
+    } else {
+      memory =
+        await db.learningMemory.create({
+          data: {
+            userId: user.id,
+            courseId,
+            chapterId,
+            topic,
+            memoryType,
+            key,
+            content,
+            confidence: Math.max(
+              0,
+              Math.min(100, Number(confidence))
+            ),
+            priority: Math.max(
+              1,
+              Number(priority)
+            ),
+            occurrences: 1,
+            lastObserved: new Date(),
+            isActive: true,
+          },
+        });
+    }
+
+    return NextResponse.json({
+      success: true,
+      memory,
+    });
+  } catch (error) {
+    console.error(
+      "Learning memory save error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "Failed to save learning memory.",
+      },
+      { status: 500 }
+    );
+  }
+}

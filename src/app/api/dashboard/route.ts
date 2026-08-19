@@ -385,6 +385,138 @@ export async function GET(req: Request) {
       notificationsList.push(...freshNotifs);
     }
 
+        // =====================================================
+    // L. DAILY LEARNING RECAP — 13D
+    // =====================================================
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayLearningEvents = await db.learningEvent.findMany({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const dailyEventCounts = {
+      total: todayLearningEvents.length,
+      questions: todayLearningEvents.filter(
+        e => e.eventType === "QUESTION"
+      ).length,
+      mistakes: todayLearningEvents.filter(
+        e => e.eventType === "MISTAKE"
+      ).length,
+      corrections: todayLearningEvents.filter(
+        e => e.eventType === "CORRECTION"
+      ).length,
+      practice: todayLearningEvents.filter(
+        e => e.eventType === "PRACTICE"
+      ).length,
+      explanations: todayLearningEvents.filter(
+        e => e.eventType === "EXPLANATION"
+      ).length,
+      examples: todayLearningEvents.filter(
+        e => e.eventType === "EXAMPLE"
+      ).length,
+      visual: todayLearningEvents.filter(
+        e => e.eventType === "VISUAL"
+      ).length,
+      answers: todayLearningEvents.filter(
+        e => e.eventType === "ANSWER"
+      ).length,
+    };
+
+    const topicsStudied = Array.from(
+      new Set(
+        todayLearningEvents
+          .map(e => e.topic?.trim())
+          .filter(Boolean)
+      )
+    );
+
+    const dailyMistakes = todayLearningEvents
+      .filter(e => e.eventType === "MISTAKE")
+      .map(e => ({
+        topic: e.topic,
+        content: e.content,
+        createdAt: e.createdAt,
+      }));
+
+    const dailyCorrections = todayLearningEvents
+      .filter(e => e.eventType === "CORRECTION")
+      .map(e => ({
+        topic: e.topic,
+        content: e.content,
+        createdAt: e.createdAt,
+      }));
+
+    const dailyPractice = todayLearningEvents
+      .filter(e => e.eventType === "PRACTICE")
+      .map(e => ({
+        topic: e.topic,
+        content: e.content,
+        createdAt: e.createdAt,
+      }));
+
+    const mistakeTopics = Array.from(
+      new Set(
+        dailyMistakes
+          .map(item => item.topic?.trim())
+          .filter(Boolean)
+      )
+    );
+
+    const practicedTopics = Array.from(
+      new Set(
+        dailyPractice
+          .map(item => item.topic?.trim())
+          .filter(Boolean)
+      )
+    );
+
+    const dailyRecap = {
+      date: startOfDay.toISOString().split("T")[0],
+
+      events: dailyEventCounts,
+
+      topicsStudied,
+
+      topicsCount: topicsStudied.length,
+
+      mistakes: dailyMistakes,
+
+      corrections: dailyCorrections,
+
+      practice: dailyPractice,
+
+      strengths: practicedTopics,
+
+      weakConcepts: mistakeTopics,
+
+      hasActivity: todayLearningEvents.length > 0,
+
+      summary:
+        todayLearningEvents.length === 0
+          ? "No learning activity recorded today yet."
+          : `You studied ${topicsStudied.length} topic${
+              topicsStudied.length === 1 ? "" : "s"
+            } today and recorded ${
+              todayLearningEvents.length
+            } learning activit${
+              todayLearningEvents.length === 1 ? "y" : "ies"
+            }.`,
+    };
+
     // K. Profile Widget Progress
     let targetXp = 1000;
     if (user.level >= 10) {
@@ -419,7 +551,11 @@ export async function GET(req: Request) {
       continueLearningCourses,
       learningProgress,
       weeklyGoals: weeklyGoalsData,
-      heatmap: heatmapData,
+            heatmap: heatmapData,
+
+      // 13D Daily Recap
+      dailyRecap,
+
       recommended: recommendedCourses,
       notifications: {
         unreadCount: unreadNotifications.length,

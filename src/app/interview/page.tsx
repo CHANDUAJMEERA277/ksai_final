@@ -1,284 +1,756 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import {
-  Code2,
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
   Brain,
   Briefcase,
-  Video,
-  Sparkles,
+  CheckCircle2,
+  ChevronRight,
+  Code2,
+  Flame,
+  MessageSquare,
   Play,
-  ArrowRight,
+  Sparkles,
   Target,
-  BarChart3,
+  Trophy,
+  Users,
+  Video,
   Zap,
 } from "lucide-react";
 
-interface InterviewRecord {
-  title: string;
-  type: string;
-  score: number;
-  date: string;
-  status: string;
-}
+import { useRouter } from "next/navigation";
+import type { ElementType } from "react";
+
 
 const interviewTypes = [
   {
     id: "technical",
     title: "Technical Interview",
-    description: "Deep dive into CS fundamentals, system design, and language concepts.",
+    description:
+      "Test your programming knowledge, CS fundamentals, and technical concepts.",
     icon: Code2,
-    badge: "AI Evaluated",
-    bgColor: "bg-blue-50/80 hover:bg-blue-100/80 border-blue-200",
-    iconBg: "bg-blue-600 text-white",
+    level: "Beginner → Advanced",
+    questions: "AI-generated questions",
   },
   {
     id: "coding",
     title: "Coding Interview",
-    description: "Solve live algorithmic challenges and data structure problems.",
+    description:
+      "Solve coding problems and demonstrate your problem-solving ability.",
     icon: Brain,
-    badge: "Live Runner",
-    bgColor: "bg-purple-50/80 hover:bg-purple-100/80 border-purple-200",
-    iconBg: "bg-purple-600 text-white",
+    level: "Easy → Hard",
+    questions: "Live coding",
   },
   {
     id: "hr",
-    title: "HR & Behavioral",
-    description: "Practice situational questions, leadership principles, and soft skills.",
+    title: "HR Interview",
+    description:
+      "Practice common HR and behavioral questions with an AI interviewer.",
     icon: Briefcase,
-    badge: "Voice & Speech",
-    bgColor: "bg-emerald-50/80 hover:bg-emerald-100/80 border-emerald-200",
-    iconBg: "bg-emerald-600 text-white",
+    level: "Beginner → Advanced",
+    questions: "Behavioral questions",
   },
   {
     id: "mock",
-    title: "Full AI Mock Interview",
-    description: "End-to-end multi-round interview simulation with full scorecard.",
+    title: "AI Mock Interview",
+    description:
+      "Experience a complete interview simulation with technical and HR rounds.",
     icon: Video,
-    badge: "Full Proctor",
-    bgColor: "bg-amber-50/80 hover:bg-amber-100/80 border-amber-200",
-    iconBg: "bg-amber-600 text-white",
+    level: "Real interview",
+    questions: "Adaptive interview",
   },
 ];
+
 
 const technologies = [
   "Java",
   "Python",
+  "C",
   "C++",
   "JavaScript",
   "React",
   "Node.js",
   "SQL",
   "Data Structures",
+  "Algorithms",
 ];
+
+
+const recentInterviews = [
+  {
+    title: "Java Technical Interview",
+    type: "Technical",
+    score: 82,
+    date: "Today",
+  },
+  {
+    title: "HR Mock Interview",
+    type: "HR",
+    score: 74,
+    date: "2 days ago",
+  },
+  {
+    title: "Coding Challenge",
+    type: "Coding",
+    score: 88,
+    date: "5 days ago",
+  },
+];
+
 
 export default function InterviewPage() {
   const router = useRouter();
-  const [selectedTech, setSelectedTech] = useState("Java");
-  const [history, setHistory] = useState<InterviewRecord[]>([]);
-  const [readinessScore, setReadinessScore] = useState<number>(0);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("ksai_interview_history");
-      if (saved) {
-        const parsed: InterviewRecord[] = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setHistory(parsed);
-          const totalScore = parsed.reduce((acc, item) => acc + (item.score || 0), 0);
-          setReadinessScore(Math.round(totalScore / parsed.length));
-        } else {
-          setHistory([]);
-          setReadinessScore(0);
-        }
-      } else {
-        setHistory([]);
-        setReadinessScore(0);
-      }
-    } catch {
-      setHistory([]);
-      setReadinessScore(0);
-    }
-  }, []);
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden font-sans antialiased">
-      {/* Unified Left Sidebar */}
-      <LeftSidebar
-        activeTab="Interview Prep"
-        onTabChange={(tab) => {
-          if (tab === "Dashboard") router.push("/dashboard");
-          else if (tab === "Explore Courses") router.push("/courses/catalog");
-          else if (tab === "Courses") router.push("/courses");
-          else if (tab === "Leaderboard") router.push("/leaderboard");
-          else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
-          else if (tab === "Editor" || tab === "Workspace") router.push("/editor");
-          else if (tab === "Certificates") router.push("/certificates");
-          else if (tab === "Interview Prep") router.push("/interview");
-          else if (tab === "Settings") router.push("/settings");
-        }}
-        fullHeight={true}
+    <div className="min-h-screen bg-[#07070A] text-white overflow-x-hidden">
+
+      {/* =====================================================
+          BACKGROUND
+      ====================================================== */}
+
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+
+        <div className="absolute top-[-180px] left-[10%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+
+        <div className="absolute top-[20%] right-[-150px] w-[500px] h-[500px] rounded-full bg-purple-600/10 blur-[140px]" />
+
+        <div className="absolute bottom-[-200px] left-[35%] w-[500px] h-[500px] rounded-full bg-cyan-600/5 blur-[140px]" />
+
+      </div>
+
+
+      {/* =====================================================
+          TOP NAVIGATION
+      ====================================================== */}
+
+      <header className="relative z-10 h-16 border-b border-white/10 bg-[#09090B]/80 backdrop-blur-xl">
+
+        <div className="h-full max-w-[1500px] mx-auto px-5 lg:px-8 flex items-center justify-between">
+
+          <div className="flex items-center gap-4">
+
+            <button
+              onClick={() => router.back()}
+              className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition"
+            >
+              <ArrowLeft size={17} />
+            </button>
+
+
+            <div>
+
+              <div className="flex items-center gap-2">
+
+                <Sparkles
+                  size={16}
+                  className="text-cyan-400"
+                />
+
+                <span className="font-bold">
+                  KnowledgeStream AI
+                </span>
+
+              </div>
+
+              <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">
+                Interview Center
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="hidden md:flex items-center gap-6 text-xs text-slate-400">
+
+            <span className="flex items-center gap-2">
+              <Flame
+                size={14}
+                className="text-orange-400"
+              />
+              7 Day Streak
+            </span>
+
+            <span className="flex items-center gap-2">
+              <Trophy
+                size={14}
+                className="text-yellow-400"
+              />
+              12 Interviews
+            </span>
+
+          </div>
+
+        </div>
+
+      </header>
+
+
+      {/* =====================================================
+          MAIN
+      ====================================================== */}
+
+      <main className="relative z-10 max-w-[1500px] mx-auto px-5 lg:px-8 py-8">
+
+        {/* ===================================================
+            HERO
+        ==================================================== */}
+
+        <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-blue-950/50 via-purple-950/20 to-cyan-950/20 p-7 md:p-10 mb-8">
+
+          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 blur-[100px] rounded-full" />
+
+          <div className="relative max-w-3xl">
+
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold mb-5">
+
+              <Sparkles size={13} />
+
+              CODEXAI INTERVIEWER
+
+            </div>
+
+
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+
+              Prepare for your
+
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                {" "}next interview.
+              </span>
+
+            </h1>
+
+
+            <p className="mt-4 text-sm md:text-base text-slate-400 leading-relaxed max-w-2xl">
+
+              Practice with an adaptive AI interviewer that asks questions,
+              evaluates your answers, identifies weak areas, and helps you
+              become interview-ready.
+
+            </p>
+
+
+            <div className="flex flex-wrap gap-3 mt-7">
+
+              <button
+                onClick={() => router.push("/interview/setup")}
+                className="group flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 text-white font-bold text-sm shadow-xl shadow-blue-900/20 hover:scale-[1.02] transition"
+              >
+
+                <Play
+                  size={17}
+                  className="fill-current"
+                />
+
+                Start AI Mock Interview
+
+                <ArrowRight
+                  size={16}
+                  className="group-hover:translate-x-1 transition"
+                />
+
+              </button>
+
+
+              <button
+                onClick={() => {
+                  document
+                    .getElementById("interview-types")
+                    ?.scrollIntoView({
+                      behavior: "smooth",
+                    });
+                }}
+                className="px-6 py-3.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-sm transition"
+              >
+                Explore Interviews
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* ===================================================
+            READINESS OVERVIEW
+        ==================================================== */}
+
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+
+          {/* Overall score */}
+
+          <div className="lg:col-span-1 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+
+                <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
+                  Interview Readiness
+                </p>
+
+                <h2 className="text-4xl font-black mt-2">
+                  76%
+                </h2>
+
+              </div>
+
+
+              <div className="w-14 h-14 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center">
+
+                <Target
+                  size={25}
+                  className="text-cyan-400"
+                />
+
+              </div>
+
+            </div>
+
+
+            <div className="mt-5 h-2 rounded-full bg-white/5 overflow-hidden">
+
+              <div className="h-full w-[76%] bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" />
+
+            </div>
+
+
+            <p className="text-xs text-slate-500 mt-3">
+              You're getting closer. Keep practicing to reach interview-ready status.
+            </p>
+
+          </div>
+
+
+          {/* Skill cards */}
+
+          <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+
+            <SkillCard
+              title="Technical"
+              score={82}
+              icon={Code2}
+            />
+
+            <SkillCard
+              title="Coding"
+              score={88}
+              icon={Brain}
+            />
+
+            <SkillCard
+              title="Communication"
+              score={71}
+              icon={MessageSquare}
+            />
+
+            <SkillCard
+              title="HR"
+              score={76}
+              icon={Users}
+            />
+
+          </div>
+
+        </section>
+
+
+        {/* ===================================================
+            INTERVIEW TYPES
+        ==================================================== */}
+
+        <section
+          id="interview-types"
+          className="mb-10"
+        >
+
+          <div className="flex items-end justify-between mb-5">
+
+            <div>
+
+              <p className="text-xs text-cyan-400 font-bold uppercase tracking-wider">
+                Practice
+              </p>
+
+              <h2 className="text-2xl font-black mt-1">
+                Choose your interview
+              </h2>
+
+              <p className="text-sm text-slate-500 mt-1">
+                Practice the skills that matter for your next opportunity.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            {interviewTypes.map((item) => {
+
+              const Icon = item.icon;
+
+              return (
+
+                <button
+                  key={item.id}
+                  onClick={() =>
+                    router.push(
+                      `/interview/setup?type=${item.id}`
+                    )
+                  }
+                  className="group text-left rounded-3xl border border-white/10 bg-white/[0.025] hover:bg-white/[0.05] hover:border-blue-500/40 p-5 transition-all hover:-translate-y-1"
+                >
+
+                  <div className="flex items-start justify-between">
+
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center">
+
+                      <Icon
+                        size={21}
+                        className="text-cyan-400"
+                      />
+
+                    </div>
+
+
+                    <ChevronRight
+                      size={17}
+                      className="text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition"
+                    />
+
+                  </div>
+
+
+                  <h3 className="font-bold text-base mt-5">
+                    {item.title}
+                  </h3>
+
+
+                  <p className="text-xs text-slate-500 leading-relaxed mt-2 min-h-[58px]">
+                    {item.description}
+                  </p>
+
+
+                  <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/10">
+
+                    <span className="text-[10px] text-slate-500">
+                      {item.level}
+                    </span>
+
+                    <span className="text-[10px] text-cyan-400 font-semibold">
+                      {item.questions}
+                    </span>
+
+                  </div>
+
+                </button>
+
+              );
+
+            })}
+
+          </div>
+
+        </section>
+
+
+        {/* ===================================================
+            TECHNOLOGY PRACTICE
+        ==================================================== */}
+
+        <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-6 md:p-7 mb-8">
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+
+            <div>
+
+              <p className="text-xs text-purple-400 font-bold uppercase tracking-wider">
+                Technical Preparation
+              </p>
+
+              <h2 className="text-xl font-black mt-1">
+                Practice by technology
+              </h2>
+
+            </div>
+
+
+            <button
+              onClick={() =>
+                router.push("/interview/setup?type=technical")
+              }
+              className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+            >
+              View all
+              <ArrowRight size={14} />
+            </button>
+
+          </div>
+
+
+          <div className="flex flex-wrap gap-2">
+
+            {technologies.map((technology) => (
+
+              <button
+                key={technology}
+                onClick={() =>
+                  router.push(
+                    `/interview/setup?type=technical&technology=${encodeURIComponent(
+                      technology
+                    )}`
+                  )
+                }
+                className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-slate-300 hover:text-white hover:border-cyan-500/40 hover:bg-cyan-500/5 transition"
+              >
+                {technology}
+              </button>
+
+            ))}
+
+          </div>
+
+        </section>
+
+
+        {/* ===================================================
+            BOTTOM GRID
+        ==================================================== */}
+
+        <section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+
+          {/* Recent interviews */}
+
+          <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-white/[0.025] overflow-hidden">
+
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+
+              <div>
+
+                <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
+                  Practice History
+                </p>
+
+                <h2 className="text-xl font-black mt-1">
+                  Recent interviews
+                </h2>
+
+              </div>
+
+
+              <button className="text-xs text-cyan-400 font-bold">
+                View history
+              </button>
+
+            </div>
+
+
+            <div className="divide-y divide-white/5">
+
+              {recentInterviews.map((interview) => (
+
+                <div
+                  key={interview.title}
+                  className="p-5 flex items-center gap-4 hover:bg-white/[0.02] transition"
+                >
+
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+
+                    <BarChart3
+                      size={18}
+                      className="text-blue-400"
+                    />
+
+                  </div>
+
+
+                  <div className="flex-1 min-w-0">
+
+                    <h3 className="text-sm font-bold truncate">
+                      {interview.title}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-1">
+                      {interview.type} • {interview.date}
+                    </p>
+
+                  </div>
+
+
+                  <div className="text-right">
+
+                    <p className="text-lg font-black">
+                      {interview.score}%
+                    </p>
+
+                    <p className="text-[10px] text-slate-500">
+                      Score
+                    </p>
+
+                  </div>
+
+
+                  <ChevronRight
+                    size={16}
+                    className="text-slate-600"
+                  />
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+
+          {/* Recommended */}
+
+          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-purple-950/30 to-blue-950/20 p-6">
+
+            <div className="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+
+              <Zap
+                size={20}
+                className="text-purple-400"
+              />
+
+            </div>
+
+
+            <h2 className="text-xl font-black mt-5">
+              Your next focus
+            </h2>
+
+
+            <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+              Based on your recent performance, improving communication
+              and technical follow-up answers can increase your interview score.
+            </p>
+
+
+            <div className="mt-5 space-y-3">
+
+              <Recommendation
+                text="Practice 5 Java interview questions"
+              />
+
+              <Recommendation
+                text="Complete one coding challenge"
+              />
+
+              <Recommendation
+                text="Take an AI mock interview"
+              />
+
+            </div>
+
+
+            <button
+              onClick={() =>
+                router.push("/interview/setup?type=mock")
+              }
+              className="w-full mt-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold transition"
+            >
+              Continue Preparation
+            </button>
+
+          </div>
+
+        </section>
+
+      </main>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   SKILL CARD
+========================================================= */
+
+function SkillCard({
+  title,
+  score,
+  icon: Icon,
+}: {
+  title: string;
+  score: number;
+  // Icon components can have varying props (e.g., size, className). Use any to allow passing size:number
+  icon: any;
+}) {
+
+  return (
+
+    <div className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
+
+      <div className="flex items-center justify-between">
+
+        <Icon
+          size ={18}
+          className ="text-slate-500"
+        />
+
+        <span className="text-lg font-black">
+          {score}%
+        </span>
+
+      </div>
+
+
+      <p className="text-xs text-slate-400 mt-5">
+        {title}
+      </p>
+
+
+      <div className="h-1.5 bg-white/5 rounded-full mt-3 overflow-hidden">
+
+        <div
+          className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full"
+          style={{
+            width: `${score}%`,
+          }}
+        />
+
+      </div>
+
+    </div>
+
+  );
+}
+
+
+/* =========================================================
+   RECOMMENDATION
+========================================================= */
+
+function Recommendation({
+  text,
+}: {
+  text: string;
+}) {
+
+  return (
+
+    <div className="flex items-center gap-3">
+
+      <CheckCircle2
+        size={16}
+        className="text-cyan-400 shrink-0"
       />
 
-      {/* Main 100vh Non-Scrollable Light Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#F8FAFC] p-5 lg:p-6 gap-5">
-        {/* Top Header Banner */}
-        <div className="relative rounded-3xl border border-slate-200 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 shrink-0 shadow-lg text-white overflow-hidden">
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-xs font-black uppercase tracking-wider backdrop-blur-md">
-                <Sparkles size={13} /> Codenthra AI Interview Engine v3.0
-              </div>
-              <h1 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">
-                Prepare for your <span className="underline decoration-cyan-400 decoration-wavy">Next Tech Interview</span>
-              </h1>
-              <p className="text-xs text-blue-100 mt-1 max-w-2xl font-medium">
-                Practice real-time technical questions with Codenthra AI. Receive instant feedback on your technical depth, communication, and response relevance.
-              </p>
-            </div>
+      <span className="text-xs text-slate-300">
+        {text}
+      </span>
 
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-center backdrop-blur-md">
-                <p className="text-[10px] text-blue-100 uppercase font-black tracking-wider">Readiness Score</p>
-                <p className="text-xl font-black text-white">{readinessScore}%</p>
-              </div>
-              <button
-                onClick={() => router.push("/interview/setup?type=mock")}
-                className="px-6 py-3 rounded-2xl bg-white text-blue-700 hover:bg-blue-50 font-black text-xs shadow-md transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
-              >
-                <Play size={16} className="fill-blue-700 text-blue-700" /> Start AI Mock Interview
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 2-Column Dashboard Grid */}
-        <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-5 min-h-0 overflow-hidden">
-          {/* Left Column (2 Cols): Interview Selection & Technologies */}
-          <div className="xl:col-span-2 flex flex-col gap-5 min-h-0 overflow-hidden">
-            {/* Interview Types (2x2 Grid) */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex items-center justify-between mb-3 shrink-0">
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                  <Target size={16} className="text-blue-600" /> Choose Interview Track
-                </h2>
-                <span className="text-xs text-slate-400 font-bold">Select mode to begin setup</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 min-h-0">
-                {interviewTypes.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => router.push(`/interview/setup?type=${item.id}`)}
-                      className={`group text-left p-4.5 rounded-2xl border ${item.bgColor} shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between relative overflow-hidden`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className={`w-10 h-10 rounded-xl ${item.iconBg} shadow-sm flex items-center justify-center`}>
-                          <Icon size={20} />
-                        </div>
-                        <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700 shadow-2xs">
-                          {item.badge}
-                        </span>
-                      </div>
-
-                      <div className="mt-3">
-                        <h3 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition flex items-center justify-between">
-                          {item.title} <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1 text-blue-600" />
-                        </h3>
-                        <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Tech Stack Horizontal Selector */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shrink-0 shadow-xs">
-              <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2.5">
-                Practice By Topic & Language
-              </p>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {technologies.map((tech) => (
-                  <button
-                    key={tech}
-                    onClick={() => {
-                      setSelectedTech(tech);
-                      router.push(`/interview/setup?technology=${encodeURIComponent(tech)}`);
-                    }}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
-                      selectedTech === tech
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    {tech}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column (1 Col): Dynamic History & Focus */}
-          <div className="flex flex-col gap-5 min-h-0 overflow-hidden">
-            {/* Dynamic Recent History */}
-            <div className="flex-1 flex flex-col rounded-2xl border border-slate-200 bg-white p-4 min-h-0 overflow-hidden shadow-xs">
-              <div className="flex items-center justify-between mb-3 shrink-0">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                  <BarChart3 size={15} className="text-blue-600" /> Recent Practice History
-                </h3>
-                <span className="text-[10px] text-slate-400 font-bold">{history.length} Completed</span>
-              </div>
-
-              <div className="flex-1 flex flex-col gap-2.5 overflow-y-auto pr-1">
-                {history.length > 0 ? (
-                  history.map((item, idx) => (
-                    <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">{item.title}</h4>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{item.type} • {item.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-black text-blue-600">{item.score}%</span>
-                        <p className="text-[9px] text-emerald-600 font-bold">{item.status}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                    <BarChart3 size={24} className="text-slate-300 mb-2" />
-                    <p className="text-xs font-bold text-slate-700">No Interview Sessions Yet</p>
-                    <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
-                      Complete your first AI practice round above to dynamically view your score history!
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Next Recommended Focus Card */}
-            <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 p-4 shrink-0 shadow-xs">
-              <div className="flex items-center gap-2 text-indigo-700 text-xs font-black mb-1.5">
-                <Zap size={14} /> Recommended Action
-              </div>
-              <p className="text-xs font-black text-slate-900">Master {selectedTech} Core Concepts</p>
-              <p className="text-[11px] text-slate-600 mt-1">Practice interview questions for {selectedTech} to calculate your overall readiness score.</p>
-              <button
-                onClick={() => router.push(`/interview/setup?technology=${encodeURIComponent(selectedTech)}`)}
-                className="w-full mt-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-sm transition"
-              >
-                Practice {selectedTech} Interview →
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+
   );
 }

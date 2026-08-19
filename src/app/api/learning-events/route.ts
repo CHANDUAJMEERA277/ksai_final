@@ -37,6 +37,201 @@ type MemoryInput = {
   priority: number;
 };
 
+async function updateTopicLearningProgress({
+  userId,
+  courseId,
+  chapterId,
+  topic,
+  eventType,
+  isCorrect,
+}: {
+  userId: string;
+  courseId: string;
+  chapterId: string;
+  topic: string;
+  eventType: string;
+  isCorrect?: boolean;
+}) {
+  const existing = await db.topicProgress.findUnique({
+    where: {
+      userId_chapterId_topic: {
+        userId,
+        chapterId,
+        topic,
+      },
+    },
+  });
+
+  const attempts = existing?.attempts ?? 0;
+  const totalQuestions = existing?.totalQuestions ?? 0;
+  const correctAnswers = existing?.correctAnswers ?? 0;
+  const masteryScore = existing?.masteryScore ?? 0;
+
+  let nextAttempts = attempts;
+  let nextTotalQuestions = totalQuestions;
+  let nextCorrectAnswers = correctAnswers;
+  let nextMasteryScore = masteryScore;
+
+  let status =
+    existing?.status ?? "NOT_STARTED";
+
+  // -----------------------------------------
+  // QUESTION
+  // -----------------------------------------
+
+  if (eventType === "QUESTION") {
+    nextTotalQuestions += 1;
+
+    status = "LEARNING";
+  }
+
+  // -----------------------------------------
+  // ANSWER
+  // -----------------------------------------
+
+  if (eventType === "ANSWER") {
+    nextAttempts += 1;
+
+    if (isCorrect === true) {
+      nextCorrectAnswers += 1;
+
+      nextMasteryScore = Math.min(
+        100,
+        masteryScore + 20
+      );
+    }
+
+    if (isCorrect === false) {
+      nextMasteryScore = Math.max(
+        0,
+        masteryScore - 15
+      );
+    }
+  }
+
+  // -----------------------------------------
+  // MISTAKE
+  // -----------------------------------------
+
+  if (eventType === "MISTAKE") {
+    nextMasteryScore = Math.max(
+      0,
+      masteryScore - 15
+    );
+
+    status = "NEEDS_REVIEW";
+  }
+
+  // -----------------------------------------
+  // CORRECTION
+  // -----------------------------------------
+
+  if (eventType === "CORRECTION") {
+    nextMasteryScore = Math.min(
+      100,
+      masteryScore + 5
+    );
+
+    status = "NEEDS_REVIEW";
+  }
+
+  // -----------------------------------------
+  // PRACTICE
+  // -----------------------------------------
+
+  if (eventType === "PRACTICE") {
+    nextMasteryScore = Math.min(
+      100,
+      masteryScore + 5
+    );
+
+    if (nextMasteryScore >= 80) {
+      status = "MASTERED";
+    } else {
+      status = "PRACTICED";
+    }
+  }
+
+  // -----------------------------------------
+  // EXPLANATION
+  // -----------------------------------------
+
+  if (eventType === "EXPLANATION") {
+    if (status === "NOT_STARTED") {
+      status = "LEARNING";
+    }
+  }
+
+  // -----------------------------------------
+  // PERFORMANCE
+  // -----------------------------------------
+
+  const accuracy =
+    nextTotalQuestions > 0
+      ? Math.round(
+          (nextCorrectAnswers /
+            nextTotalQuestions) *
+            100
+        )
+      : 0;
+
+  // Repeated poor performance
+  if (
+    nextTotalQuestions >= 2 &&
+    accuracy < 50
+  ) {
+    status = "NEEDS_REVIEW";
+  }
+
+  // Strong performance
+  if (
+    nextTotalQuestions >= 2 &&
+    accuracy >= 80 &&
+    nextMasteryScore >= 80
+  ) {
+    status = "MASTERED";
+  }
+
+  // Don't accidentally overwrite review state
+  if (
+    existing?.status === "NEEDS_REVIEW" &&
+    eventType !== "ANSWER"
+  ) {
+    status = "NEEDS_REVIEW";
+  }
+
+  if (existing) {
+    return db.topicProgress.update({
+      where: {
+        id: existing.id,
+      },
+      data: {
+        attempts: nextAttempts,
+        totalQuestions: nextTotalQuestions,
+        correctAnswers: nextCorrectAnswers,
+        masteryScore: nextMasteryScore,
+        status,
+        lastActivity: new Date(),
+      },
+    });
+  }
+
+  return db.topicProgress.create({
+    data: {
+      userId,
+      courseId,
+      chapterId,
+      topic,
+      attempts: nextAttempts,
+      totalQuestions: nextTotalQuestions,
+      correctAnswers: nextCorrectAnswers,
+      masteryScore: nextMasteryScore,
+      status,
+      lastActivity: new Date(),
+    },
+  });
+}
+
 function buildMemoryFromEvent(
   eventType: string,
   topic: string,
@@ -86,13 +281,13 @@ function buildMemoryFromEvent(
       };
 
     case "EXPLANATION":
-      return {
-        memoryType: "MASTERY",
-        key: cleanTopic,
-        content: `Student received an explanation about ${cleanTopic}: ${content}`,
-        confidence: 40,
-        priority: 1,
-      };
+  return {
+    memoryType: "REVIEW",
+    key: cleanTopic,
+    content: `Student studied an explanation about ${cleanTopic}: ${content}`,
+    confidence: 40,
+    priority: 1,
+  };
 
     case "EXAMPLE":
       return {
@@ -122,14 +317,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const {
-      userEmail,
-      courseId,
-      chapterId,
-      topic,
-      eventType,
-      content,
-      metadata,
-    } = body;
+  userEmail,
+  courseId,
+  chapterId,
+  topic,
+  eventType,
+  content,
+  metadata,
+  isCorrect,
+} = body;
 
     if (
       !userEmail ||
@@ -196,6 +392,51 @@ export async function POST(request: NextRequest) {
         shouldSave,
       },
     });
+
+
+    // =====================================================
+// 13C — TOPIC PERFORMANCE
+// =====================================================
+
+const eventMetadata =
+  typeof metadata === "string"
+    ? (() => {
+        try {
+          return JSON.parse(metadata);
+        } catch {
+          return {};
+        }
+      })()
+    : metadata || {};
+
+const isCorrectFromMetadata =
+  typeof eventMetadata.isCorrect === "boolean"
+    ? eventMetadata.isCorrect
+    : undefined;
+
+let topicProgress = null;
+
+try {
+  topicProgress =
+    await updateTopicLearningProgress({
+
+      
+
+      userId: user.id,
+      courseId,
+      chapterId,
+      topic,
+      eventType,
+      isCorrect: isCorrectFromMetadata,
+    });
+} catch (progressError) {
+  console.error(
+    "Topic progress update error:",
+    progressError
+  );
+}
+
+    
 
     let note = null;
 
@@ -309,12 +550,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      event,
-      note,
-      memory: savedMemory,
-    });
+    // =====================================================
+// 13C — LEARNING INTELLIGENCE
+// =====================================================
+
+return NextResponse.json({
+  success: true,
+  event,
+  note,
+  memory: savedMemory,
+  topicProgress,
+});
+
+
+
   } catch (error) {
     console.error("Learning event error:", error);
 

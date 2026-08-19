@@ -1,29 +1,64 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { LeftSidebar } from "@/components/dashboard/LeftSidebar";
 import {
-  Code2,
-  Brain,
-  Briefcase,
-  Video,
-  Sparkles,
-  Play,
   ArrowLeft,
-  CheckCircle2,
-  ChevronRight,
-  Layers,
-  Award,
+  ArrowRight,
+  Briefcase,
+  Check,
+  ChevronDown,
+  Code2,
+  Layers3,
+  Sparkles,
+  Target,
+  Timer,
+  Trophy,
+  Users,
+  Video,
+  Zap,
 } from "lucide-react";
 
-type InterviewType = "technical" | "coding" | "hr" | "mock";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
+
+type InterviewType =
+  | "technical"
+  | "coding"
+  | "hr"
+  | "mock";
 
 const interviewTypes = [
-  { id: "technical" as InterviewType, title: "Technical Interview", icon: Code2, desc: "CS fundamentals & language concepts" },
-  { id: "coding" as InterviewType, title: "Coding Challenge", icon: Brain, desc: "Live algorithmic problem solving" },
-  { id: "hr" as InterviewType, title: "HR & Behavioral", icon: Briefcase, desc: "Soft skills & situational questions" },
-  { id: "mock" as InterviewType, title: "Full AI Mock Round", icon: Video, desc: "End-to-end multi-round assessment" },
+  {
+    id: "technical" as InterviewType,
+    title: "Technical Interview",
+    description:
+      "Test programming knowledge, computer science fundamentals, and technical concepts.",
+    icon: Code2,
+  },
+  {
+    id: "coding" as InterviewType,
+    title: "Coding Interview",
+    description:
+      "Solve coding problems and demonstrate your problem-solving ability.",
+    icon: Target,
+  },
+  {
+    id: "hr" as InterviewType,
+    title: "HR Interview",
+    description:
+      "Practice behavioral, communication, and common HR interview questions.",
+    icon: Users,
+  },
+  {
+    id: "mock" as InterviewType,
+    title: "AI Mock Interview",
+    description:
+      "Experience a complete interview simulation with adaptive AI questions.",
+    icon: Video,
+  },
 ];
 
 const roles = [
@@ -33,39 +68,191 @@ const roles = [
   "Frontend Developer",
   "Backend Developer",
   "Full Stack Developer",
-  "Data Scientist",
+  "Android Developer",
+  "Data Analyst",
+  "Machine Learning Engineer",
   "DevOps Engineer",
 ];
 
 const technologies = [
   "Java",
   "Python",
+  "C",
   "C++",
   "JavaScript",
   "TypeScript",
   "React",
   "Node.js",
   "SQL",
+  "Data Structures & Algorithms",
 ];
 
 const experienceLevels = [
-  { id: "fresher", title: "Fresher", label: "0 Years" },
-  { id: "junior", title: "0–1 Years", label: "Junior" },
-  { id: "mid", title: "1–3 Years", label: "Intermediate" },
-  { id: "senior", title: "3+ Years", label: "Experienced" },
+  {
+    id: "fresher",
+    title: "Fresher",
+    description: "Preparing for your first job.",
+  },
+  {
+    id: "junior",
+    title: "0–1 Years",
+    description: "Early career professional.",
+  },
+  {
+    id: "mid",
+    title: "1–3 Years",
+    description: "Building professional experience.",
+  },
+  {
+    id: "senior",
+    title: "3+ Years",
+    description: "Experienced professional.",
+  },
 ];
 
 const difficulties = [
-  { id: "beginner", title: "Beginner", desc: "Basic concepts" },
-  { id: "intermediate", title: "Intermediate", desc: "Moderate questions" },
-  { id: "advanced", title: "Advanced", desc: "Deep technical & edge cases" },
+  {
+    id: "beginner",
+    title: "Beginner",
+    description:
+      "Fundamental concepts and straightforward questions.",
+  },
+  {
+    id: "intermediate",
+    title: "Intermediate",
+    description:
+      "Practical concepts and moderate problem solving.",
+  },
+  {
+    id: "advanced",
+    title: "Advanced",
+    description:
+      "Deep technical reasoning and challenging problems.",
+  },
 ];
 
-export default function InterviewSetupPage() {
+const questionCounts = [
+  {
+    value: 5,
+    title: "Quick",
+    description: "5 Questions",
+    duration: "10–15 min",
+  },
+  {
+    value: 10,
+    title: "Standard",
+    description: "10 Questions",
+    duration: "20–30 min",
+  },
+  {
+    value: 15,
+    title: "Deep Practice",
+    description: "15 Questions",
+    duration: "35–45 min",
+  },
+];
+
+interface SetupSectionProps {
+  number: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}
+
+function SetupSection({
+  number,
+  title,
+  description,
+  children,
+}: SetupSectionProps) {
   return (
-    <Suspense fallback={<div className="h-screen bg-[#F8FAFC] text-slate-900 flex items-center justify-center font-mono text-xs">Loading Interview Configurator...</div>}>
-      <InterviewSetupContent />
-    </Suspense>
+    <section className="mb-8">
+      <div className="mb-4 flex items-start gap-4">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-xs font-bold text-cyan-400">
+          {number}
+        </div>
+
+        <div>
+          <h2 className="text-base font-bold text-white">
+            {title}
+          </h2>
+
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+interface SelectGridProps {
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+}
+
+function SelectGrid({
+  value,
+  options,
+  onChange,
+  icon: Icon,
+}: SelectGridProps) {
+  return (
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {options.map((option) => {
+        const selected = value === option;
+
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            className={`group flex min-h-[54px] items-center justify-between rounded-xl border px-4 text-left transition-all ${
+              selected
+                ? "border-cyan-500/50 bg-cyan-500/[0.08] shadow-lg shadow-cyan-500/5"
+                : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
+            }`}
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              {Icon && (
+                <Icon
+                  size={16}
+                  className={
+                    selected
+                      ? "text-cyan-400"
+                      : "text-slate-500 group-hover:text-slate-300"
+                  }
+                />
+              )}
+
+              <span
+                className={`truncate text-sm font-medium ${
+                  selected
+                    ? "text-white"
+                    : "text-slate-400 group-hover:text-slate-200"
+                }`}
+              >
+                {option}
+              </span>
+            </div>
+
+            {selected && (
+              <div className="ml-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400">
+                <Check
+                  size={12}
+                  className="text-black"
+                  strokeWidth={3}
+                />
+              </div>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -73,261 +260,528 @@ function InterviewSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [selectedType, setSelectedType] = useState<InterviewType>(
-    (searchParams.get("type") as InterviewType) || "technical"
-  );
-  const [selectedRole, setSelectedRole] = useState("Software Engineer");
-  const [selectedTech, setSelectedTech] = useState(searchParams.get("technology") || "Java");
-  const [selectedExp, setSelectedExp] = useState("fresher");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("intermediate");
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const queryType =
+    searchParams.get("type") as InterviewType | null;
 
-  const handleStartSession = () => {
-    const params = new URLSearchParams({
-      type: selectedType,
-      role: selectedRole,
-      technology: selectedTech,
-      experience: selectedExp,
-      difficulty: selectedDifficulty,
-    });
-    router.push(`/interview/session?${params.toString()}`);
-  };
+  const queryTechnology =
+    searchParams.get("technology");
+
+  const [interviewType, setInterviewType] =
+    useState<InterviewType>(
+      queryType &&
+        interviewTypes.some(
+          (item) => item.id === queryType
+        )
+        ? queryType
+        : "technical"
+    );
+
+  const [role, setRole] =
+    useState("Software Engineer");
+
+  const [technology, setTechnology] =
+    useState(
+      queryTechnology &&
+        technologies.includes(queryTechnology)
+        ? queryTechnology
+        : "Java"
+    );
+
+  const [experience, setExperience] =
+    useState("fresher");
+
+  const [difficulty, setDifficulty] =
+    useState("intermediate");
+
+  const [questionCount, setQuestionCount] =
+    useState(10);
+
+  useEffect(() => {
+    if (
+      queryType &&
+      interviewTypes.some(
+        (item) => item.id === queryType
+      )
+    ) {
+      setInterviewType(queryType);
+    }
+
+    if (
+      queryTechnology &&
+      technologies.includes(queryTechnology)
+    ) {
+      setTechnology(queryTechnology);
+    }
+  }, [queryType, queryTechnology]);
+
+  function startInterview() {
+    const params = new URLSearchParams();
+
+    params.set("type", interviewType);
+    params.set("role", role);
+    params.set("technology", technology);
+    params.set("experience", experience);
+    params.set("difficulty", difficulty);
+    params.set("questions", String(questionCount));
+
+    router.push(
+      `/interview/session?${params.toString()}`
+    );
+  }
+
+  const selectedQuestion =
+    questionCounts.find(
+      (item) => item.value === questionCount
+    );
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden font-sans antialiased">
-      {/* Unified Left Sidebar */}
-      <LeftSidebar
-        activeTab="Interview Prep"
-        onTabChange={(tab) => {
-          if (tab === "Dashboard") router.push("/dashboard");
-          else if (tab === "Explore Courses") router.push("/courses/catalog");
-          else if (tab === "Courses") router.push("/courses");
-          else if (tab === "Leaderboard") router.push("/leaderboard");
-          else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
-          else if (tab === "Editor" || tab === "Workspace") router.push("/editor");
-          else if (tab === "Certificates") router.push("/certificates");
-          else if (tab === "Interview Prep") router.push("/interview");
-          else if (tab === "Settings") router.push("/settings");
-        }}
-        fullHeight={true}
-      />
+    <div className="min-h-screen overflow-x-hidden bg-[#07070A] text-white">
 
-      {/* Main 100vh Non-Scrollable Light Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[#F8FAFC] p-5 lg:p-6 gap-5">
-        {/* Top Header & Step Navigation Ribbon */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/interview")}
-              className="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-xs transition"
-            >
-              <ArrowLeft size={16} />
-            </button>
-            <div>
-              <h1 className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-                Configure Your <span className="text-blue-600">AI Interview</span>
-              </h1>
-              <p className="text-xs text-slate-500">Customize target role, language, and difficulty level</p>
-            </div>
-          </div>
+      {/* Background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-[10%] top-[-200px] h-[550px] w-[550px] rounded-full bg-blue-600/10 blur-[150px]" />
 
-          {/* 3 Step Wizard Controls */}
-          <div className="flex items-center gap-2 bg-white border border-slate-200 p-1.5 rounded-2xl shadow-xs">
-            <button
-              onClick={() => setActiveStep(1)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeStep === 1 ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
-            >
-              <Layers size={13} /> 1. Track & Role
-            </button>
-            <ChevronRight size={14} className="text-slate-400" />
-            <button
-              onClick={() => setActiveStep(2)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeStep === 2 ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
-            >
-              <Code2 size={13} /> 2. Tech & Experience
-            </button>
-            <ChevronRight size={14} className="text-slate-400" />
-            <button
-              onClick={() => setActiveStep(3)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
-                activeStep === 3 ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
-            >
-              <Award size={13} /> 3. Difficulty & Launch
-            </button>
-          </div>
-        </div>
+        <div className="absolute right-[-180px] top-[25%] h-[500px] w-[500px] rounded-full bg-purple-600/10 blur-[150px]" />
 
-        {/* Dynamic Wizard Body Card */}
-        <div className="flex-1 rounded-3xl border border-slate-200 bg-white p-6 flex flex-col justify-between min-h-0 overflow-hidden shadow-xs relative">
-          {activeStep === 1 && (
-            <div className="flex-1 flex flex-col min-h-0 gap-6 overflow-y-auto pr-1">
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 1: Select Interview Type</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {interviewTypes.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setSelectedType(item.id)}
-                        className={`p-4 rounded-2xl border text-left transition-all ${
-                          selectedType === item.id
-                            ? "bg-blue-50 border-blue-600 text-blue-950 shadow-md"
-                            : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                        }`}
-                      >
-                        <Icon size={20} className={selectedType === item.id ? "text-blue-600" : "text-slate-500"} />
-                        <h3 className="text-xs font-black text-slate-900 mt-3">{item.title}</h3>
-                        <p className="text-[11px] text-slate-500 mt-1">{item.desc}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 2: Select Target Role</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {roles.map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => setSelectedRole(role)}
-                      className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
-                        selectedRole === role
-                          ? "bg-indigo-50 border-indigo-600 text-indigo-950 shadow-xs"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeStep === 2 && (
-            <div className="flex-1 flex flex-col min-h-0 gap-6 overflow-y-auto pr-1">
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 1: Select Primary Technology</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {technologies.map((tech) => (
-                    <button
-                      key={tech}
-                      onClick={() => setSelectedTech(tech)}
-                      className={`p-4 rounded-2xl border text-xs font-bold text-center transition ${
-                        selectedTech === tech
-                          ? "bg-blue-50 border-blue-600 text-blue-950 shadow-xs"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {tech}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3">Step 2: Select Experience Level</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {experienceLevels.map((exp) => (
-                    <button
-                      key={exp.id}
-                      onClick={() => setSelectedExp(exp.id)}
-                      className={`p-4 rounded-2xl border text-left transition ${
-                        selectedExp === exp.id
-                          ? "bg-indigo-50 border-indigo-600 text-indigo-950 shadow-xs"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      <h3 className="text-xs font-bold text-slate-900">{exp.title}</h3>
-                      <p className="text-[10px] text-slate-500 mt-1">{exp.label}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeStep === 3 && (
-            <div className="flex-1 flex flex-col min-h-0 gap-6 justify-center max-w-3xl mx-auto w-full">
-              <div>
-                <h2 className="text-xs font-black uppercase tracking-wider text-blue-600 mb-3 text-center">Select Difficulty Level</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {difficulties.map((diff) => (
-                    <button
-                      key={diff.id}
-                      onClick={() => setSelectedDifficulty(diff.id)}
-                      className={`p-5 rounded-2xl border text-center transition ${
-                        selectedDifficulty === diff.id
-                          ? "bg-blue-50 border-blue-600 text-blue-950 shadow-md"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      <h3 className="text-sm font-bold text-slate-900 capitalize">{diff.title}</h3>
-                      <p className="text-xs text-slate-500 mt-1">{diff.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Selected Config Summary */}
-              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-slate-600 font-medium">Selected Config:</span>
-                  <span className="font-black text-slate-900 ml-2">{selectedRole} • {selectedTech} • {selectedDifficulty}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-blue-600 font-bold">
-                  <CheckCircle2 size={15} /> Ready to launch
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Sticky Bottom Action Ribbon */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-              <span>Track: <strong className="text-slate-900 capitalize">{selectedType}</strong></span>
-              <span>•</span>
-              <span>Role: <strong className="text-slate-900">{selectedRole}</strong></span>
-              <span>•</span>
-              <span>Tech: <strong className="text-blue-600">{selectedTech}</strong></span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {activeStep > 1 && (
-                <button
-                  onClick={() => setActiveStep((prev) => (prev - 1) as any)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs transition"
-                >
-                  Previous Step
-                </button>
-              )}
-
-              {activeStep < 3 ? (
-                <button
-                  onClick={() => setActiveStep((prev) => (prev + 1) as any)}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs transition flex items-center gap-1.5 shadow-sm"
-                >
-                  Next Step →
-                </button>
-              ) : (
-                <button
-                  onClick={handleStartSession}
-                  className="px-8 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md transition-all flex items-center gap-2 hover:scale-105"
-                >
-                  <Play size={16} fill="white" /> Launch Live AI Interview
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <div className="absolute bottom-[-200px] left-[35%] h-[500px] w-[500px] rounded-full bg-cyan-500/5 blur-[150px]" />
       </div>
+
+      {/* Header */}
+      <header className="relative z-10 h-16 border-b border-white/10 bg-[#09090B]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between px-5 lg:px-8">
+
+          <div className="flex items-center gap-4">
+
+            <button
+              type="button"
+              onClick={() => router.push("/interview")}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
+              aria-label="Back to interviews"
+            >
+              <ArrowLeft size={17} />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles
+                  size={15}
+                  className="text-cyan-400"
+                />
+
+                <span className="font-bold">
+                  CodeXAI
+                </span>
+              </div>
+
+              <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                Interview Setup
+              </p>
+            </div>
+
+          </div>
+
+          <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
+            <Zap
+              size={14}
+              className="text-cyan-400"
+            />
+            AI-powered interview
+          </div>
+
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="relative z-10 mx-auto max-w-[1100px] px-5 py-8 md:py-10 lg:px-8">
+
+        {/* Introduction */}
+        <section className="mb-8">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
+            <Sparkles size={14} />
+            Personalized Interview
+          </div>
+
+          <h1 className="mt-2 text-3xl font-black md:text-4xl">
+            Configure your interview
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
+            Tell CodeXAI what you&apos;re preparing for.
+            We&apos;ll use your selections to create an
+            adaptive interview experience designed around
+            your goals.
+          </p>
+        </section>
+
+        {/* Interview Type */}
+        <SetupSection
+          number="01"
+          title="Interview type"
+          description="What kind of interview do you want to practice?"
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {interviewTypes.map((item) => {
+              const Icon = item.icon;
+              const selected =
+                interviewType === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    setInterviewType(item.id)
+                  }
+                  className={`relative rounded-2xl border p-5 text-left transition-all ${
+                    selected
+                      ? "border-cyan-500/60 bg-cyan-500/[0.07] shadow-lg shadow-cyan-500/5"
+                      : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  {selected && (
+                    <div className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500">
+                      <Check
+                        size={14}
+                        className="text-black"
+                        strokeWidth={3}
+                      />
+                    </div>
+                  )}
+
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl border ${
+                      selected
+                        ? "border-cyan-500/20 bg-cyan-500/10"
+                        : "border-white/10 bg-white/5"
+                    }`}
+                  >
+                    <Icon
+                      size={20}
+                      className={
+                        selected
+                          ? "text-cyan-400"
+                          : "text-slate-400"
+                      }
+                    />
+                  </div>
+
+                  <h3 className="mt-4 font-bold">
+                    {item.title}
+                  </h3>
+
+                  <p className="mt-2 pr-5 text-xs leading-relaxed text-slate-500">
+                    {item.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </SetupSection>
+
+        {/* Role */}
+        <SetupSection
+          number="02"
+          title="Target role"
+          description="Which role are you preparing for?"
+        >
+          <SelectGrid
+            value={role}
+            options={roles}
+            onChange={setRole}
+            icon={Briefcase}
+          />
+        </SetupSection>
+
+        {/* Technology */}
+        <SetupSection
+          number="03"
+          title="Technology"
+          description="Which technology should CodeXAI focus on?"
+        >
+          <SelectGrid
+            value={technology}
+            options={technologies}
+            onChange={setTechnology}
+            icon={Layers3}
+          />
+        </SetupSection>
+
+        {/* Experience */}
+        <SetupSection
+          number="04"
+          title="Experience level"
+          description="Choose the level that best matches your current experience."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {experienceLevels.map((item) => {
+              const selected =
+                experience === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    setExperience(item.id)
+                  }
+                  className={`rounded-2xl border p-4 text-left transition-all ${
+                    selected
+                      ? "border-cyan-500/50 bg-cyan-500/[0.07]"
+                      : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`text-sm font-bold ${
+                        selected
+                          ? "text-white"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      {item.title}
+                    </span>
+
+                    {selected && (
+                      <Check
+                        size={15}
+                        className="text-cyan-400"
+                      />
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                    {item.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </SetupSection>
+
+        {/* Difficulty */}
+        <SetupSection
+          number="05"
+          title="Difficulty"
+          description="How challenging should the interview be?"
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {difficulties.map((item) => {
+              const selected =
+                difficulty === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    setDifficulty(item.id)
+                  }
+                  className={`rounded-2xl border p-5 text-left transition-all ${
+                    selected
+                      ? "border-cyan-500/50 bg-cyan-500/[0.07]"
+                      : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold">
+                      {item.title}
+                    </span>
+
+                    {selected && (
+                      <Check
+                        size={16}
+                        className="text-cyan-400"
+                      />
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                    {item.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </SetupSection>
+
+        {/* Question Count */}
+        <SetupSection
+          number="06"
+          title="Interview length"
+          description="How many questions would you like to practice?"
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {questionCounts.map((item) => {
+              const selected =
+                questionCount === item.value;
+
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() =>
+                    setQuestionCount(item.value)
+                  }
+                  className={`relative rounded-2xl border p-5 text-left transition-all ${
+                    selected
+                      ? "border-cyan-500/50 bg-cyan-500/[0.07]"
+                      : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  {selected && (
+                    <div className="absolute right-4 top-4">
+                      <Check
+                        size={16}
+                        className="text-cyan-400"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <Timer
+                      size={17}
+                      className={
+                        selected
+                          ? "text-cyan-400"
+                          : "text-slate-500"
+                      }
+                    />
+
+                    <span className="font-bold">
+                      {item.title}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm text-slate-300">
+                    {item.description}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-500">
+                    {item.duration}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </SetupSection>
+
+        {/* Summary */}
+        <section className="mb-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025]">
+          <div className="border-b border-white/10 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Trophy
+                size={16}
+                className="text-cyan-400"
+              />
+
+              <h2 className="text-sm font-bold">
+                Interview summary
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-px bg-white/10 md:grid-cols-4">
+            <div className="bg-[#0b0b0f] p-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                Type
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold text-white">
+                {
+                  interviewTypes.find(
+                    (item) =>
+                      item.id === interviewType
+                  )?.title
+                }
+              </p>
+            </div>
+
+            <div className="bg-[#0b0b0f] p-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                Role
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold text-white">
+                {role}
+              </p>
+            </div>
+
+            <div className="bg-[#0b0b0f] p-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                Technology
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold text-white">
+                {technology}
+              </p>
+            </div>
+
+            <div className="bg-[#0b0b0f] p-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                Questions
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {selectedQuestion?.value} ·{" "}
+                {selectedQuestion?.duration}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Start */}
+        <div className="flex flex-col items-stretch justify-between gap-4 rounded-3xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/[0.06] to-blue-500/[0.04] p-5 sm:flex-row sm:items-center">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles
+                size={16}
+                className="text-cyan-400"
+              />
+
+              <p className="text-sm font-bold">
+                Ready to begin?
+              </p>
+            </div>
+
+            <p className="mt-1 text-xs text-slate-500">
+              CodeXAI will generate your interview based
+              on these preferences.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={startInterview}
+            className="group flex shrink-0 items-center justify-center gap-3 rounded-xl bg-cyan-400 px-6 py-3 text-sm font-bold text-black shadow-lg shadow-cyan-500/10 transition hover:bg-cyan-300"
+          >
+            Start Interview
+
+            <ArrowRight
+              size={17}
+              className="transition-transform group-hover:translate-x-1"
+            />
+          </button>
+        </div>
+
+        {/* Small footer */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-slate-600">
+          <Target size={12} />
+          Your interview adapts to your selected level and goals.
+        </div>
+
+      </main>
     </div>
+  );
+}
+
+export default function InterviewSetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#07070A] text-white flex items-center justify-center">
+          <div className="text-sm text-slate-400">
+            Preparing interview setup...
+          </div>
+        </div>
+      }
+    >
+      <InterviewSetupContent />
+    </Suspense>
   );
 }

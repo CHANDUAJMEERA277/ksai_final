@@ -51,6 +51,7 @@ type Note = {
     id: string;
     title: string;
     orderNumber: number;
+    explanation: string;
   };
 };
 
@@ -72,6 +73,7 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("ALL");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -112,16 +114,17 @@ const [explanation, setExplanation] = useState("");
 
   const chapters = useMemo(() => {
     const map = new Map<
-      string,
-      {
-        id: string;
-        title: string;
-        orderNumber: number;
-        courseTitle: string;
-        language: string;
-        notes: Note[];
-      }
-    >();
+  string,
+  {
+    id: string;
+    title: string;
+    orderNumber: number;
+    courseTitle: string;
+    language: string;
+    content: string;
+    notes: Note[];
+  }
+>();
 
     for (const note of notes) {
       if (!note.chapterId) continue;
@@ -132,13 +135,14 @@ const [explanation, setExplanation] = useState("");
         existing.notes.push(note);
       } else {
         map.set(note.chapterId, {
-          id: note.chapterId,
-          title: note.chapter?.title || "Untitled Chapter",
-          orderNumber: note.chapter?.orderNumber ?? 0,
-          courseTitle: note.course?.title || "Course",
-          language: note.course?.language || "unknown",
-          notes: [note],
-        });
+  id: note.chapterId,
+  title: note.chapter?.title || "Untitled Chapter",
+  orderNumber: note.chapter?.orderNumber ?? 0,
+  courseTitle: note.course?.title || "Course",
+  language: note.course?.language || "unknown",
+  content: note.chapter?.explanation || "",
+  notes: [note],
+});
       }
     }
 
@@ -182,9 +186,19 @@ const [explanation, setExplanation] = useState("");
     }
   }, [chapters, selectedChapter]);
 
+  useEffect(() => {
+    setSelectedType("ALL");
+  }, [selectedChapter]);
+
   const selected = chapters.find(
     (chapter) => chapter.id === selectedChapter
   );
+
+  const filteredSelectedNotes = useMemo(() => {
+    if (!selected) return [];
+    if (selectedType === "ALL") return selected.notes;
+    return selected.notes.filter((note) => note.type === selectedType);
+  }, [selected, selectedType]);
 
   const completedChapterIds = new Set(
     notes
@@ -399,6 +413,34 @@ const [explanation, setExplanation] = useState("");
           </div>
         )}
 
+        {/* NOTE TYPE FILTERS */}
+        {!loading && notes.length > 0 && (
+          <section className="mb-6">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <span className="text-[10px] uppercase tracking-wider font-black text-slate-400 shrink-0">Filter</span>
+              {[
+                ["ALL", "All Notes"],
+                ["EXPLANATION", "Concepts"],
+                ["QUESTION", "Questions"],
+                ["MISTAKE", "Mistakes"],
+                ["CORRECTION", "Corrections"],
+                ["EXAMPLE", "Examples"],
+                ["PRACTICE", "Practice"],
+                ["VISUAL", "Visuals"],
+              ].map(([value, label]) => {
+                const active = selectedType === value;
+                const count = value === "ALL" ? notes.length : notes.filter((note) => note.type === value).length;
+                return (
+                  <button key={value} type="button" onClick={() => setSelectedType(value)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[10px] font-bold transition ${active ? "bg-blue-600 border-blue-600 text-white shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                    {label}
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-400"}`}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* STATS */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
           <StatCard
@@ -573,6 +615,39 @@ const [explanation, setExplanation] = useState("");
                   );
                 })}
 
+                <div className="mt-8">
+  <div className="flex items-center justify-between mb-4">
+    <div>
+      <p className="text-[10px] uppercase tracking-wider font-black text-slate-400">
+        Learning Activity
+      </p>
+
+      <h4 className="text-xl font-black mt-1">
+        Your questions, mistakes & progress
+      </h4>
+    </div>
+  </div>
+
+  <div className="space-y-4">
+    {filteredSelectedNotes.map((note) => (
+      <NotePreview
+        key={note.id}
+        note={note}
+        deleting={deleting === note.id}
+        explaining={explainingNote === note.id}
+        explained={explainedNote === note.id}
+        explanation={
+          explainedNote === note.id
+            ? explanation
+            : ""
+        }
+        onDelete={() => deleteNote(note.id)}
+        onExplain={() => explainNote(note)}
+      />
+    ))}
+  </div>
+</div>
+
                 {filteredChapters.length === 0 && (
                   <div className="text-center py-6">
                     <Search
@@ -682,51 +757,114 @@ const [explanation, setExplanation] = useState("");
                     />
                   </div>
 
-                  {/* NOTES */}
-                  <div className="p-6 lg:p-8">
-                    <div className="flex items-center justify-between mb-5">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider font-black text-slate-400">
-                          Personal Notes
-                        </p>
+                  {/* CHAPTER CONTENT + PERSONAL NOTES */}
+<div className="p-6 lg:p-8">
 
-                        <h4 className="text-lg font-black mt-1">
-                          What you learned
-                        </h4>
-                      </div>
+  {/* ACTUAL BOOK CONTENT */}
+  <div className="mb-10">
+    <div className="flex items-center justify-between mb-5">
+      <div>
+        <p className="text-[10px] uppercase tracking-wider font-black text-blue-600">
+          Chapter Content
+        </p>
 
-                      <button
-                        onClick={() =>
-                          router.push(
-                            `/courses/${selected.language}/chapter/${selected.orderNumber}`
-                          )
-                        }
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition"
-                      >
-                        Open Chapter
-                        <ChevronRight size={15} />
-                      </button>
-                    </div>
+        <h4 className="text-2xl font-black mt-1">
+          What you are learning
+        </h4>
+      </div>
+    </div>
 
-                    <div className="space-y-4">
-                      {selected.notes.map((note) => (
-                        <NotePreview
-  key={note.id}
-  note={note}
-  deleting={deleting === note.id}
-  explaining={explainingNote === note.id}
-  explained={explainedNote === note.id}
-  explanation={
-    explainedNote === note.id
-      ? explanation
-      : ""
-  }
-  onDelete={() => deleteNote(note.id)}
-  onExplain={() => explainNote(note)}
-/>
-                      ))}
-                    </div>
-                  </div>
+    <article className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+      <div className="p-6 lg:p-8">
+        {selected.content ? (
+          <div className="text-[15px] md:text-base text-slate-700 leading-8 whitespace-pre-wrap">
+            {selected.content}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-slate-50 border border-dashed border-slate-200 p-8 text-center">
+            <FileText
+              size={24}
+              className="mx-auto text-slate-400"
+            />
+
+            <p className="text-sm font-bold text-slate-700 mt-3">
+              No chapter content available
+            </p>
+
+            <p className="text-xs text-slate-400 mt-1">
+              This chapter does not have learning content yet.
+            </p>
+          </div>
+        )}
+      </div>
+    </article>
+  </div>
+
+  {/* PERSONAL LEARNING ACTIVITY */}
+  <div>
+    <div className="flex items-center justify-between mb-5">
+      <div>
+        <p className="text-[10px] uppercase tracking-wider font-black text-slate-400">
+          Personal Notes
+        </p>
+
+        <h4 className="text-lg font-black mt-1">
+          What you learned
+        </h4>
+      </div>
+
+      <button
+        onClick={() =>
+          router.push(
+            `/courses/${selected.language}/chapter/${selected.orderNumber}`
+          )
+        }
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition"
+      >
+        Open Chapter
+        <ChevronRight size={15} />
+      </button>
+    </div>
+
+    <div className="space-y-4">
+      {filteredSelectedNotes.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+          <FileText
+            size={18}
+            className="mx-auto text-slate-400"
+          />
+
+          <p className="text-sm font-bold text-slate-700 mt-3">
+            No personal learning notes yet
+          </p>
+
+          <p className="text-xs text-slate-400 mt-1">
+            Your questions, mistakes, corrections and practice
+            will appear here.
+          </p>
+        </div>
+      ) : (
+        filteredSelectedNotes.map((note) => (
+          <NotePreview
+            key={note.id}
+            note={note}
+            deleting={deleting === note.id}
+            explaining={explainingNote === note.id}
+            explained={explainedNote === note.id}
+            explanation={
+              explainedNote === note.id
+                ? explanation
+                : ""
+            }
+            onDelete={() => deleteNote(note.id)}
+            onExplain={() => explainNote(note)}
+          />
+        ))
+      )}
+    </div>
+  </div>
+
+</div>
                 </div>
               )}
             </section>
@@ -814,9 +952,8 @@ function MiniStat({
     </div>
   );
 }
-
 /* ============================================================= */
-/* NOTE PREVIEW */
+/* REAL NOTEBOOK PAGE */
 /* ============================================================= */
 
 function NotePreview({
@@ -838,114 +975,278 @@ function NotePreview({
 }) {
   const config = getNoteConfig(note.type);
 
-  return (
-    <div className="border border-slate-200 rounded-2xl p-4 hover:border-slate-300 transition">
-      <div className="flex items-start gap-3">
-        <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${config.iconClass}`}
-        >
-          {config.icon}
-        </div>
+  const typeTitle: Record<string, string> = {
+    EXPLANATION: "Concept",
+    EXAMPLE: "Example",
+    QUESTION: "Question",
+    CORRECTION: "Correction",
+    CODE: "Code Example",
+    VISUAL: "Visual Explanation",
+    TIP: "Key Idea",
+    MISTAKE: "Common Mistake",
+    PRACTICE: "Practice",
+  };
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
+  const sectionTitle = typeTitle[note.type] || "Learning Note";
+
+  return (
+    <article className="relative overflow-hidden rounded-[4px] border border-slate-300 bg-[#fffef8] shadow-[0_3px_12px_rgba(15,23,42,0.08)]">
+
+      {/* NOTEBOOK TOP */}
+      <div className="relative px-7 md:px-10 pt-7 pb-5 border-b border-slate-200">
+
+        {/* Red notebook margin */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-200" />
+
+        <div className="flex items-start justify-between gap-4">
+
+          <div className="min-w-0">
+
+            {/* Small label */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-black text-blue-700">
+                {config.icon}
+                {sectionTitle}
+              </span>
+
+              <span className="text-slate-300">•</span>
+
+              <span className="text-[10px] font-semibold text-slate-400">
+                {note.topic}
+              </span>
+
+            </div>
+
+            {/* Main handwritten-style heading */}
+            <h5 className="text-2xl md:text-[28px] font-black tracking-tight text-slate-900">
+              {note.title}
+            </h5>
+
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 shrink-0">
+
+            {note.isPinned && (
+              <div
+                className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"
+                title="Pinned"
+              >
+                <Pin size={14} />
+              </div>
+            )}
+
+            <button
+              onClick={onExplain}
+              disabled={explaining}
+              className="h-8 px-3 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center gap-1.5 text-[10px] font-bold transition"
+              title="Explain this note"
+            >
+              {explaining ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Bot size={13} />
+              )}
+
+              {explaining ? "Explaining..." : "Explain"}
+            </button>
+
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition"
+              title="Delete note"
+            >
+              {deleting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+      {/* NOTE PAPER */}
+      <div
+        className="
+          relative
+          px-7 md:px-10
+          py-7
+          min-h-[190px]
+          bg-[#fffef8]
+          bg-[linear-gradient(to_bottom,transparent_31px,#dbeafe_32px)]
+          bg-[length:100%_32px]
+        "
+      >
+
+        {/* Red notebook margin */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-red-200" />
+
+        {/* Content */}
+        <div className="relative pl-3 md:pl-5">
+
+          {/* Numbered note heading */}
+          <div className="flex items-start gap-3 mb-5">
+
+            <div className="mt-1 flex items-center justify-center w-7 h-7 rounded-full border-2 border-blue-500 text-blue-600 text-xs font-black bg-white">
+              {note.type === "PRACTICE"
+                ? "✓"
+                : note.type === "MISTAKE"
+                  ? "!"
+                  : "1"}
+            </div>
+
             <div>
-              <p className="text-[9px] uppercase tracking-wider font-black text-slate-400">
-                {config.label}
+              <p className="text-[10px] uppercase tracking-[0.14em] font-black text-slate-400">
+                {sectionTitle}
               </p>
 
-              <h5 className="text-sm font-black text-slate-800 mt-1">
+              <p className="text-base md:text-lg font-bold text-slate-800 mt-0.5">
                 {note.title}
-              </h5>
-
-              <p className="text-[10px] text-slate-400 mt-1">
-                {note.topic}
               </p>
             </div>
 
-            <div className="flex items-center gap-1">
-  {note.isPinned && (
-    <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-      <Pin size={13} />
-    </div>
-  )}
-
-  <button
-    onClick={onExplain}
-    disabled={explaining}
-    className="h-7 px-2.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center gap-1.5 text-[10px] font-bold transition"
-    title="Explain this note"
-  >
-    {explaining ? (
-      <Loader2 size={12} className="animate-spin" />
-    ) : (
-      <Bot size={12} />
-    )}
-
-    {explaining ? "Explaining..." : "Explain"}
-  </button>
-
-  <button
-    onClick={onDelete}
-    disabled={deleting}
-    className="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition"
-    title="Delete note"
-  >
-    {deleting ? (
-      <Loader2 size={13} className="animate-spin" />
-    ) : (
-      <Trash2 size={13} />
-    )}
-  </button>
-</div>
           </div>
 
+          {/* SPECIAL MISTAKE BLOCK */}
+          {note.type === "MISTAKE" && (
+            <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-orange-700">
+                <AlertTriangle size={16} />
+                <span className="text-xs font-black">
+                  Common Mistake
+                </span>
+              </div>
+
+              <p className="text-sm text-orange-900 mt-1 leading-6">
+                Remember this point when revising the topic.
+              </p>
+            </div>
+          )}
+
+          {/* SPECIAL CORRECTION BLOCK */}
+          {note.type === "CORRECTION" && (
+            <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <CheckCircle2 size={16} />
+                <span className="text-xs font-black">
+                  Corrected Understanding
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* VISUAL */}
           {note.type === "VISUAL" ? (
-  <div className="mt-4">
-    <VisualNoteRenderer
-      metadata={note.metadata}
-      content={note.content}
-    />
-  </div>
-) : (
-  <div className="text-xs text-slate-600 leading-6 mt-3 whitespace-pre-wrap">
-    {note.content}
-  </div>
-)}
+            <div className="rounded-xl border border-slate-200 bg-white/80 p-4">
+              <VisualNoteRenderer
+                metadata={note.metadata}
+                content={note.content}
+              />
+            </div>
+          ) : note.type === "CODE" ? (
 
-{explained && explanation && (
-  <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
-        <Bot size={15} />
-      </div>
+            /* CODE */
+            <pre className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-950 text-slate-100 p-5 text-sm leading-7 font-mono shadow-inner">
+              <code>{note.content}</code>
+            </pre>
 
-      <div>
-        <p className="text-[9px] uppercase tracking-wider font-black text-blue-600">
-          CodeXAI Mentor
-        </p>
+          ) : (
 
-        <p className="text-xs font-black text-slate-800">
-          Simpler Explanation
-        </p>
-      </div>
-    </div>
+            /* NORMAL NOTE */
+            <div className="text-[15px] md:text-base text-slate-700 leading-8 whitespace-pre-wrap">
+              {note.content}
+            </div>
 
-    <div className="mt-3 text-xs text-slate-700 leading-6 whitespace-pre-wrap">
-      {explanation}
-    </div>
-  </div>
-)}
+          )}
 
+          {/* KEY IDEA */}
+          {(note.type === "EXPLANATION" || note.type === "TIP") && (
+            <div className="mt-7 rounded-xl border-l-4 border-amber-400 bg-amber-50 px-5 py-4">
 
+              <div className="flex items-center gap-2 text-amber-700">
+                <Lightbulb size={16} />
 
-          <p className="text-[9px] text-slate-400 mt-3">
-            Saved{" "}
-            {new Date(note.createdAt).toLocaleDateString()}
-          </p>
+                <span className="text-[10px] uppercase tracking-wider font-black">
+                  Key Idea
+                </span>
+              </div>
+
+              <p className="text-sm font-semibold text-amber-900 mt-1">
+                Understand the concept first, then remember the terminology.
+              </p>
+
+            </div>
+          )}
+
+          {/* PRACTICE */}
+          {note.type === "PRACTICE" && (
+            <div className="mt-7 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+
+              <div className="flex items-center gap-2 text-blue-700">
+                <Dumbbell size={16} />
+
+                <span className="text-[10px] uppercase tracking-wider font-black">
+                  Practice
+                </span>
+              </div>
+
+              <p className="text-sm font-semibold text-blue-900 mt-1">
+                Try explaining this concept without looking at your notes.
+              </p>
+
+            </div>
+          )}
+
+          {/* AI EXPLANATION */}
+          {explained && explanation && (
+            <div className="mt-7 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                  <Bot size={16} />
+                </div>
+
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.15em] font-black text-blue-600">
+                    CodeXAI Mentor
+                  </p>
+
+                  <p className="text-sm font-black text-slate-800">
+                    Simpler Explanation
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="mt-4 text-sm text-slate-700 leading-7 whitespace-pre-wrap">
+                {explanation}
+              </div>
+
+            </div>
+          )}
+
+          {/* FOOTER */}
+          <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-between">
+
+            <p className="text-[10px] text-slate-400">
+              Written from your learning activity
+            </p>
+
+            <p className="text-[10px] text-slate-400">
+              {new Date(note.createdAt).toLocaleDateString()}
+            </p>
+
+          </div>
+
         </div>
       </div>
-    </div>
+
+    </article>
   );
 }
 

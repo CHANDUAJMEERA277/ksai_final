@@ -114,6 +114,7 @@ class AIOrchestrator:
     history=None,
     asked_question="",
     content_type="general",
+    learning_memory="",
 ):
 
         history = history or []
@@ -128,6 +129,7 @@ class AIOrchestrator:
     history=history,
     asked_question=asked_question,
     content_type=content_type,
+    learning_memory=learning_memory,
 )
         print()
         print("========== AI TEACHING REQUEST ==========")

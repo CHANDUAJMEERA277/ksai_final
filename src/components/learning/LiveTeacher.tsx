@@ -19,14 +19,23 @@ import {
 
 interface LiveTeacherProps {
   contentRef: React.RefObject<HTMLElement | null>;
+
   chapterTitle: string;
   chapterContent: string;
+
   course: string;
+  courseId: string;
+  chapterId: string;
+  userEmail: string;
+
+  activeTopic?: string;
+activeTopicContent?: string;
 
   onExplain: (
-    content: string,
-    title: string
-  ) => Promise<string>;
+  content: string,
+  title: string,
+  learningMemory?: string
+) => Promise<string>;
 
   onResumeRecap?: (
     resumeTitle: string
@@ -35,10 +44,18 @@ interface LiveTeacherProps {
     questions: string[];
   }>;
 
-  onEvaluateResumeAnswer?: (
+    onEvaluateResumeAnswer?: (
     question: string,
     answer: string
   ) => Promise<string>;
+
+  onEvaluateCheckpoint?: (
+    question: string,
+    answer: string
+  ) => Promise<{
+    result: "CORRECT" | "PARTIAL" | "INCORRECT";
+    feedback: string;
+  }>;
 
   onEvaluateChapter?: (
     answers: Array<{
@@ -74,12 +91,17 @@ const LiveTeacher = forwardRef<
   LiveTeacherProps
 >( ({
   contentRef,
-  chapterTitle,
-  chapterContent,
-  course,
-  onExplain,
-  onResumeRecap,
+chapterTitle,
+chapterContent,
+course,
+courseId,
+chapterId,
+userEmail,
+onExplain,
+    onResumeRecap,
+      activeTopic,
   onEvaluateResumeAnswer,
+  onEvaluateCheckpoint,
   onEvaluateChapter,
   onLessonStart,
   onLessonComplete,
@@ -348,7 +370,7 @@ useEffect(() => {
 };
 
 
-const collectUnits = (): TeachingUnit[] => {
+  const collectUnits = (): TeachingUnit[] => {
   const root = contentRef.current;
 
   if (!root) {
@@ -400,49 +422,114 @@ const collectUnits = (): TeachingUnit[] => {
 
   const units: TeachingUnit[] = [];
 
-  let currentUnit:
-    | TeachingUnit
-    | null = null;
+let currentUnit: TeachingUnit | null = null;
+
+
+  /*
+   * --------------------------------------------------
+   * OPTIONAL ACTIVE TOPIC FILTER
+   * --------------------------------------------------
+   */
+
+  const topicHeading = activeTopic
+    ? Array.from(
+        root.querySelectorAll(
+          "h1, h2, h3, h4, h5, h6"
+        )
+      ).find(
+        (heading) =>
+          heading.textContent
+            ?.trim()
+            .toLowerCase() ===
+          activeTopic
+            .trim()
+            .toLowerCase()
+      ) as HTMLElement | undefined
+    : undefined;
+
+  if (activeTopic && !topicHeading) {
+    console.warn(
+      "⚠️ LiveTeacher: active topic heading not found:",
+      activeTopic
+    );
+  }
+
+  let insideActiveTopic =
+    !activeTopic;
+
+  const activeHeadingLevel =
+    topicHeading
+      ? Number(
+          topicHeading.tagName.substring(1)
+        )
+      : null;
 
   filtered.forEach((element) => {
     const isHeading =
-  /^H[1-6]$/.test(element.tagName);
-
-const text =
-  element.innerText.trim();
-
-let type: TeachingUnitType = "paragraph";
-
-if (isHeading) {
-  type = "heading";
-} else if (element.tagName === "PRE") {
-  type = "code";
-} else if (element.tagName === "BLOCKQUOTE") {
-  type = "quote";
-} else if (
-  element.tagName === "UL" ||
-  element.tagName === "OL"
-) {
-  type = "list";
-} else if (
-  element.tagName === "TABLE"
-) {
-  type = "table";
-}
+      /^H[1-6]$/.test(
+        element.tagName
+      );
 
     /*
-     * ==========================================
+     * --------------------------------------------------
+     * ACTIVE TOPIC SCOPING
+     * --------------------------------------------------
+     */
+
+    if (activeTopic) {
+      if (element === topicHeading) {
+        insideActiveTopic = true;
+      } else if (
+        insideActiveTopic &&
+        isHeading &&
+        activeHeadingLevel !== null &&
+        Number(
+          element.tagName.substring(1)
+        ) <= activeHeadingLevel
+      ) {
+        insideActiveTopic = false;
+      }
+
+      if (!insideActiveTopic) {
+        return;
+      }
+    }
+
+    const text =
+      element.innerText.trim();
+
+    let type: TeachingUnitType =
+      "paragraph";
+
+    if (isHeading) {
+      type = "heading";
+    } else if (
+      element.tagName === "PRE"
+    ) {
+      type = "code";
+    } else if (
+      element.tagName === "BLOCKQUOTE"
+    ) {
+      type = "quote";
+    } else if (
+      element.tagName === "UL" ||
+      element.tagName === "OL"
+    ) {
+      type = "list";
+    } else if (
+      element.tagName === "TABLE"
+    ) {
+      type = "table";
+    }
+
+    /*
+     * --------------------------------------------------
      * NEW SECTION
-     * ==========================================
+     * --------------------------------------------------
      */
 
     if (isHeading) {
       if (currentUnit) {
-        /*
-         * If DOM extraction only captured the
-         * heading, recover the real content
-         * from chapterContent.
-         */
         if (
           currentUnit.content.trim() ===
           currentUnit.title.trim()
@@ -462,20 +549,20 @@ if (isHeading) {
       }
 
       currentUnit = {
-  anchor: element,
-  elements: [element],
-  title: text,
-  content: text,
-  type,
-};
+        anchor: element,
+        elements: [element],
+        title: text,
+        content: text,
+        type,
+      };
 
       return;
     }
 
     /*
-     * ==========================================
+     * --------------------------------------------------
      * CONTENT BELONGS TO CURRENT SECTION
-     * ==========================================
+     * --------------------------------------------------
      */
 
     if (currentUnit) {
@@ -490,28 +577,30 @@ if (isHeading) {
     }
 
     /*
-     * ==========================================
+     * --------------------------------------------------
      * CONTENT BEFORE FIRST HEADING
-     * ==========================================
+     * --------------------------------------------------
      */
 
     currentUnit = {
-  anchor: element,
-  elements: [element],
-  title: "Introduction",
-  content: text,
-  type,
-};
+      anchor: element,
+      elements: [element],
+      title: "Introduction",
+      content: text,
+      type,
+    };
   });
 
   /*
-   * ==========================================
+   * --------------------------------------------------
    * FINAL SECTION
-   * ==========================================
+   * --------------------------------------------------
    */
+// --------------------------------------------------
+// FINAL SECTION
+// --------------------------------------------------
 
-  const finalUnit =
-  currentUnit as TeachingUnit | null;
+const finalUnit = currentUnit as TeachingUnit | null;
 
 if (finalUnit) {
   if (
@@ -519,29 +608,26 @@ if (finalUnit) {
     finalUnit.title.trim()
   ) {
     const sourceContent =
-      extractSourceSection(
-        finalUnit.title
-      );
+      extractSourceSection(finalUnit.title);
 
     if (sourceContent) {
-      finalUnit.content =
-        sourceContent;
+      finalUnit.content = sourceContent;
     }
   }
 
-  units.push(finalUnit);
-}
+  // Only add it if it has not already been added.
+  const alreadyAdded = units.includes(finalUnit);
 
-  /*
-   * ==========================================
-   * DEBUG
-   * ==========================================
-   */
+  if (!alreadyAdded) {
+    units.push(finalUnit);
+  }
+}
 
   console.log(
     "📚 LiveTeacher teaching units:",
     units.map((unit) => ({
       title: unit.title,
+      type: unit.type,
       contentLength:
         unit.content.length,
       contentPreview:
@@ -552,6 +638,7 @@ if (finalUnit) {
   return units;
 };
 
+  
   // --------------------------------------------------
   // Highlight current teaching element
   // --------------------------------------------------
@@ -803,21 +890,120 @@ const startCheckpoint = async (
   setCheckpointAnswer("");
   setCheckpointFeedback("");
 
-  setCheckpointQuestion(
-    `In your own words, what is ${title}?`
+  const question =
+    `In your own words, what is ${title}?`;
+
+  setCheckpointQuestion(question);
+
+  await recordLearningEvent(
+    "QUESTION",
+    title,
+    question,
+    {
+      source: "live-teacher-checkpoint",
+    }
   );
 
   setShowCheckpoint(true);
 };
 
-const submitCheckpoint = () => {
-  if (!checkpointAnswer.trim()) {
+const submitCheckpoint = async () => {
+  const answer = checkpointAnswer.trim();
+
+  if (!answer) {
     return;
   }
 
-  setCheckpointFeedback(
-    "Good thinking! Your answer has been recorded. Let's continue."
+  let result:
+    | "CORRECT"
+    | "PARTIAL"
+    | "INCORRECT" = "PARTIAL";
+
+  let feedback =
+    "Your answer has been recorded.";
+
+  // -----------------------------------------
+  // AI CHECKPOINT EVALUATION
+  // -----------------------------------------
+
+  if (onEvaluateCheckpoint) {
+    try {
+      const evaluation = await onEvaluateCheckpoint(
+        checkpointQuestion,
+        answer
+      );
+
+      result =
+        evaluation?.result || "PARTIAL";
+
+      feedback =
+        evaluation?.feedback ||
+        feedback;
+    } catch (error) {
+      console.error(
+        "Checkpoint evaluation error:",
+        error
+      );
+    }
+  }
+
+  const isCorrect = result === "CORRECT";
+
+  // -----------------------------------------
+  // SAVE ANSWER
+  // -----------------------------------------
+
+  await recordLearningEvent(
+    "ANSWER",
+    currentTitle || "Checkpoint",
+    answer,
+    {
+      question: checkpointQuestion,
+      source: "live-teacher-checkpoint",
+      evaluation: result,
+      isCorrect,
+    }
   );
+
+  // -----------------------------------------
+  // SAVE MISTAKE
+  // -----------------------------------------
+
+  if (result === "INCORRECT") {
+    await recordLearningEvent(
+      "MISTAKE",
+      currentTitle || "Checkpoint",
+      answer,
+      {
+        question: checkpointQuestion,
+        source: "live-teacher-checkpoint",
+        evaluation: result,
+      }
+    );
+  }
+
+  // -----------------------------------------
+  // SAVE CORRECTION
+  // -----------------------------------------
+
+  if (
+    result === "CORRECT" ||
+    result === "PARTIAL"
+  ) {
+    await recordLearningEvent(
+      "CORRECTION",
+      currentTitle || "Checkpoint",
+      feedback,
+      {
+        question: checkpointQuestion,
+        studentAnswer: answer,
+        evaluation: result,
+        source: "live-teacher-checkpoint",
+      }
+    );
+  }
+
+  setCheckpointFeedback(feedback);
 };
 
 const continueAfterCheckpoint = () => {
@@ -975,6 +1161,451 @@ const continueAfterCheckpoint = () => {
     startTeaching();
   };
 
+  const loadLearningMemory = async () => {
+  if (!userEmail) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(
+      `/api/learning-memory?userEmail=${encodeURIComponent(
+        userEmail
+      )}&courseId=${encodeURIComponent(
+        courseId
+      )}&chapterId=${encodeURIComponent(
+        chapterId
+      )}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Failed to load learning memory:",
+        await response.text()
+      );
+      return [];
+    }
+
+    const data = await response.json();
+
+    if (Array.isArray(data.memories)) {
+      return data.memories;
+    }
+
+    return [];
+  } catch (error) {
+    console.error(
+      "Learning memory loading error:",
+      error
+    );
+
+    return [];
+  }
+};
+
+const [learningMemory, setLearningMemory] = useState<
+  Array<{
+    topic: string;
+    memoryType: string;
+    key: string;
+    content: string;
+    confidence: number;
+    priority: number;
+    occurrences: number;
+  }>
+>([]);
+
+type AdaptiveLevel =
+  | "BEGINNER"
+  | "DEVELOPING"
+  | "CONFIDENT"
+  | "MASTERED";
+
+interface AdaptiveProfile {
+  level: AdaptiveLevel;
+  masteryScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  mistakes: number;
+  reviewsNeeded: number;
+  preferredStyle:
+    | "SIMPLE"
+    | "EXAMPLE_FIRST"
+    | "DETAILED"
+    | "CHALLENGE";
+}
+
+const [adaptiveProfile, setAdaptiveProfile] =
+  useState<AdaptiveProfile>({
+    level: "BEGINNER",
+    masteryScore: 0,
+    strengths: [],
+    weaknesses: [],
+    mistakes: 0,
+    reviewsNeeded: 0,
+    preferredStyle: "SIMPLE",
+  });
+
+  const buildAdaptiveProfile = (
+  topic?: string
+): AdaptiveProfile => {
+  const normalizedTopic =
+    topic?.trim().toLowerCase();
+
+  const topicMemory = normalizedTopic
+    ? learningMemory.filter(
+        (item) =>
+          item.topic.trim().toLowerCase() ===
+          normalizedTopic
+      )
+    : learningMemory;
+
+  const strengths = topicMemory.filter(
+    (item) =>
+      item.memoryType === "STRENGTH" ||
+      item.memoryType === "MASTERY"
+  );
+
+  const weaknesses = topicMemory.filter(
+    (item) =>
+      item.memoryType === "STRUGGLE" ||
+      item.memoryType === "MISTAKE" ||
+      item.memoryType === "REVIEW"
+  );
+
+  const mistakes = topicMemory.filter(
+    (item) =>
+      item.memoryType === "MISTAKE"
+  );
+
+  const reviews = topicMemory.filter(
+    (item) =>
+      item.memoryType === "REVIEW"
+  );
+
+  const confidenceValues = topicMemory
+    .map((item) => item.confidence)
+    .filter(
+      (value) =>
+        typeof value === "number"
+    );
+
+  const masteryScore =
+    confidenceValues.length > 0
+      ? Math.round(
+          confidenceValues.reduce(
+            (sum, value) => sum + value,
+            0
+          ) / confidenceValues.length
+        )
+      : 0;
+
+  let level: AdaptiveLevel = "BEGINNER";
+
+  if (masteryScore >= 85) {
+    level = "MASTERED";
+  } else if (masteryScore >= 70) {
+    level = "CONFIDENT";
+  } else if (masteryScore >= 40) {
+    level = "DEVELOPING";
+  }
+
+  let preferredStyle:
+    | "SIMPLE"
+    | "EXAMPLE_FIRST"
+    | "DETAILED"
+    | "CHALLENGE" =
+    "SIMPLE";
+
+  if (weaknesses.length >= 2) {
+    preferredStyle = "EXAMPLE_FIRST";
+  }
+
+  if (reviews.length >= 2) {
+    preferredStyle = "DETAILED";
+  }
+
+  if (
+    masteryScore >= 80 &&
+    weaknesses.length === 0
+  ) {
+    preferredStyle = "CHALLENGE";
+  }
+
+  return {
+    level,
+    masteryScore,
+    strengths: strengths
+      .slice(0, 5)
+      .map((item) => item.content),
+
+    weaknesses: weaknesses
+      .slice(0, 5)
+      .map((item) => item.content),
+
+    mistakes: mistakes.length,
+    reviewsNeeded: reviews.length,
+    preferredStyle,
+  };
+};
+
+useEffect(() => {
+  const profile =
+    buildAdaptiveProfile(
+      activeTopic
+    );
+
+  setAdaptiveProfile(profile);
+
+  console.log(
+    "🧠 PHASE 14 Adaptive Profile:",
+    profile
+  );
+}, [
+  learningMemory,
+  activeTopic,
+]);
+
+const saveLearningMemory = async ({
+  topic,
+  memoryType,
+  key,
+  content,
+  confidence = 50,
+  priority = 1,
+}: {
+  topic: string;
+  memoryType:
+    | "STRUGGLE"
+    | "STRENGTH"
+    | "PREFERENCE"
+    | "MISTAKE"
+    | "MASTERY"
+    | "REVIEW";
+  key: string;
+  content: string;
+  confidence?: number;
+  priority?: number;
+}) => {
+  if (!courseId || !chapterId) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/learning-memory",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          courseId,
+          chapterId,
+          topic,
+          memoryType,
+          learningMemory,
+          key,
+          content,
+          confidence,
+          priority,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Failed to save learning memory:",
+        await response.text()
+      );
+
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.memory) {
+      setLearningMemory((previous) => {
+        const withoutCurrent = previous.filter(
+          (item) =>
+            !(
+              item.topic === data.memory.topic &&
+              item.memoryType === data.memory.memoryType &&
+              item.key === data.memory.key
+            )
+        );
+
+        return [
+          ...withoutCurrent,
+          data.memory,
+        ];
+      });
+    }
+  } catch (error) {
+    console.error(
+      "Learning memory save error:",
+      error
+    );
+  }
+};
+
+useEffect(() => {
+  let cancelled = false;
+
+  const refreshLearningMemory = async () => {
+    const memories = await loadLearningMemory();
+
+    if (!cancelled) {
+      setLearningMemory(memories);
+    }
+  };
+
+  void refreshLearningMemory();
+
+  return () => {
+    cancelled = true;
+  };
+}, [courseId, chapterId]);
+
+
+const buildLearningMemoryContext = (
+  topic?: string
+) => {
+  if (!learningMemory.length) {
+    return "";
+  }
+
+  const topicMemory = topic
+  ? learningMemory.filter(
+      (item) =>
+        item.topic.trim().toLowerCase() ===
+        topic.trim().toLowerCase()
+    )
+  : learningMemory;
+
+  const strengths = topicMemory.filter(
+    (item) =>
+      item.memoryType === "STRENGTH" ||
+      item.memoryType === "MASTERY"
+  );
+
+  const struggles = topicMemory.filter(
+    (item) =>
+      item.memoryType === "STRUGGLE" ||
+      item.memoryType === "MISTAKE" ||
+      item.memoryType === "REVIEW"
+  );
+
+  return `
+STUDENT LEARNING MEMORY:
+
+STRENGTHS:
+${
+  strengths.length
+    ? strengths
+        .slice(0, 8)
+        .map(
+          (item) =>
+            `- ${item.topic}: ${item.content}`
+        )
+        .join("\n")
+    : "- No recorded strengths yet."
+}
+
+AREAS NEEDING IMPROVEMENT:
+${
+  struggles.length
+    ? struggles
+        .slice(0, 8)
+        .map(
+          (item) =>
+            `- ${item.topic}: ${item.content}`
+        )
+        .join("\n")
+    : "- No recorded difficulties yet."
+}
+
+TEACHING INSTRUCTIONS:
+
+Use this information to personalize the teaching.
+
+If the student is strong in a topic:
+- avoid unnecessary repetition
+- gradually increase difficulty
+
+If the student struggles with a topic:
+- slow down
+- explain using another approach
+- use a simpler example
+- check understanding again
+
+If the student repeatedly makes a mistake:
+- address the underlying misunderstanding
+- provide a targeted explanation
+
+Never tell the student that you are using learning memory.
+
+Do not say:
+"According to your learning memory..."
+
+Adapt naturally.
+`;
+};
+
+  const recordLearningEvent = async (
+  eventType: string,
+  topic: string,
+  content: string,
+  metadata?: Record<string, unknown>
+) => {
+  if (
+    !userEmail ||
+    !courseId ||
+    !chapterId ||
+    !topic ||
+    !content
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/learning-events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userEmail,
+        courseId,
+        chapterId,
+        topic,
+        eventType,
+        content,
+        metadata: {
+          course,
+          chapterTitle,
+          ...metadata,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(
+        "Learning event failed:",
+        await response.text()
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Learning event recording error:",
+      error
+    );
+  }
+};
+
   const startTeaching = async () => {
     const units = collectUnits();
 
@@ -1081,14 +1712,121 @@ onLessonStart?.(title);
     break;
   }
 
-  const explanation = await onExplain(
-  `${unit.content}\n\nCONTENT TYPE: ${unit.type}`,
-  unit.title
+  const topic =
+  activeTopic || unit.title;
+
+const adaptive =
+  buildAdaptiveProfile(topic);
+
+const adaptiveContext = `
+PHASE 14 — ADAPTIVE TEACHER PROFILE
+
+CURRENT TOPIC:
+${topic}
+
+STUDENT LEVEL:
+${adaptive.level}
+
+MASTERY SCORE:
+${adaptive.masteryScore}/100
+
+STRENGTHS:
+${
+  adaptive.strengths.length
+    ? adaptive.strengths
+        .map((item) => `- ${item}`)
+        .join("\n")
+    : "- None recorded yet."
+}
+
+WEAKNESSES:
+${
+  adaptive.weaknesses.length
+    ? adaptive.weaknesses
+        .map((item) => `- ${item}`)
+        .join("\n")
+    : "- None recorded yet."
+}
+
+MISTAKES:
+${adaptive.mistakes}
+
+REVISION ITEMS:
+${adaptive.reviewsNeeded}
+
+TEACHING STYLE:
+${adaptive.preferredStyle}
+
+ADAPTIVE RULES:
+
+If BEGINNER:
+- explain slowly
+- use very simple language
+- introduce one idea at a time
+- use a small example
+
+If DEVELOPING:
+- explain clearly
+- connect the concept to the previous idea
+- use one practical example
+- ask for understanding when appropriate
+
+If CONFIDENT:
+- reduce repetition
+- explain more efficiently
+- introduce a slightly harder example
+
+If MASTERED:
+- do not repeat basic material unnecessarily
+- use a challenging practical example
+- connect this concept to real programming
+
+If the student has weaknesses:
+- slow down
+- use another explanation
+- use an easier example
+- focus only on the current topic
+
+If the student has repeated mistakes:
+- identify the underlying misunderstanding
+- explain that misunderstanding directly
+
+IMPORTANT:
+Never mention this adaptive profile to the student.
+Never say "according to your learning memory".
+Adapt naturally.
+`;
+
+const explanation =
+  await onExplain(
+    `${unit.content}
+
+CONTENT TYPE: ${unit.type}`,
+    unit.title,
+    `
+${buildLearningMemoryContext(topic)}
+
+${adaptiveContext}
+`
+  );
+
+  
+if (stopRef.current) {
+  break;
+}
+
+await recordLearningEvent(
+  "PRACTICE",
+  title,
+  `Completed learning unit: ${title}`,
+  {
+    source: "live-teacher",
+    unitIndex: i,
+    totalUnits: units.length,
+  }
 );
 
-  if (stopRef.current) {
-    break;
-  }
+onLessonComplete?.(title);
 
   // Teacher starts explaining
 setState("EXPLAINING");

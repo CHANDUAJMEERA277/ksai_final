@@ -62,6 +62,11 @@ def teach(request):
     "",
 )
 
+        learning_memory = data.get(
+    "learningMemory",
+    "",
+)
+
         # -----------------------------------------
         # VALIDATION
         # -----------------------------------------
@@ -112,6 +117,7 @@ def teach(request):
     mode=mode,
     history=history,
     asked_question=asked_question,
+    learning_memory=learning_memory,
 )
 
         return JsonResponse(

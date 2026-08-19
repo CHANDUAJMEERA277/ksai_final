@@ -253,6 +253,8 @@ export default function PythonChapterPage() {
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  
+
   // Floating panel tabs state
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(true);
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
@@ -276,7 +278,8 @@ const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
 
 const explainLiveTeacherUnit = async (
   content: string,
-  title: string
+  title: string,
+  learningMemory?: string
 ): Promise<string> => {
   try {
     const response = await fetch(
@@ -488,7 +491,7 @@ const evaluateResumeAnswer = async (
       course: "Python",
       chapter: currentChapter.title,
       topic: currentLesson || currentChapter.title,
-      content: currentChapter.content,
+content: getLessonContent(),
       question: `
 You are evaluating a student's return-to-learning answer.
 
@@ -585,7 +588,7 @@ if (currentLesson) {
           course: "Python",
           chapter: currentChapter.title,
           topic: currentLesson || currentChapter.title,
-          content: currentChapter.content,
+content: getLessonContent(),
 
           question: `
 Student request:
@@ -1606,44 +1609,53 @@ setCurrentLessonIndex(secIdx);
               
 
               <LiveTeacher
-                ref={liveTeacherRef}
-                contentRef={lessonContentRef}
+  ref={liveTeacherRef}
+  contentRef={lessonContentRef}
   chapterTitle={currentChapter?.title || "Live Chapter"}
-    course="Python"
+
+  course="Python"
+  courseId={courseId}
+  chapterId={currentChapter?.id || ""}
+  userEmail={userEmail}
+
+    activeTopic={currentLesson || undefined}
+
   onExplain={explainLiveTeacherUnit}
   chapterContent={currentChapter?.content || ""}
   onResumeRecap={generateResumeRecap}
   onEvaluateResumeAnswer={evaluateResumeAnswer}
+
   onLessonStart={(title: string) => {
-  const lesson = getLessons().find(
-    (item) =>
-      item.trim().toLowerCase() ===
-      title.trim().toLowerCase()
-  );
+    const lesson = getLessons().find(
+      (item) =>
+        item.trim().toLowerCase() ===
+        title.trim().toLowerCase()
+    );
 
-  if (!lesson) return;
+    if (!lesson) return;
 
-  setCurrentLesson(lesson);
+    setCurrentLesson(lesson);
 
-  setLessonProgress((prev) => ({
-    ...prev,
-    [lesson]: {
-      ...(prev[lesson] || {
-        lesson,
-        status: "NOT_STARTED",
-        score: 0,
-        attempts: 0,
-        questionsAsked: 0,
-        correctAnswers: 0,
-      }),
+    setLessonProgress((prev) => ({
+      ...prev,
+      [lesson]: {
+        ...(prev[lesson] || {
+          lesson,
+          status: "NOT_STARTED",
+          score: 0,
+          attempts: 0,
+          questionsAsked: 0,
+          correctAnswers: 0,
+        }),
+        status: "LEARNING",
+      },
+    }));
+
+    void saveLessonProgress(lesson, {
       status: "LEARNING",
-    },
-  }));
+    });
+  }}
 
-  void saveLessonProgress(lesson, {
-    status: "LEARNING",
-  });
-}}
   onLessonComplete={(title: string) => {
     const lesson = getLessons().find(
       (item) =>

@@ -8,9 +8,11 @@ def build_teach_prompt(
     history=None,
     asked_question="",
     content_type="general",
+    learning_memory="",
 ):
     history = history or []
     asked_question = asked_question or ""
+    learning_memory = learning_memory or ""
 
     history_text = ""
 
@@ -379,12 +381,23 @@ PREVIOUS QUESTION ASKED BY CODEXAI:
 CONVERSATION HISTORY:
 {history_text}
 
+STUDENT LEARNING MEMORY:
+{learning_memory if learning_memory else "No previous learning memory is available yet."}
+
+IMPORTANT MEMORY RULES:
+- Use the learning memory only to personalize teaching.
+- Do not mention the memory system to the student.
+- Do not say "according to your learning memory".
+- If a strength is recorded, avoid unnecessary repetition and gradually increase difficulty.
+- If a struggle or mistake is recorded, slow down and explain the concept differently.
+- If a topic needs review, provide extra clarification or a small check for understanding.
+- Always prioritize the current lesson content over learning memory.
+- Never invent information from the learning memory.
+
 TEACHING MODE:
 {mode}
-
 MODE INSTRUCTIONS:
 {selected_instruction}
-
 Remember:
 
 Teach according to the subject and content type.
