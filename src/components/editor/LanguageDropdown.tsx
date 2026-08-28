@@ -1,75 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, Search, Lock } from "lucide-react";
 import Image from "next/image";
-
-const LANGUAGES = [
-  {
-    name: "Java",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg",
-  },
-  {
-    name: "Python",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
-  },
-  {
-    name: "C",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
-  },
-  {
-    name: "C++",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
-  },
-  {
-    name: "JavaScript",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg",
-  },
-  {
-    name: "TypeScript",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg",
-  },
-  {
-    name: "HTML",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg",
-  },
-  {
-    name: "CSS",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg",
-  },
-  {
-    name: "React",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg",
-  },
-  {
-    name: "Node.js",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg",
-  },
-  {
-    name: "Go",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg",
-  },
-  {
-    name: "Rust",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-plain.svg",
-  },
-  {
-    name: "Kotlin",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg",
-  },
-  {
-    name: "PHP",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg",
-  },
-  {
-    name: "Swift",
-    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swift/swift-original.svg",
-  },
-];
+import { useLanguage } from "./languages/LanguageContext";
+import { LanguageConfig } from "./languages/LanguageConfig";
 
 interface Props {
-  value: string;
-  onChange: (language: string) => void;
+  value?: string;
+  onChange?: (language: string) => void;
   darkMode: boolean;
 }
 
@@ -78,6 +17,7 @@ export default function LanguageDropdown({
   onChange,
   darkMode,
 }: Props) {
+  const { language, setLanguage, accessibleLanguages } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -94,112 +34,121 @@ export default function LanguageDropdown({
     }
 
     document.addEventListener("mousedown", handleOutside);
-
-    return () =>
-      document.removeEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const filtered = LANGUAGES.filter((lang) =>
+  const currentLang = language;
+  const filtered = accessibleLanguages.filter((lang) =>
     lang.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const selected =
-    LANGUAGES.find((l) => l.name === value) || LANGUAGES[0];
+  const handleSelect = (lang: LanguageConfig) => {
+    if (onChange) {
+      onChange(lang.name);
+    } else {
+      setLanguage(lang.id);
+    }
+    setOpen(false);
+    setSearch("");
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Selected Button */}
-
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-3 px-4 h-10 rounded-xl border transition ${
+        className={`flex items-center gap-2.5 px-3.5 h-10 rounded-xl border font-bold text-xs transition select-none ${
           darkMode
-            ? "bg-[#151823] border-white/10 hover:bg-[#1C2130]"
-            : "bg-gray-100 border-gray-300 hover:bg-gray-200"
+            ? "bg-[#151823] border-white/10 hover:bg-[#1C2130] text-white"
+            : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-900"
         }`}
       >
         <Image
-          src={selected.icon}
-          alt={selected.name}
-          width={20}
-          height={20}
+          src={currentLang.icon}
+          alt={currentLang.name}
+          width={18}
+          height={18}
+          className="shrink-0"
         />
 
-        <span>{selected.name}</span>
+        <span>{currentLang.name}</span>
 
-        <ChevronDown
-          size={16}
-          className={`transition ${open ? "rotate-180" : ""}`}
-        />
+        {accessibleLanguages.length > 1 && (
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
 
-      {/* Dropdown */}
-
-      {open && (
+      {/* Dropdown Menu (Only shown for enrolled / accessible languages) */}
+      {open && accessibleLanguages.length > 1 && (
         <div
-          className={`absolute mt-2 w-72 rounded-xl shadow-2xl border overflow-hidden z-50 ${
+          className={`absolute mt-2 w-64 rounded-2xl shadow-2xl border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 ${
             darkMode
-              ? "bg-[#11131B] border-white/10"
-              : "bg-white border-gray-200"
+              ? "bg-[#11131B] border-white/10 text-white"
+              : "bg-white border-gray-200 text-gray-900"
           }`}
         >
-          {/* Search */}
-
-          <div className="p-3">
-            <div
-              className={`flex items-center gap-2 rounded-lg px-3 border ${
-                darkMode
-                  ? "bg-[#1A1D26] border-white/10"
-                  : "bg-gray-100 border-gray-200"
-              }`}
-            >
-              <Search size={16} />
-
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search language..."
-                className="flex-1 py-2 bg-transparent outline-none text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Languages */}
-
-          <div className="max-h-72 overflow-y-auto">
-            {filtered.map((language) => (
-              <button
-                key={language.name}
-                onClick={() => {
-                  onChange(language.name);
-                  setOpen(false);
-                  setSearch("");
-                }}
-                className={`w-full flex items-center justify-between px-4 py-3 transition ${
+          {/* Search Header if > 2 languages */}
+          {accessibleLanguages.length > 2 && (
+            <div className="p-2.5 border-b border-white/5">
+              <div
+                className={`flex items-center gap-2 rounded-xl px-2.5 py-1.5 border text-xs ${
                   darkMode
-                    ? "hover:bg-[#1A1D26]"
-                    : "hover:bg-gray-100"
+                    ? "bg-[#1A1D26] border-white/10"
+                    : "bg-gray-100 border-gray-200"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={language.icon}
-                    alt={language.name}
-                    width={22}
-                    height={22}
-                  />
+                <Search size={14} className="text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter enrolled..."
+                  className="flex-1 bg-transparent outline-none text-xs"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
 
-                  <span>{language.name}</span>
-                </div>
+          {/* Languages List */}
+          <div className="max-h-60 overflow-y-auto py-1">
+            {filtered.map((item) => {
+              const isSelected = item.id === currentLang.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelect(item)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-medium transition ${
+                    isSelected
+                      ? darkMode
+                        ? "bg-[#4F46E5]/20 text-[#818CF8]"
+                        : "bg-indigo-50 text-indigo-700 font-bold"
+                      : darkMode
+                      ? "hover:bg-[#1A1D26] text-slate-300"
+                      : "hover:bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Image
+                      src={item.icon}
+                      alt={item.name}
+                      width={18}
+                      height={18}
+                    />
+                    <span>{item.name}</span>
+                  </div>
 
-                {language.name === value && (
-                  <Check
-                    size={18}
-                    className="text-green-500"
-                  />
-                )}
-              </button>
-            ))}
+                  {isSelected && (
+                    <Check
+                      size={15}
+                      className={darkMode ? "text-[#818CF8]" : "text-indigo-600"}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

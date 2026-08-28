@@ -251,12 +251,8 @@ export default function ProfessionalResumeStudio() {
     }
   };
 
-  const handleSidebarTabChange = (tab: string) => {
-    if (tab === "Dashboard") router.push("/dashboard");
-    else if (tab === "Courses") router.push("/courses");
-    else if (tab === "Leaderboard") router.push("/leaderboard");
-    else if (tab === "AI Mentor") router.push("/codexai");
-    else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
+  const handleSidebarTabChange = (_tab: string) => {
+    // LeftSidebar handles global navigation directly
   };
 
   // Handle PDF / Text File Upload

@@ -97,7 +97,7 @@ export default function CourseOverviewPage() {
 
   // Calculate Progress Stats
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : courseSlug === "c" ? 6 : 11);
+  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   // Continue Learning Logic

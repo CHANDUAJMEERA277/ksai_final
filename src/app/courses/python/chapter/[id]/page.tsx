@@ -34,7 +34,14 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  Zap,
+  Calendar,
 } from "lucide-react";
+import { QuickRecapModal } from "@/components/learning/QuickRecapModal";
+import { VisionAttachment } from "@/components/learning/VisionAttachment";
+import { DailyRecapModal } from "@/components/learning/DailyRecapModal";
+import { CourseSwitcher } from "@/components/courses/CourseSwitcher";
+import { CheckpointEvaluation, parseCheckpointEvaluation } from "@/types/teaching-types";
 
 interface ChapterItem {
   id: string;
@@ -70,16 +77,47 @@ interface QuizQuestion {
   options: string[];
 }
 
+function extractLessonTitles(content: string): string[] {
+  if (!content?.trim()) return [];
+
+  const headings: string[] = [];
+  const headingRegex = /^\s{0,3}#{1,4}\s+(.+?)\s*#*\s*$/gm;
+  let match: RegExpExecArray | null;
+
+  while ((match = headingRegex.exec(content)) !== null) {
+    const title = stripMarkdown(match[1]).trim();
+    if (
+      title &&
+      /^\d+[\.\)]\s+/.test(title) &&
+      !/^quiz( assessment)?$/i.test(title) &&
+      !/^chapter assessment/i.test(title) &&
+      !/^by the end of this chapter/i.test(title)
+    ) {
+      headings.push(title);
+    }
+  }
+
+  const unique = Array.from(new Set(headings));
+  if (unique.length > 0) return unique;
+
+  return content
+    .split(/\n\s*\n/)
+    .map((block) => stripMarkdown(block).trim())
+    .filter((block) => /^\d+(?:\.\d+)*[.)]?\s+/.test(block))
+    .map((block) => block.split(/\n/)[0].trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.indexOf(value) === index);
+}
+
 const CHAPTER_SECTIONS: Record<number, string[]> = {
   0: [
-    "0.1 What is Programming?",
-    "0.2 What is Python?",
-    "0.3 Why Python?",
-    "0.4 Real-world Applications",
-    "0.5 How Python Executes Code",
-    "0.6 Interpreted vs Compiled",
-    "0.7 Installing Python & IDE",
-    "0.9 Writing Your First Python Program",
+    "1. What is Programming?",
+    "2. What is Python?",
+    "3. Where Python is Used",
+    "4. How Python Executes Code",
+    "5. Interpreted vs Compiled Languages",
+    "6. Installing Python & Setting Up VS Code",
+    "7. Writing Your Very First Python Program",
     "Quiz Assessment"
   ],
   1: [
@@ -217,7 +255,7 @@ export default function PythonChapterPage() {
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const lessonContentRef = useRef<HTMLElement | null>(null);
   const liveTeacherRef = useRef<LiveTeacherHandle | null>(null);
-  
+  const topicChatMapRef = useRef<Record<string, Array<{ question: string; answer: string }>>>({});
 
   const router = useRouter();
   const params = useParams();
@@ -255,25 +293,36 @@ export default function PythonChapterPage() {
 
   
 
+  // Quick Recap & Daily Recap Modals
+  const [quickRecapOpen, setQuickRecapOpen] = useState(false);
+  const [quickRecapTopic, setQuickRecapTopic] = useState("");
+  const [dailyRecapOpen, setDailyRecapOpen] = useState(false);
+
   // Floating panel tabs state
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(true);
   const [rightPanelExpanded, setRightPanelExpanded] = useState(true);
   const [expandedSummary, setExpandedSummary] = useState(false);
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
-    { sender: "ai", text: "Hi! Ask me any questions or doubts about this chapter's notes, and I will explain them using details from the text." }
+  const [attachedImage, setAttachedImage] = useState<{
+    base64: string;
+    mime: string;
+    fileName: string;
+  } | null>(null);
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ sender: "user" | "ai"; text: string; image?: string; fileName?: string }>
+  >([
+    {
+      sender: "ai",
+      text: "Hi! Ask me any questions or doubts about this chapter's notes, or upload a diagram/code screenshot for visual analysis.",
+    },
   ]);
-
-  
-
-  
 
   const [chatLoading, setChatLoading] = useState(false);
   const [currentLesson, setCurrentLesson] = useState<string | null>(null);
-const [completedLessons, setCompletedLessons] = useState<string[]>([]);
-const [lessonProgress, setLessonProgress] =
-  useState<Record<string, LessonProgress>>({});
-const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [lessonProgress, setLessonProgress] = useState<Record<string, LessonProgress>>({});
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [autoResumeTopic, setAutoResumeTopic] = useState<string | undefined>(undefined);
 
 
 const explainLiveTeacherUnit = async (
@@ -370,6 +419,75 @@ Keep the entire explanation concise enough for live classroom teaching.
     );
 
     return "Let's understand this section step by step. Focus on the highlighted part first, and then we'll connect it to the bigger concept.";
+  }
+};
+
+const reteachLiveTeacherSection = async (
+  content: string,
+  title: string
+): Promise<string> => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course: "Python",
+        chapter: currentChapter?.title || "Python Chapter",
+        topic: title,
+        content: content || getLessonContent(),
+        question: `Reteach this section simply with a real-world analogy, step-by-step breakdown, and a small clear example.`,
+        mode: "reteach",
+        history: [],
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Reteaching failed.");
+    }
+
+    return (
+      data.data?.response ||
+      data.response ||
+      `Let's understand ${title} from a fresh, intuitive perspective with a simple analogy.`
+    );
+  } catch (error) {
+    console.error("Live teacher reteach error:", error);
+    return `Let's break down ${title} using an intuitive real-world analogy and step-by-step thinking.`;
+  }
+};
+
+const evaluateCheckpointAnswer = async (
+  question: string,
+  answer: string
+): Promise<CheckpointEvaluation> => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course: "Python",
+        chapter: currentChapter?.title || "Python Chapter",
+        topic: currentLesson || currentChapter?.title || "Python Lesson",
+        content: getLessonContent(),
+        question: `
+QUESTION:
+${question}
+
+STUDENT ANSWER:
+${answer}
+`,
+        mode: "evaluate",
+        history: [],
+      }),
+    });
+
+    const data = await response.json();
+    const rawText = data.data?.response || data.response || "";
+    return parseCheckpointEvaluation(rawText, question, answer);
+  } catch (error) {
+    console.error("Checkpoint evaluation error:", error);
+    return parseCheckpointEvaluation("", question, answer);
   }
 };
 
@@ -523,119 +641,106 @@ Do not teach the upcoming lesson.
 
 const handleTeachingRequest = async (
   question: string,
-  mode: string = "chat"
+  mode: string = "chat",
+  imagePayload?: { base64: string; mime: string; fileName: string } | null
 ) => {
-  if (!question.trim() || chatLoading) return;
+  const activeImage = imagePayload !== undefined ? imagePayload : attachedImage;
+  if ((!question.trim() && !activeImage) || chatLoading) return;
 
-if (!currentChapter) return;
+  if (!currentChapter) return;
 
-// Pause Live Teacher while the student is asking a question.
-liveTeacherRef.current?.pause();
+  // Pause Live Teacher while the student is asking a question.
+  liveTeacherRef.current?.pause();
 
-markLessonLearning();
+  markLessonLearning();
 
-if (currentLesson) {
-  const current =
-    lessonProgress[currentLesson];
+  if (currentLesson) {
+    const current = lessonProgress[currentLesson];
+    const questionsAsked = (current?.questionsAsked ?? 0) + 1;
 
-  const questionsAsked =
-    (current?.questionsAsked ?? 0) + 1;
+    setLessonProgress((prev) => ({
+      ...prev,
+      [currentLesson]: {
+        ...(prev[currentLesson] || {
+          lesson: currentLesson,
+          status: "LEARNING",
+          score: 0,
+          attempts: 0,
+          questionsAsked: 0,
+          correctAnswers: 0,
+        }),
+        questionsAsked,
+      },
+    }));
 
-  setLessonProgress((prev) => ({
-    ...prev,
-    [currentLesson]: {
-      ...(prev[currentLesson] || {
-        lesson: currentLesson,
-        status: "LEARNING",
-        score: 0,
-        attempts: 0,
-        questionsAsked: 0,
-        correctAnswers: 0,
-      }),
+    void saveLessonProgress(currentLesson, {
       questionsAsked,
-    },
-  }));
+    });
+  }
 
-  void saveLessonProgress(
-    currentLesson,
-    {
-      questionsAsked,
-    }
-  );
-}
+  const promptText = question.trim() || (activeImage ? "Explain this diagram / visual screenshot" : "Explain this topic");
 
-  // Show student's message immediately
+  // Show student's message with image thumbnail if present
   setChatMessages((prev) => [
     ...prev,
     {
       sender: "user",
-      text: question,
+      text: promptText,
+      image: activeImage?.base64,
+      fileName: activeImage?.fileName,
     },
   ]);
 
   setChatInput("");
+  setAttachedImage(null);
   setChatLoading(true);
 
-  try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/ai/teach/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          course: "Python",
-          chapter: currentChapter.title,
-          topic: currentLesson || currentChapter.title,
-content: getLessonContent(),
+  const effectiveMode = activeImage ? "vision" : mode;
 
-          question: `
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        course: "Python",
+        chapter: currentChapter.title,
+        topic: currentLesson || currentChapter.title,
+        content: getLessonContent(),
+        question: `
 Student request:
-${question}
+${promptText}
 
 Learning progress:
 Completed lessons:
-${
-  completedLessons.length > 0
-    ? completedLessons.join("\n")
-    : "None"
-}
+${completedLessons.length > 0 ? completedLessons.join("\n") : "None"}
 
 Current lesson:
 ${currentLesson || "Not selected"}
 
 Remaining lessons:
 ${getLessons()
-  .filter(
-    (lesson) => !completedLessons.includes(lesson)
-  )
+  .filter((lesson) => !completedLessons.includes(lesson))
   .join("\n")}
 `,
-
-          mode: mode,
-          history: chatMessages,
-        }),
-      }
-    );
+        mode: effectiveMode,
+        image: activeImage?.base64,
+        imageMimeType: activeImage?.mime,
+        history: chatMessages.map((m) => ({ sender: m.sender, text: m.text })),
+      }),
+    });
 
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(
-        data.message || "Teaching request failed."
-      );
+      throw new Error(data.message || "Teaching request failed.");
     }
 
-    const aiResponse =
-      data.data?.response ??
-      data.response ??
-      "";
+    const aiResponse = data.data?.response ?? data.response ?? "";
 
     if (!aiResponse) {
-      throw new Error(
-        "CodeXAI returned an empty response."
-      );
+      throw new Error("CodeXAI returned an empty response.");
     }
 
     // Display AI response
@@ -646,6 +751,34 @@ ${getLessons()
         text: aiResponse,
       },
     ]);
+
+    // Record Learning Evidence in Knowledge Graph
+    if (userEmail) {
+      void fetch("/api/knowledge-graph/evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail,
+          course: "python",
+          chapterId: currentChapter.id,
+          topic: currentLesson || currentChapter.title,
+          source: activeImage ? "VISION" : "NOTE",
+          score: 85,
+          summary: promptText,
+          visualReference: activeImage?.fileName,
+        }),
+      }).catch((e) => console.error("Knowledge Graph evidence error:", e));
+    }
+
+    // Attach to active topic notes
+    const activeLessonKey = currentLesson || currentChapter?.title || "General";
+    if (!topicChatMapRef.current[activeLessonKey]) {
+      topicChatMapRef.current[activeLessonKey] = [];
+    }
+    topicChatMapRef.current[activeLessonKey].push({
+      question,
+      answer: aiResponse,
+    });
 
     
 
@@ -695,9 +828,16 @@ const initializeLessonProgress = () => {
 
 
 const getLessons = () => {
-  return (CHAPTER_SECTIONS[chapterOrder] || []).filter(
-    (section) => section !== "Quiz Assessment"
-  );
+  if (CHAPTER_SECTIONS[chapterOrder] && CHAPTER_SECTIONS[chapterOrder].length > 0) {
+    return CHAPTER_SECTIONS[chapterOrder].filter(
+      (section) => section !== "Quiz Assessment"
+    );
+  }
+  if (currentChapter?.content) {
+    const extracted = extractLessonTitles(currentChapter.content);
+    if (extracted.length > 0) return extracted;
+  }
+  return [];
 };
 
 const totalLessons = getLessons().length;
@@ -723,14 +863,18 @@ const getLessonContent = () => {
   const content = currentChapter.content;
 
   // Try to find the selected lesson heading in the chapter content.
-  const startIndex = content.toLowerCase().indexOf(lesson.toLowerCase());
+  let startIndex = content.toLowerCase().indexOf(lesson.toLowerCase());
+
+  if (startIndex === -1) {
+    const normLesson = lesson.replace(/^[\d\.\-\s:]+/, "").trim().toLowerCase();
+    startIndex = content.toLowerCase().indexOf(normLesson);
+  }
 
   if (startIndex === -1) {
     return content;
   }
 
   const lessons = getLessons();
-
   const lessonIndex = lessons.indexOf(lesson);
 
   if (lessonIndex === -1 || lessonIndex === lessons.length - 1) {
@@ -738,12 +882,16 @@ const getLessonContent = () => {
   }
 
   const nextLesson = lessons[lessonIndex + 1];
-
-  const endIndex = content
+  let endIndex = content
     .toLowerCase()
     .indexOf(nextLesson.toLowerCase(), startIndex + lesson.length);
 
   if (endIndex === -1) {
+    const normNext = nextLesson.replace(/^[\d\.\-\s:]+/, "").trim().toLowerCase();
+    endIndex = content.toLowerCase().indexOf(normNext, startIndex + lesson.length);
+  }
+
+  if (endIndex === -1 || endIndex <= startIndex) {
     return content.slice(startIndex);
   }
 
@@ -764,13 +912,14 @@ const loadLessonProgress = async () => {
       )}`
     );
 
+    if (!response.ok) {
+      return;
+    }
+
     const data = await response.json();
 
-    if (!response.ok || !data.success) {
-      console.error(
-        "Failed to load lesson progress:",
-        data.error
-      );
+    if (!data.success) {
+      console.error("Failed to load lesson progress:", data.error);
       return;
     }
 
@@ -790,39 +939,59 @@ const loadLessonProgress = async () => {
     setLessonProgress(progressMap);
 
     const mastered = Object.values(progressMap)
-      .filter(
-        (item) =>
-          item.status === "MASTERED" ||
-          item.status === "PRACTICED"
-      )
+      .filter((item) => item.status === "MASTERED" || item.status === "PRACTICED")
       .map((item) => item.lesson);
 
     setCompletedLessons(mastered);
 
-    console.log(
-      "✅ Lesson progress restored:",
-      progressMap
-    );
-
     const lessons = getLessons();
+    if (lessons.length === 0) return;
 
-const nextLesson = lessons.find(
-  (lesson) =>
-    progressMap[lesson]?.status !== "MASTERED" &&
-    progressMap[lesson]?.status !== "PRACTICED"
-);
+    // Restore last actively studied topic
+    const localKey = `ksai_last_lesson_${userEmail}_python_${currentChapter.id}`;
+    const savedLocalLesson = typeof window !== "undefined" ? localStorage.getItem(localKey) : null;
 
-if (nextLesson) {
-  setCurrentLesson(nextLesson);
-  setCurrentLessonIndex(
-    lessons.indexOf(nextLesson)
-  );
-}
+    let resumeLesson: string | null = null;
+
+    if (savedLocalLesson && lessons.includes(savedLocalLesson)) {
+      resumeLesson = savedLocalLesson;
+    } else if (data.lastStudiedLesson && lessons.includes(data.lastStudiedLesson)) {
+      resumeLesson = data.lastStudiedLesson;
+    } else {
+      const inProgress = lessons.find(
+        (l) => progressMap[l]?.status === "LEARNING" || progressMap[l]?.status === "NEEDS_REVIEW"
+      );
+      if (inProgress) {
+        resumeLesson = inProgress;
+      } else {
+        const nextUnfinished = lessons.find(
+          (l) => progressMap[l]?.status !== "MASTERED" && progressMap[l]?.status !== "PRACTICED"
+        );
+        resumeLesson = nextUnfinished || lessons[0];
+      }
+    }
+
+    if (resumeLesson && lessons.includes(resumeLesson)) {
+      setCurrentLesson(resumeLesson);
+      setCurrentLessonIndex(lessons.indexOf(resumeLesson));
+
+      // Check if automatic Quick Recap should run on return
+      const resumeIdx = lessons.indexOf(resumeLesson);
+      const isReturning = Boolean(
+        (data.progress && data.progress.length > 0) ||
+        (progressMap[resumeLesson] && progressMap[resumeLesson].attempts > 0) ||
+        resumeIdx > 0
+      );
+
+      const recapKey = `ksai_quick_recap_${userEmail}_python_${currentChapter.id}_${resumeLesson}`;
+      const recapAlreadyDone = typeof window !== "undefined" && sessionStorage.getItem(recapKey) === "done";
+
+      if (isReturning && !recapAlreadyDone) {
+        setAutoResumeTopic(resumeLesson);
+      }
+    }
   } catch (error) {
-    console.error(
-      "Lesson progress loading error:",
-      error
-    );
+    console.error("Lesson progress loading error:", error);
   }
 };
 
@@ -834,49 +1003,31 @@ const saveLessonProgress = async (
     return;
   }
 
+  // Persist locally for instant tab/session recovery
+  if (typeof window !== "undefined") {
+    localStorage.setItem(`ksai_last_lesson_${userEmail}_python_${currentChapter.id}`, lesson);
+  }
+
   try {
-    const current =
-      lessonProgress[lesson];
+    const current = lessonProgress[lesson];
 
     const payload = {
       userEmail,
       lesson,
-
-      status:
-        updates.status ??
-        current?.status ??
-        "LEARNING",
-
-      attempts:
-        updates.attempts ??
-        current?.attempts ??
-        0,
-
-      correctAnswers:
-        updates.correctAnswers ??
-        current?.correctAnswers ??
-        0,
-
-      totalQuestions:
-        updates.questionsAsked ??
-        current?.questionsAsked ??
-        0,
-
-      lastScore:
-        updates.score ??
-        current?.score ??
-        0,
+      status: updates.status ?? current?.status ?? "LEARNING",
+      attempts: updates.attempts ?? current?.attempts ?? 0,
+      correctAnswers: updates.correctAnswers ?? current?.correctAnswers ?? 0,
+      totalQuestions: updates.questionsAsked ?? current?.questionsAsked ?? 0,
+      lastScore: updates.score ?? current?.score ?? 0,
     };
 
     const response = await fetch(
       `/api/courses/python/chapters/${currentChapter.id}/lesson-progress`,
       {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify(payload),
       }
     );
@@ -897,6 +1048,27 @@ const saveLessonProgress = async (
       lesson,
       payload.status
     );
+
+    // Save/update structured study note in day-wise notebook
+    try {
+      if (courseId && currentChapter?.id) {
+        await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            courseId,
+            chapterId: currentChapter.id,
+            topic: lesson,
+            title: lesson,
+            type: "NOTEBOOK",
+            content: `Core concepts and syntax for ${lesson} in ${currentChapter.title}.`,
+            saveEvent: true,
+          }),
+        });
+      }
+    } catch (noteErr) {
+      console.warn("Auto-note save notice:", noteErr);
+    }
   } catch (error) {
     console.error(
       "Lesson progress save error:",
@@ -908,6 +1080,15 @@ const saveLessonProgress = async (
   // Expandable chapters state
   const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({ [chapterOrder]: true });
 
+
+  // Stop speech / mentor speaking immediately on page unmount or route change
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
   if (!chatScrollRef.current) return;
@@ -952,9 +1133,20 @@ const saveLessonProgress = async (
     try {
       // 1. Fetch Notes & Metadata
       const chapterRes = await fetch(`/api/courses/python/chapters/${chapterOrder}`);
+      if (!chapterRes.ok) {
+        let errMsg = "Failed to load chapter contents.";
+        try {
+          const errData = await chapterRes.json();
+          errMsg = errData.error || errMsg;
+        } catch {}
+        setError(errMsg);
+        setLoading(false);
+        return;
+      }
+
       const chapterData = await chapterRes.json();
 
-      if (!chapterRes.ok || !chapterData.success) {
+      if (!chapterData.success) {
         setError(chapterData.error || "Failed to load chapter contents.");
         setLoading(false);
         return;
@@ -978,11 +1170,16 @@ const saveLessonProgress = async (
       setProgresses(chapterData.progresses);
 
       // 2. Fetch Quiz Questions to check if a quiz exists
-      const quizRes = await fetch(`/api/courses/python/chapters/${chapterOrder}/quiz`);
-      const quizData = await quizRes.json();
-
-      if (quizRes.ok && quizData.success) {
-        setQuizQuestions(quizData.questions || []);
+      try {
+        const quizRes = await fetch(`/api/courses/python/chapters/${chapterOrder}/quiz`);
+        if (quizRes.ok) {
+          const quizData = await quizRes.json();
+          if (quizData.success) {
+            setQuizQuestions(quizData.questions || []);
+          }
+        }
+      } catch (quizErr) {
+        console.warn("Quiz load notice:", quizErr);
       }
     } catch (e) {
       console.error(e);
@@ -1382,7 +1579,21 @@ const startMentorListening = () => {
     
     if (order > 0 && !isEnrolled) return false;
 
-    return !!prevProgress?.isCompleted;
+    return !!prevProgress?.isCompleted && (prevProgress.quizScore ?? 0) >= 75;
+  };
+
+  const isTopicUnlocked = (secIdx: number, sectionsList: string[]) => {
+    if (secIdx === 0) return true;
+    const prevSec = sectionsList[secIdx - 1];
+    if (!prevSec || prevSec === "Quiz Assessment") return true;
+    const prevStatus = lessonProgress[prevSec]?.status;
+    return prevStatus === "MASTERED";
+  };
+
+  const isQuizUnlocked = (sectionsList: string[]) => {
+    const topicsOnly = sectionsList.filter((s) => s !== "Quiz Assessment");
+    if (topicsOnly.length === 0) return true;
+    return topicsOnly.every((s) => lessonProgress[s]?.status === "MASTERED");
   };
 
   return (
@@ -1398,20 +1609,23 @@ const startMentorListening = () => {
             <span className="text-sm font-extrabold text-slate-800">KnowledgeStream AI &bull; Python Course</span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/notes?course=python")}
+            className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-600 hover:bg-blue-500/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <BookOpen size={14} />
+            <span className="hidden sm:inline">Notes</span>
+          </button>
+
+          <CourseSwitcher currentLanguage="python" currentChapter={chapterOrder} />
+
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm transition-all flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all flex items-center gap-1.5"
           >
-            <ArrowLeft size={13} /> Back to Dashboard
+            <ArrowLeft size={13} /> Dashboard
           </button>
-          
-          <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              {user?.name?.charAt(0) || "N"}
-            </div>
-            <ChevronDown size={14} className="text-slate-500" />
-          </div>
         </div>
       </header>
 
@@ -1499,49 +1713,76 @@ const startMentorListening = () => {
                   {/* Expandable nested sections outline */}
                   {isExpanded && (
                     <div className="pl-9 pr-2 py-1 space-y-2 border-l border-slate-200 ml-5">
-                      {(CHAPTER_SECTIONS[ch.orderNumber] || []).map((sec, secIdx) => {
+                      {(CHAPTER_SECTIONS[ch.orderNumber] || []).map((sec, secIdx, arr) => {
                         const isQuiz = sec === "Quiz Assessment";
                         const status = isQuiz
                           ? "NOT_STARTED"
                           : getLessonStatus(sec);
+                        const isUnlocked = isQuiz
+                          ? isQuizUnlocked(arr)
+                          : isTopicUnlocked(secIdx, arr);
+
                         return (
                           <button
                             key={secIdx}
                             onClick={() => {
-  if (isQuiz) {
-    router.push(`/courses/python/chapter/${ch.orderNumber}/quiz`);
-    return;
-  }
+                              if (!isUnlocked) {
+                                if (isQuiz) {
+                                  alert("🔒 Complete and master all chapter topics with your AI Teacher before taking the Chapter Assessment Quiz.");
+                                } else {
+                                  alert(`🔒 Topic is locked. Please master "${arr[secIdx - 1]}" first.`);
+                                }
+                                return;
+                              }
 
-  setCurrentLesson(sec);
-setCurrentLessonIndex(secIdx);
-}}
+                              if (isQuiz) {
+                                router.push(`/courses/python/chapter/${ch.orderNumber}/quiz`);
+                                return;
+                              }
+
+                              setCurrentLesson(sec);
+                              setCurrentLessonIndex(secIdx);
+                            }}
                             className={`w-full text-left text-[11px] leading-relaxed flex items-center gap-1.5 py-0.5 transition-all ${
-                              isQuiz
+                              !isUnlocked
+                                ? "opacity-50 cursor-not-allowed text-slate-400"
+                                : isQuiz
                                 ? "text-purple-600 font-bold hover:underline"
-                                : "text-slate-500 hover:text-slate-800"
+                                : "text-slate-600 hover:text-slate-900"
                             }`}
                           >
-                            <span
-  className={`w-2 h-2 rounded-full shrink-0 ${
-    status === "MASTERED"
-      ? "bg-emerald-500"
-      : status === "PRACTICED"
-      ? "bg-blue-500"
-      : status === "LEARNING"
-      ? "bg-amber-500"
-      : status === "NEEDS_REVIEW"
-      ? "bg-red-500"
-      : "bg-slate-300"
-  }`}
-/>
+                            {!isUnlocked ? (
+                              <Lock size={11} className="text-slate-400 shrink-0" />
+                            ) : (
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${
+                                  status === "MASTERED"
+                                    ? "bg-emerald-500"
+                                    : status === "PRACTICED"
+                                    ? "bg-blue-500"
+                                    : status === "LEARNING"
+                                    ? "bg-amber-500"
+                                    : status === "NEEDS_REVIEW"
+                                    ? "bg-red-500"
+                                    : isQuiz
+                                    ? "bg-purple-500"
+                                    : "bg-slate-300"
+                                }`}
+                              />
+                            )}
+
                             <span className="truncate flex-1">
                               {sec}
                             </span>
 
                             {!isQuiz && (
                               <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                                {getLessonStatusLabel(sec)}
+                                {isUnlocked ? getLessonStatusLabel(sec) : "Locked"}
+                              </span>
+                            )}
+                            {isQuiz && isUnlocked && (
+                              <span className="text-[9px] font-bold text-purple-600 whitespace-nowrap">
+                                Ready ⭐
                               </span>
                             )}
                           </button>
@@ -1605,9 +1846,6 @@ setCurrentLessonIndex(secIdx);
             </div>
           ) : (
             <div className="space-y-6 animate-fade-in max-w-5xl mx-auto w-full pb-10">
-
-              
-
               <LiveTeacher
   ref={liveTeacherRef}
   contentRef={lessonContentRef}
@@ -1619,9 +1857,62 @@ setCurrentLessonIndex(secIdx);
   userEmail={userEmail}
 
     activeTopic={currentLesson || undefined}
+  allTopics={getLessons()}
+  onActiveTopicChange={(topic) => {
+    setCurrentLesson((prev) => (prev === topic ? prev : topic));
+    const lessons = getLessons();
+    const idx = lessons.indexOf(topic);
+    if (idx >= 0) {
+      setCurrentLessonIndex((prev) => (prev === idx ? prev : idx));
+    }
+  }}
+  isFinalTopic={
+    getLessons().length > 0 &&
+    getLessons().indexOf(currentLesson || "") === getLessons().length - 1
+  }
+  onNextTopic={() => {
+    const lessons = getLessons();
+    const idx = lessons.indexOf(currentLesson || "");
+    if (idx >= 0 && idx < lessons.length - 1) {
+      const next = lessons[idx + 1];
+      setCurrentLesson(next);
+      setCurrentLessonIndex(idx + 1);
+
+      // Smooth scroll to the target heading in textbook
+      setTimeout(() => {
+        const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+        const targetEl = headings.find((h) =>
+          h.textContent?.trim().toLowerCase().includes(next.toLowerCase())
+        );
+        targetEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } else if (idx === lessons.length - 1) {
+      void handleMarkChapterComplete();
+      router.push(`/courses/python/chapter/${chapterOrder}/quiz`);
+    }
+  }}
+  onChapterComplete={() => {
+    void handleMarkChapterComplete();
+  }}
 
   onExplain={explainLiveTeacherUnit}
+  onReteach={reteachLiveTeacherSection}
+  onEvaluateCheckpoint={evaluateCheckpointAnswer}
+  onReviewWeakSection={(topic: string) => {
+    setCurrentLesson(topic);
+    const lessons = getLessons();
+    const idx = lessons.indexOf(topic);
+    if (idx >= 0) setCurrentLessonIndex(idx);
+    setTimeout(() => {
+      const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+      const targetEl = headings.find((h) =>
+        h.textContent?.trim().toLowerCase().includes(topic.toLowerCase())
+      );
+      targetEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }}
   chapterContent={currentChapter?.content || ""}
+  autoResumeTopic={autoResumeTopic}
   onResumeRecap={generateResumeRecap}
   onEvaluateResumeAnswer={evaluateResumeAnswer}
 
@@ -1633,8 +1924,6 @@ setCurrentLessonIndex(secIdx);
     );
 
     if (!lesson) return;
-
-    setCurrentLesson(lesson);
 
     setLessonProgress((prev) => ({
       ...prev,
@@ -1656,7 +1945,7 @@ setCurrentLessonIndex(secIdx);
     });
   }}
 
-  onLessonComplete={(title: string) => {
+  onLessonComplete={(title: string, performance, sessionData) => {
     const lesson = getLessons().find(
       (item) =>
         item.trim().toLowerCase() ===
@@ -1665,7 +1954,14 @@ setCurrentLessonIndex(secIdx);
 
     if (!lesson) return;
 
-    setCurrentLesson(lesson);
+    const calculatedStatus =
+      performance?.understanding === "Strong"
+        ? "MASTERED"
+        : performance?.understanding === "Good"
+        ? "PRACTICED"
+        : performance?.understanding === "Needs Practice"
+        ? "NEEDS_REVIEW"
+        : "PRACTICED";
 
     setLessonProgress((prev) => ({
       ...prev,
@@ -1678,7 +1974,9 @@ setCurrentLessonIndex(secIdx);
           questionsAsked: 0,
           correctAnswers: 0,
         }),
-        status: "PRACTICED",
+        status: calculatedStatus,
+        attempts: performance?.attempts || 1,
+        correctAnswers: performance?.isCorrect ? 1 : 0,
       },
     }));
 
@@ -1686,12 +1984,121 @@ setCurrentLessonIndex(secIdx);
       if (prev.includes(lesson)) {
         return prev;
       }
-
       return [...prev, lesson];
     });
 
     void saveLessonProgress(lesson, {
-      status: "PRACTICED",
+      status: calculatedStatus,
+      attempts: performance?.attempts || 1,
+      correctAnswers: performance?.isCorrect ? 1 : 0,
+    });
+
+    // 📝 Persist Completed Topic Note to Learning Notebook
+    const topicStudentChats = topicChatMapRef.current[title] || topicChatMapRef.current[lesson] || [];
+
+    const markdownSections: string[] = [
+      `# ${title}`,
+      ``,
+      `**Status**: ✓ Completed`,
+      ``,
+      `---`,
+      ``,
+      `### WHAT I LEARNED`,
+      sessionData?.whatILearned || `Mastered key concepts in ${title}.`,
+      ``,
+      `---`,
+      ``,
+      `### CORE CONCEPTS`,
+      ...(sessionData?.coreConcepts && sessionData.coreConcepts.length > 0
+        ? sessionData.coreConcepts.map((c) => `• ${c}`)
+        : [`• Core principles covered in ${title}`]),
+      ``,
+      `---`,
+      ``,
+      `### IMPORTANT POINTS`,
+      ...(sessionData?.importantPoints && sessionData.importantPoints.length > 0
+        ? sessionData.importantPoints.map((p) => `• ${p}`)
+        : [`• Demonstrated understanding of ${title}`]),
+      ``,
+    ];
+
+    if (sessionData?.examples && sessionData.examples.length > 0) {
+      markdownSections.push(
+        `---`,
+        ``,
+        `### EXAMPLES`,
+        ...sessionData.examples.map((ex) => `\`\`\`${ex.lang || "python"}\n${ex.code}\n\`\`\``),
+        ``
+      );
+    }
+
+    if (sessionData?.teacherQuestions && sessionData.teacherQuestions.length > 0) {
+      markdownSections.push(
+        `---`,
+        ``,
+        `### CHECKPOINT EVALUATIONS`,
+        ...sessionData.teacherQuestions.map((tq) => {
+          const parts = [
+            `#### TEACHER QUESTION`,
+            tq.question,
+            ``,
+            `#### MY ANSWER`,
+            tq.answer || "Answer provided",
+            ``,
+            `#### AI EVALUATION`,
+            `Understanding: ${tq.score ?? 85}% • ${tq.result || "Evaluated"}`,
+            tq.feedback || "",
+            ``,
+          ];
+          if (tq.whatWasCorrect) {
+            parts.push(`#### WHAT I GOT RIGHT`, tq.whatWasCorrect, ``);
+          }
+          if (tq.whatIsMissing) {
+            parts.push(`#### WHAT I NEED TO IMPROVE`, tq.whatIsMissing, ``);
+          }
+          return parts.join("\n");
+        }),
+        ``
+      );
+    }
+
+    if (topicStudentChats.length > 0) {
+      markdownSections.push(
+        `---`,
+        ``,
+        `### MY QUESTIONS (Ask AI)`,
+        ...topicStudentChats.map((sq) => `**Q**: ${sq.question}\n\n**A**: ${sq.answer}\n`),
+        ``
+      );
+    }
+
+    const markdownContent = markdownSections.join("\n");
+
+    void fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        courseId: courseId || "python",
+        chapterId: currentChapter?.id || String(chapterOrder),
+        topic: title,
+        title: title,
+        type: "NOTEBOOK",
+        content: markdownContent,
+        metadata: {
+          whatILearned: sessionData?.whatILearned || "",
+          coreConcepts: sessionData?.coreConcepts || [],
+          importantPoints: sessionData?.importantPoints || [],
+          examples: sessionData?.examples || [],
+          codeSnippets: sessionData?.codeSnippets || [],
+          teacherQuestions: sessionData?.teacherQuestions || [],
+          studentQuestions: topicStudentChats,
+          diagram: sessionData?.diagram || null,
+          understanding: performance?.understanding || "Strong",
+          completedAt: new Date().toISOString(),
+        },
+      }),
+    }).catch((err) => {
+      console.error("Failed to save completed topic note:", err);
     });
   }}
 />
@@ -1775,7 +2182,7 @@ setCurrentLessonIndex(secIdx);
       {/* ========================================= */}
       <button
         type="button"
-        onClick={() => router.push("/notes")}
+        onClick={() => router.push("/notes?course=python")}
         className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-blue-300 hover:shadow-md transition-all group"
       >
         <div className="flex items-center gap-3">
@@ -1880,6 +2287,16 @@ setCurrentLessonIndex(secIdx);
               : "bg-slate-100 text-slate-700 border border-slate-200 rounded-bl-md"
           }`}
         >
+          {message.image && (
+            <div className="mb-2 rounded-xl overflow-hidden border border-white/20 bg-slate-900 flex items-center justify-center max-h-36">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={message.image}
+                alt="Attached visual"
+                className="max-h-36 w-auto object-contain"
+              />
+            </div>
+          )}
           {message.text}
         </div>
       </div>
@@ -2071,37 +2488,49 @@ setCurrentLessonIndex(secIdx);
 
 
         {/* Ask Mentor */}
-        <div className="p-3 border-t border-slate-200 bg-slate-50/50 shrink-0">
+        <div className="p-3 border-t border-slate-200 bg-slate-50/50 shrink-0 space-y-2">
+          {/* Vision Attachment */}
+          <VisionAttachment
+            onImageSelected={(b64, mime, fName) =>
+              setAttachedImage({ base64: b64, mime, fileName: fName })
+            }
+            onImageRemoved={() => setAttachedImage(null)}
+            currentImage={attachedImage?.base64}
+            disabled={chatLoading}
+            onQuickPrompt={(prompt) => {
+              setChatInput(prompt);
+              void handleTeachingRequest(prompt, "vision", attachedImage);
+            }}
+          />
 
           <form
-  onSubmit={(e) => {
-    e.preventDefault();
-    handleTeachingRequest(chatInput, "chat");
-  }}
-  className="flex items-center gap-2"
->
-  <input
-    type="text"
-    value={chatInput}
-    onChange={(e) => setChatInput(e.target.value)}
-    placeholder="Ask about this lesson..."
-    className="flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-  />
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleTeachingRequest(chatInput, attachedImage ? "vision" : "chat", attachedImage);
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder={attachedImage ? "Ask about attached image / diagram..." : "Ask about this lesson..."}
+              className="flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+            />
 
-  <button
-    type="submit"
-    disabled={!chatInput.trim() || chatLoading}
-    className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shadow-sm shrink-0 disabled:opacity-50"
-    title="Ask AI"
-  >
-    <Send size={13} />
-  </button>
-</form>
+            <button
+              type="submit"
+              disabled={(!chatInput.trim() && !attachedImage) || chatLoading}
+              className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shadow-sm shrink-0 disabled:opacity-50 cursor-pointer"
+              title="Ask AI"
+            >
+              <Send size={13} />
+            </button>
+          </form>
 
-          <p className="text-[9px] text-slate-400 mt-2 text-center">
-            CodeXAI uses this lesson as context.
+          <p className="text-[9px] text-slate-400 text-center">
+            CodeXAI uses this lesson and visual context.
           </p>
-
         </div>
 
       </div>
@@ -2140,8 +2569,49 @@ setCurrentLessonIndex(secIdx);
     </div>
   )}
 </aside>
-
       </div>
+
+      {/* Interactive Quick Recap Modal (Resume Checkpoint) */}
+      <QuickRecapModal
+        isOpen={quickRecapOpen}
+        onClose={() => setQuickRecapOpen(false)}
+        language="python"
+        chapterOrder={chapterOrder}
+        topicTitle={quickRecapTopic || currentLesson || "auto"}
+        courseId={courseId}
+        chapterId={currentChapter?.id}
+        onContinueLearning={() => {
+          const sections = getLessons();
+          const nextIdx = currentLessonIndex + 1;
+          if (nextIdx < sections.length) {
+            setCurrentLesson(sections[nextIdx]);
+            setCurrentLessonIndex(nextIdx);
+          }
+        }}
+        onTeachAgain={(topic) => {
+          const sections = getLessons();
+          const idx = sections.indexOf(topic);
+          setCurrentLesson(topic);
+          if (idx >= 0) setCurrentLessonIndex(idx);
+        }}
+        onSavedToNotes={() => {}}
+      />
+
+      {/* Interactive Daily Recap Modal (Today's Learning Review) */}
+      <DailyRecapModal
+        isOpen={dailyRecapOpen}
+        onClose={() => setDailyRecapOpen(false)}
+        language="python"
+        onContinueLearning={() => {}}
+        onReviewTodayAgain={(topics) => {
+          if (topics && topics.length > 0) {
+            const sections = getLessons();
+            const idx = sections.indexOf(topics[0]);
+            setCurrentLesson(topics[0]);
+            if (idx >= 0) setCurrentLessonIndex(idx);
+          }
+        }}
+      />
     </div>
   );
 }

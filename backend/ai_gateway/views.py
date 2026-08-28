@@ -186,12 +186,15 @@ def autocode_code(request):
                 status=400
             )
 
-        orchestrator =AIOrchestrator()
+        level = data.get("level", "") or data.get("learningLevel", "") or "beginner"
 
-        result =  orchestrator.autocode(
-                language,
-                project,
-            )
+        orchestrator = AIOrchestrator()
+
+        result = orchestrator.autocode(
+            language=language,
+            project=project,
+            level=level,
+        )
 
         return JsonResponse(
             {

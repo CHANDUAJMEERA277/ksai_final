@@ -212,14 +212,12 @@ export default function CourseCurriculumPage() {
 
   // Progress summary
   const completedChaptersCount = progresses.filter((p) => p.isCompleted).length;
-  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : courseSlug === "c" ? 6 : 11);
+  const totalChaptersCount = chapters.length || ((courseSlug === "cpp" || courseSlug === "java") ? 15 : 11);
   const progressPercentage = Math.round((completedChaptersCount / totalChaptersCount) * 100);
 
   const isC = courseSlug === "c";
   const startsAtOne = courseSlug === "cpp" || courseSlug === "java";
   const activeChapterOrder = startsAtOne
-    ? completedChaptersCount + 1
-    : isC
     ? completedChaptersCount + 1
     : completedChaptersCount;
 

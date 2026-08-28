@@ -63,29 +63,29 @@ export default function MyCoursesPage() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "Dashboard") {
-      router.push("/dashboard");
-    } else if (tab === "Leaderboard") {
-      router.push("/leaderboard");
-    } else if (tab === "AI Mentor") {
-      router.push("/codexai");
-    } else if (tab === "AI Quiz Generator") {
-      router.push("/quiz-generator");
-    }
   };
 
   const handleStartLearning = (course: any) => {
-    const lang = course.language ? course.language.toLowerCase() : "";
-    if (lang === "python" || course.title.toLowerCase().includes("python")) {
-      router.push("/courses/python");
-    } else if (lang === "java" || course.title.toLowerCase().includes("java")) {
-      router.push("/courses/java");
-    } else if (lang === "cpp" || lang === "c++" || course.title.toLowerCase().includes("c++")) {
+    const lang = (course.language || "").toLowerCase().trim();
+    if (lang === "cpp" || lang === "c++") {
       router.push("/courses/cpp");
-    } else if (lang === "c" || course.title.toLowerCase().includes("c programming") || course.title.toLowerCase() === "c") {
+    } else if (lang === "c") {
       router.push("/courses/c");
+    } else if (lang === "java") {
+      router.push("/courses/java");
+    } else if (lang === "python") {
+      router.push("/courses/python");
     } else {
-      router.push(`/courses/${lang || "python"}`);
+      const titleLower = (course.title || "").toLowerCase();
+      if (titleLower.includes("c++") || titleLower.includes("cpp")) {
+        router.push("/courses/cpp");
+      } else if (titleLower.includes("c programming") || titleLower === "c") {
+        router.push("/courses/c");
+      } else if (titleLower.includes("java")) {
+        router.push("/courses/java");
+      } else {
+        router.push("/courses/python");
+      }
     }
   };
 

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       
       const completedChapterIds = new Set(
         user.progresses
-          .filter((p) => p.isCompleted)
+          .filter((p) => p.isCompleted && (p.quizScore ?? 0) >= 75)
           .map((p) => p.chapterId)
       );
 

@@ -1,52 +1,39 @@
-import { parseJavaCompilerError } from "./ErrorParser";
+import { validateCodeBeforeRun } from "../runner/CodeValidator";
 import type { CompilerError } from "./ErrorParser";
 
-export async function compileCode(
+export function compileCode(
     code: string,
     setDiagnostics: (
         errors: CompilerError[]
-    ) => void
+    ) => void,
+    language: string = "java",
+    fileName?: string
 ) {
     try {
-        const response = await fetch(
-            "/api/run",
-            {
-                method: "POST",
+        const validation = validateCodeBeforeRun({
+            language,
+            code,
+            fileName,
+        });
 
-                headers: {
-                    "Content-Type":
-                        "application/json",
-                },
-
-                body: JSON.stringify({
-                    code,
-                    language: "java",
-                }),
-            }
-        );
-
-        const result =
-            await response.json();
-
-        if (result.success) {
+        if (validation.valid || !validation.diagnostics || validation.diagnostics.length === 0) {
             setDiagnostics([]);
         } else {
-
-            const errors =
-                parseJavaCompilerError(
-                    result.output || ""
-                );
-
-            setDiagnostics(errors);
+            const compilerErrors: CompilerError[] = validation.diagnostics.map((d) => ({
+                file: d.file || fileName || "Main",
+                line: d.line,
+                column: d.column,
+                message: d.message,
+                severity: d.severity,
+                type: d.type,
+                explanation: d.explanation,
+                correction: d.correction,
+                code: d.code,
+            }));
+            setDiagnostics(compilerErrors);
         }
-
     } catch (error) {
-
-        console.error(
-            "Compilation failed:",
-            error
-        );
-
+        console.error("Live validation failed:", error);
         setDiagnostics([]);
     }
 }

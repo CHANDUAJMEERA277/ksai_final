@@ -7,10 +7,12 @@ import {
 
 import { useTabs } from "./tabs/TabContext";
 import { useAIResult } from "./AIResultContext";
+import { useLanguage } from "./languages/LanguageContext";
 
 export default function ExplainButton() {
 
     const { activeTab } = useTabs();
+    const { language } = useLanguage();
 
     const {
         setResult,
@@ -26,6 +28,16 @@ export default function ExplainButton() {
         setLoading(true);
         setResult("");
 
+        const langName =
+            language?.name ||
+            (activeTab.language === "cpp"
+                ? "C++"
+                : activeTab.language === "c"
+                ? "C"
+                : activeTab.language === "python"
+                ? "Python"
+                : "Java");
+
         try {
 
             const response = await fetch(
@@ -40,8 +52,7 @@ export default function ExplainButton() {
 
                     body: JSON.stringify({
 
-                        language:
-                            activeTab.language,
+                        language: langName,
 
                         code:
                             activeTab.content,

@@ -1,10 +1,21 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
+import nextDynamic from "next/dynamic";
 import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import EditorNavbar from "@/components/editor/EditorNavbar";
 import ExplorerSidebar from "@/components/editor/ExplorerSidebar";
-import MonacoEditorPanel from "@/components/editor/MonacoEditor";
+
+const MonacoEditorPanel = nextDynamic(() => import("@/components/editor/MonacoEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full bg-[#09090B] flex items-center justify-center text-xs text-white/40 font-mono">
+      Loading Editor...
+    </div>
+  ),
+});
 
 import AIChatPanel from "@/components/editor/AIChatPanel";
 import AIResultPanel from "@/components/editor/AIResultPanel";
@@ -13,8 +24,11 @@ import StatusBar from "@/components/editor/StatusBar";
 
 import { TabProvider } from "@/components/editor/tabs/TabContext";
 import TabBar from "@/components/editor/tabs/TabBar";
-import { TerminalProvider } from "@/components/editor/terminal/TerminalContext";
-import TerminalPanel from "@/components/editor/terminal/TerminalPanel";
+import { TerminalProvider, useTerminal } from "@/components/editor/terminal/TerminalContext";
+
+const TerminalPanel = nextDynamic(() => import("@/components/editor/terminal/TerminalPanel"), {
+  ssr: false,
+});
 
 import { LanguageProvider } from "@/components/editor/languages/LanguageContext";
 import { ExplorerProvider } from "@/components/editor/explorer/ExplorerContext";
@@ -24,7 +38,7 @@ import { EditorProvider } from "@/components/editor/EditorContext";
 import { AIResultProvider } from "@/components/editor/AIResultContext";
 import { AIChatProvider } from "@/components/editor/AIChatContext";
 
-import { Sparkles, MessageSquare, Bot, BookOpen } from "lucide-react";
+import { Sparkles, MessageSquare, Bot, BookOpen, Terminal } from "lucide-react";
 
 export default function EditorPage() {
   return (
@@ -34,13 +48,15 @@ export default function EditorPage() {
           <LanguageProvider>
             <ExplorerProvider>
               <TabProvider>
-                <EditorProvider>
-                  <AIResultProvider>
-                    <AIChatProvider>
-                      <EditorLayout />
-                    </AIChatProvider>
-                  </AIResultProvider>
-                </EditorProvider>
+                <TerminalProvider>
+                  <EditorProvider>
+                    <AIResultProvider>
+                      <AIChatProvider>
+                        <EditorLayout />
+                      </AIChatProvider>
+                    </AIResultProvider>
+                  </EditorProvider>
+                </TerminalProvider>
               </TabProvider>
             </ExplorerProvider>
           </LanguageProvider>
@@ -53,7 +69,7 @@ export default function EditorPage() {
 function EditorLayout() {
   
   const { darkMode } = useEditorTheme();
-  const [showTerminal, setShowTerminal] = useState(true);
+  const { showTerminal, setShowTerminal } = useTerminal();
   const [rightPanelTab, setRightPanelTab] = useState<"chat" | "explanation">("explanation");
 
   return (
@@ -70,23 +86,38 @@ function EditorLayout() {
 
           {/* Code Editor Workspace */}
           <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-            <TerminalProvider>
-              {/* File Tabs */}
-              <TabBar />
+            {/* File Tabs */}
+            <TabBar />
 
-              {/* Monaco Editor Panel */}
-              <div className="flex-1 h-full overflow-hidden relative">
-                <MonacoEditorPanel />
+            {/* Monaco Editor Panel */}
+            <div className="flex-1 h-full overflow-hidden relative">
+              <MonacoEditorPanel />
+            </div>
+
+            {/* Terminal Panel or Collapsed Reopen Bar */}
+            {showTerminal ? (
+              <TerminalPanel onClose={() => setShowTerminal(false)} />
+            ) : (
+              <div className={`h-7 px-4 flex items-center justify-between border-t text-xs font-mono select-none transition-colors ${
+                darkMode ? "bg-[#0F1117] border-white/10 text-slate-400" : "bg-white border-gray-200 text-gray-600"
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => setShowTerminal(true)}
+                  className={`flex items-center gap-2 px-2.5 py-0.5 rounded transition cursor-pointer ${
+                    darkMode ? "hover:bg-white/10 hover:text-cyan-400" : "hover:bg-gray-100 hover:text-cyan-600"
+                  }`}
+                  title="Open Terminal Panel"
+                >
+                  <Terminal size={12} className="text-cyan-400" />
+                  <span className="font-semibold text-xs">Terminal</span>
+                  <span className="text-[10px] text-slate-500 font-mono">▲ Open</span>
+                </button>
               </div>
+            )}
 
-              {/* Terminal Panel */}
-              {showTerminal && (
-                <TerminalPanel onClose={() => setShowTerminal(false)} />
-              )}
-
-              {/* Bottom Dock Action Bar */}
-              <BottomDock />
-            </TerminalProvider>
+            {/* Bottom Dock Action Bar */}
+            <BottomDock />
           </div>
 
           {/* Right AI Copilot & Explanation Panel */}

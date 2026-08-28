@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import TerminalHeader from "./TerminalHeader";
 import XTermTabs from "./XTermTabs";
 import XTermInstance from "./XTermInstance";
@@ -24,7 +25,24 @@ export default function TerminalPanel({
     const {
         activePanel,
         output,
+        problemsText,
+        clearProblemsText,
+        isRunning,
+        sendInput,
     } = useTerminal();
+
+    const [currentInput, setCurrentInput] = useState("");
+    const outputContainerRef = useRef<HTMLDivElement | null>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+        if (outputContainerRef.current) {
+            outputContainerRef.current.scrollTop = outputContainerRef.current.scrollHeight;
+        }
+        if (isRunning && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [output, isRunning]);
 
     const {
         diagnostics,
@@ -66,7 +84,7 @@ export default function TerminalPanel({
     }
 
     function clearProblems() {
-
+        clearProblemsText();
         if (!editor) {
             setDiagnostics([]);
             return;
@@ -107,7 +125,8 @@ export default function TerminalPanel({
                 onClose={onClose}
             />
 
-            <XTermTabs />
+            {/* TERMINAL TABS (Only shown for Terminal tab) */}
+            {activePanel === "terminal" && <XTermTabs />}
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
 
@@ -122,23 +141,65 @@ export default function TerminalPanel({
                 {activePanel === "output" && (
 
                     <div
-                        className={`h-full overflow-auto p-5 ${
+                        ref={outputContainerRef}
+                        className={`h-full overflow-auto p-5 flex flex-col justify-between ${
                             darkMode
                                 ? "bg-[#0F1117]"
                                 : "bg-white"
                         }`}
                     >
 
-                        <pre
-                            className={`whitespace-pre-wrap font-mono text-sm ${
-                                darkMode
-                                    ? "text-slate-300"
-                                    : "text-gray-700"
-                            }`}
-                        >
-                            {output ||
-                                "No output yet."}
-                        </pre>
+                        <div className="flex-1">
+                            <pre
+                                className={`whitespace-pre-wrap font-mono text-sm leading-relaxed ${
+                                    darkMode
+                                        ? "text-emerald-300"
+                                        : "text-emerald-700"
+                                }`}
+                            >
+                                {output ||
+                                    "No output yet. Click Run in the bottom dock to execute your program."}
+                            </pre>
+                        </div>
+
+                        {/* Interactive Input Prompt when process is running */}
+                        {isRunning && (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const val = currentInput;
+                                    setCurrentInput("");
+                                    sendInput(val);
+                                }}
+                                className={`flex items-center gap-2 mt-3 pt-3 border-t font-mono text-sm shrink-0 ${
+                                    darkMode ? "border-white/10" : "border-gray-200"
+                                }`}
+                            >
+                                <span className="text-emerald-400 font-bold flex items-center gap-1.5 shrink-0 select-none">
+                                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                    &gt;
+                                </span>
+                                <input
+                                    type="text"
+                                    ref={inputRef}
+                                    value={currentInput}
+                                    onChange={(e) => setCurrentInput(e.target.value)}
+                                    placeholder="Type input here and press Enter..."
+                                    autoFocus
+                                    className={`flex-1 bg-transparent outline-none border-none font-mono text-sm ${
+                                        darkMode
+                                            ? "text-emerald-300 placeholder-slate-500"
+                                            : "text-emerald-800 placeholder-gray-400"
+                                    }`}
+                                />
+                                <button
+                                    type="submit"
+                                    className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded text-xs font-mono transition shrink-0"
+                                >
+                                    Enter ↵
+                                </button>
+                            </form>
+                        )}
 
                     </div>
 
@@ -163,18 +224,18 @@ export default function TerminalPanel({
                             <div className="flex items-center gap-3">
 
                                 <span className="text-sm font-semibold">
-                                    Problems
+                                    Problems & Diagnostics
                                 </span>
 
                                 {errorCount > 0 && (
 
-                                    <span className="flex items-center gap-1 text-xs text-red-500">
+                                    <span className="flex items-center gap-1 text-xs text-red-500 font-mono">
 
                                         <AlertCircle
                                             size={14}
                                         />
 
-                                        {errorCount}
+                                        {errorCount} {errorCount === 1 ? "Error" : "Errors"}
 
                                     </span>
 
@@ -182,13 +243,13 @@ export default function TerminalPanel({
 
                                 {warningCount > 0 && (
 
-                                    <span className="flex items-center gap-1 text-xs text-yellow-500">
+                                    <span className="flex items-center gap-1 text-xs text-yellow-500 font-mono">
 
                                         <AlertTriangle
                                             size={14}
                                         />
 
-                                        {warningCount}
+                                        {warningCount} {warningCount === 1 ? "Warning" : "Warnings"}
 
                                     </span>
 
@@ -196,7 +257,7 @@ export default function TerminalPanel({
 
                             </div>
 
-                            {diagnostics.length > 0 && (
+                            {(diagnostics.length > 0 || problemsText) && (
 
                                 <button
                                     type="button"
@@ -225,11 +286,11 @@ export default function TerminalPanel({
 
                         <div className="flex-1 overflow-y-auto">
 
-                            {diagnostics.length === 0 ? (
+                            {diagnostics.length === 0 && !problemsText ? (
 
-                                <div className="h-full flex items-center justify-center">
+                                <div className="h-full flex items-center justify-center p-6">
 
-                                    <div className="flex flex-col items-center gap-2">
+                                    <div className="flex flex-col items-center gap-2 text-center">
 
                                         <AlertCircle
                                             size={24}
@@ -243,7 +304,7 @@ export default function TerminalPanel({
                                                     : "text-gray-500"
                                             }`}
                                         >
-                                            No problems detected.
+                                            No problems detected in code.
                                         </span>
 
                                     </div>
@@ -252,7 +313,14 @@ export default function TerminalPanel({
 
                             ) : (
 
-                                <div>
+                                <div className="divide-y divide-white/5">
+                                    {problemsText && diagnostics.length === 0 && (
+                                        <div className="p-4">
+                                            <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400 leading-relaxed">
+                                                {problemsText}
+                                            </pre>
+                                        </div>
+                                    )}
 
                                     {diagnostics.map(
                                         (
@@ -338,13 +406,19 @@ export default function TerminalPanel({
                                                                     }
                                                                 </span>
 
+                                                                {error.type && (
+                                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-mono">
+                                                                        {error.type}
+                                                                    </span>
+                                                                )}
+
                                                             </div>
 
                                                             <p
-                                                                className={`text-sm mt-1 ${
+                                                                className={`text-sm mt-1 font-medium ${
                                                                     darkMode
                                                                         ? "text-slate-200"
-                                                                        : "text-gray-700"
+                                                                        : "text-gray-800"
                                                                 }`}
                                                             >
                                                                 {
@@ -352,17 +426,24 @@ export default function TerminalPanel({
                                                                 }
                                                             </p>
 
-                                                            <p
-                                                                className={`text-xs mt-1 truncate ${
-                                                                    darkMode
-                                                                        ? "text-slate-500"
-                                                                        : "text-gray-400"
-                                                                }`}
-                                                            >
-                                                                {
-                                                                    error.file
-                                                                }
-                                                            </p>
+                                                            {error.explanation && (
+                                                                <p
+                                                                    className={`text-xs mt-1 ${
+                                                                        darkMode
+                                                                            ? "text-slate-400"
+                                                                            : "text-gray-600"
+                                                                    }`}
+                                                                >
+                                                                    {error.explanation}
+                                                                </p>
+                                                            )}
+
+                                                            {error.correction && (
+                                                                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded w-fit">
+                                                                    <span className="text-slate-400 font-sans">Fix:</span>
+                                                                    <code>{error.correction}</code>
+                                                                </div>
+                                                            )}
 
                                                         </div>
 

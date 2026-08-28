@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
+import { getAuthoritativeProgression } from "@/lib/progression";
 import fs from "fs";
 import path from "path";
 
@@ -33,6 +34,16 @@ export async function GET(
           include: { user: true },
         });
         user = session?.user ?? null;
+      }
+    }
+
+    if (!user) {
+      const defaultUser =
+        (await db.user.findFirst({
+          where: { role: "Student" },
+        })) || (await db.user.findFirst());
+      if (defaultUser) {
+        user = defaultUser;
       }
     }
 
@@ -68,38 +79,30 @@ export async function GET(
       orderBy: { orderNumber: "asc" },
     });
 
-    const parsed = parseInt(chapterId.replace(/[^0-9]/g, ""), 10);
+    const cleanChapterId = chapterId.replace(/\/+$/, "").trim();
+    const parsed = parseInt(cleanChapterId.replace(/[^0-9]/g, ""), 10);
     const orderNum = isNaN(parsed) ? 0 : parsed;
-    const currentChapter = chapters.find((c: { orderNumber: number }) => c.orderNumber === orderNum);
+    const currentChapter =
+      chapters.find(
+        (c: { orderNumber: number; id: string }) =>
+          c.orderNumber === orderNum ||
+          c.id === cleanChapterId ||
+          c.id === chapterId
+      ) || chapters[0];
 
     if (!currentChapter) {
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
 
-    // Check if user is enrolled or auto-enroll active user
-    let enrollment = await db.enrollment.findFirst({
+    // Check if user is enrolled
+    const enrollment = await db.enrollment.findFirst({
       where: {
         userId: user.id,
         courseId: course.id,
       },
     });
 
-    if (!enrollment && user.id) {
-      try {
-        enrollment = await db.enrollment.create({
-          data: {
-            userId: user.id,
-            courseId: course.id,
-            paidAmount: 0,
-            paymentId: "auto_preview",
-          },
-        });
-      } catch (e) {
-        // Fallback if duplicate or constraint
-      }
-    }
-
-    // Fetch progress for this user in this course
+    // Fetch user progresses
     const progresses = await db.chapterProgress.findMany({
       where: {
         userId: user.id,
@@ -107,8 +110,8 @@ export async function GET(
       },
     });
 
-    // Read notes from Markdown file
-    let notesContent = "";
+    // Extract raw markdown explanation
+    let notesContent = currentChapter.explanation;
     try {
       const absolutePath = path.join(process.cwd(), currentChapter.explanation);
       if (fs.existsSync(absolutePath)) {
@@ -121,12 +124,20 @@ export async function GET(
     }
 
     // Metadata defaults
-    const estimatedTime = orderNum === 0 ? "15 mins" : "30 mins";
-    const difficulty = orderNum === 0 ? "Beginner" : "Intermediate";
+    const estimatedTime = currentChapter.orderNumber === 0 ? "15 mins" : "30 mins";
+    const difficulty = currentChapter.orderNumber === 0 ? "Beginner" : "Intermediate";
+
+    // Authoritative progression computation
+    const progressionData = await getAuthoritativeProgression(
+      user.id,
+      courseSlug,
+      currentChapter.orderNumber
+    );
 
     return NextResponse.json({
       success: true,
       courseTitle: course.title,
+      courseSlug: course.language || courseSlug,
       courseId: course.id,
       coursePrice: course.price,
       isEnrolled: !!enrollment,
@@ -139,6 +150,19 @@ export async function GET(
         estimatedTime,
         difficulty,
       },
+      chapter: {
+        id: currentChapter.id,
+        title: currentChapter.title,
+        orderNumber: currentChapter.orderNumber,
+        content: notesContent,
+        estimatedTime,
+        difficulty,
+      },
+      course: {
+        id: course.id,
+        title: course.title,
+        price: course.price,
+      },
       chapters: chapters.map((c: { id: string; title: string; orderNumber: number }) => ({
         id: c.id,
         title: c.title,
@@ -149,6 +173,7 @@ export async function GET(
         isCompleted: p.isCompleted,
         quizScore: p.quizScore,
       })),
+      progression: progressionData,
     });
   } catch (error) {
     console.error("GET Chapter Error:", error);

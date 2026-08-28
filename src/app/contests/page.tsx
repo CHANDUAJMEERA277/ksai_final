@@ -66,9 +66,6 @@ export default function StudentContestsPage() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "Dashboard") router.push("/dashboard");
-    else if (tab === "Courses") router.push("/courses");
-    else if (tab === "Leaderboard") router.push("/leaderboard");
   };
 
   return (

@@ -3,4 +3,5 @@ from .views import run_code
 
 urlpatterns = [
     path("run/", run_code),
+    path("run-code/", run_code),
 ]

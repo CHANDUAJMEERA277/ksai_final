@@ -6,297 +6,220 @@ import { useEffect, useMemo, useRef } from "react";
 import type { editor as MonacoEditor } from "monaco-editor";
 
 import { useTabs } from "./tabs/TabContext";
-
 import { useEditorTheme } from "./EditorTheme";
 import { useEditorSettings } from "./EditorSettingsContext";
-
 import type { CompilerError } from "./monaco/ErrorParser";
-
 import { registerLanguages } from "./monaco/registerLanguages";
 import { useEditor } from "./EditorContext";
 import { showDiagnostics } from "./monaco/MonacoDiagnostics";
 import { debounceCompile } from "./monaco/LiveDiagnostics";
 import { compileCode } from "./monaco/LiveCompiler";
-
 import { useAIResult } from "./AIResultContext";
-import { checkDictatorStep } from "./dictator/DictatorEngine";
-
+import { validateStudentCode } from "./dictator/DictatorEngine";
+import { useLanguage } from "./languages/LanguageContext";
+import { cleanTextForSpeech } from "./voice/VoiceDictatorEngine";
 
 export default function MonacoEditorPanel() {
   const { darkMode } = useEditorTheme();
   const { settings } = useEditorSettings();
+  const { language } = useLanguage();
 
   const {
     activeTab,
     updateTabContent,
     diagnosticsByTab,
     setTabDiagnostics,
-} = useTabs();
+  } = useTabs();
 
-const {
+  const {
     setEditor,
-} = useEditor();
+    setDiagnostics,
+  } = useEditor();
 
-const {
+  const {
     dictatorActive,
     dictatorProject,
-    dictatorStep,
+    dictatorUnits,
+    dictatorCurrentUnit,
+    dictatorSessionId,
     setDictatorStep,
-    setDictatorTotalSteps,
-    setResult,
-    setLoading,
+    setDictatorCompleted,
+    setDictatorFeedback,
+    setDictatorCurrentUnit,
+    setDictatorValidationStatus,
+    setDictatorTypedToken,
+    setDictatorExpectedToken,
+    setDictatorErrorExplanation,
+    setCurrentDictatorMessage,
     setMode,
-} = useAIResult();
+  } = useAIResult();
 
-const activeDiagnostics =
+  const activeDiagnostics =
     activeTab
         ? diagnosticsByTab[activeTab.id] ?? []
         : [];
 
-const editorRef =
+  const editorRef =
     useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
 
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const latestSessionIdRef = useRef(dictatorSessionId);
+  const currentUnitRef = useRef(dictatorCurrentUnit);
+  const unitsRef = useRef(dictatorUnits);
+  const lastSpokenHashRef = useRef<string>("");
 
-  const editor = settings.editor;
+  useEffect(() => {
+    latestSessionIdRef.current = dictatorSessionId;
+    lastSpokenHashRef.current = "";
+  }, [dictatorSessionId]);
 
-  const initialCode = `public class Main {
+  useEffect(() => {
+    currentUnitRef.current = dictatorCurrentUnit;
+  }, [dictatorCurrentUnit]);
 
-    public static void main(String[] args) {
+  useEffect(() => {
+    unitsRef.current = dictatorUnits;
+  }, [dictatorUnits]);
 
-        System.out.println("Welcome to KnowledgeStream AI");
+  useEffect(() => {
+    if (!editorRef.current) return;
+    showDiagnostics(editorRef.current, activeDiagnostics);
+  }, [activeDiagnostics]);
 
-    }
-
-}`;
-
-  const editorOptions = useMemo<MonacoEditor.IStandaloneEditorConstructionOptions>(
-  () => ({
-    fontFamily: editor.fontFamily,
-    fontSize: editor.fontSize,
-
-    wordWrap: editor.wordWrap ? "on" : "off",
-
-    lineNumbers: editor.lineNumbers ? "on" : "off",
-
-    cursorStyle: editor.cursorStyle,
-
-    tabSize: editor.tabSize,
-
-    minimap: {
-      enabled: editor.minimap,
-    },
-
-    automaticLayout: true,
+  const editorOptions = useMemo(() => ({
+    fontSize: settings.editor.fontSize,
+    tabSize: settings.editor.tabSize,
+    minimap: { enabled: settings.editor.minimap },
+    wordWrap: settings.editor.wordWrap ? ("on" as const) : ("off" as const),
+    lineNumbers: settings.editor.lineNumbers ? ("on" as const) : ("off" as const),
+    fontFamily: settings.editor.fontFamily,
     scrollBeyondLastLine: false,
-    roundedSelection: true,
-    cursorBlinking: "smooth",
     smoothScrolling: true,
-
-    padding: {
-      top: 20,
+    cursorBlinking: "smooth" as const,
+    cursorSmoothCaretAnimation: "on" as const,
+    automaticLayout: true,
+    padding: { top: 12, bottom: 12 },
+    folding: true,
+    glyphMargin: false,
+    lineDecorationsWidth: 6,
+    lineNumbersMinChars: 3,
+    renderLineHighlight: "line" as const,
+    bracketPairColorization: { enabled: true },
+    guides: {
+        bracketPairs: true,
+        indentation: true,
     },
-  }),
-  [editor]
-);
-
-useEffect(() => {
-
-    if (!editorRef.current) {
-        return;
-    }
-
-    void showDiagnostics(
-        editorRef.current,
-        activeDiagnostics
-    );
-
-}, [
-    activeTab?.id,
-    activeDiagnostics,
-]);
-
+    suggest: {
+        snippetsPreventQuickSuggestions: false,
+    },
+  }), [settings.editor]);
 
   return (
-  <div
-    className={`h-full w-full flex-1 transition-all duration-300 ${
-      darkMode ? "bg-[#1E1E1E]" : "bg-white"
-    }`}
-  >
-    <Editor
-      onMount={(editor)=>{
+    <div className="h-full w-full relative">
+      <Editor
+        onMount={(editor: any) => {
+          editorRef.current = editor;
+          registerLanguages();
+          setEditor(editor);
+        }}
+        height="100%"
+        language={language?.monacoLanguage || activeTab?.language || "java"}
+        value={activeTab?.content ?? language?.starterCode ?? ""}
+        theme={darkMode ? "vs-dark" : "vs"}
+        options={editorOptions}
+        onChange={(value) => {
+          if (!activeTab) return;
 
-    editorRef.current=editor;
+          const code = value || "";
 
-    setEditor(editor);
+          updateTabContent(
+            activeTab.id,
+            code
+          );
 
-}}
-      height="100%"
-      language={activeTab?.language || "java"}
-      value={activeTab?.content ?? initialCode}
-      theme={darkMode ? "vs-dark" : "vs"}
-      options={editorOptions}
-      onChange={(value) => {
+          // =========================================================
+          // REAL-TIME TWO-LAYER PROGRESSIVE DICTATOR VALIDATION
+          // =========================================================
+          if (dictatorActive && unitsRef.current.length > 0) {
+            setMode("dictator");
 
-    if (!activeTab) return;
-
-    const code = value || "";
-
-    updateTabContent(
-        activeTab.id,
-        code
-    );
-
-
-    // =========================
-// DICTATOR CHECK
-// =========================
-
-if (
-    dictatorActive &&
-    dictatorStep > 0
-) {
-
-    const check =
-        checkDictatorStep(
-            code,
-            dictatorStep,
-            dictatorProject
-        );
-
-
-    // Keep Result Panel in Dictator mode
-    setMode("dictator");
-
-
-    // =========================
-    // CORRECT
-    // =========================
-
-    if (check.correct) {
-
-        setResult(
-            check.message
-        );
-
-
-        // Move to next Dictator step
-
-        if (
-            check.nextStep !== undefined
-        ) {
-
-            setDictatorStep(
-                check.nextStep
-            );
-
-        }
-
-
-        // =========================
-        // SPEAK SUCCESS
-        // =========================
-
-        if (
-            check.speech &&
-            typeof window !== "undefined" &&
-            "speechSynthesis" in window
-        ) {
-
-            window.speechSynthesis.cancel();
-
-
-            const speech =
-                new SpeechSynthesisUtterance(
-                    check.speech
-                );
-
-
-            speech.rate = 0.9;
-            speech.pitch = 1;
-            speech.volume = 1;
-
-
-            window.speechSynthesis.speak(
-                speech
-            );
-        }
-
-    }
-
-
-    // =========================
-    // INCORRECT / MISTAKE
-    // =========================
-
-    else {
-
-        // Show teacher feedback
-        // inside the Result Panel
-
-        setResult(
-            check.message
-        );
-
-
-        // Speak mistake + hint
-
-        if (
-            check.speech &&
-            typeof window !== "undefined" &&
-            "speechSynthesis" in window
-        ) {
-
-            // Stop any previous speech
-
-            window.speechSynthesis.cancel();
-
-
-            const speech =
-                new SpeechSynthesisUtterance(
-                    check.speech
-                );
-
-
-            // Teacher-like speaking speed
-
-            speech.rate = 0.9;
-            speech.pitch = 1;
-            speech.volume = 1;
-
-
-            // Start speaking
-
-            window.speechSynthesis.speak(
-                speech
-            );
-        }
-    }
-}
-
-
-    // =========================
-    // NORMAL COMPILER CHECK
-    // =========================
-
-    debounceCompile(() => {
-
-        compileCode(
-            code,
-            (errors: CompilerError[]) => {
-
-                setTabDiagnostics(
-                    activeTab.id,
-                    errors
-                );
-
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
             }
-        );
 
-    });
+            debounceTimerRef.current = setTimeout(() => {
+              const currentLang = activeTab?.language || language?.id || "java";
+              const currentUnits = unitsRef.current;
+              const activeUnitIdx = currentUnitRef.current;
 
-}}
-    />
-  </div>
-);
+              const res = validateStudentCode(
+                code,
+                currentUnits,
+                activeUnitIdx,
+                currentLang,
+                dictatorProject
+              );
 
+              setDictatorValidationStatus(res.status);
+              setDictatorExpectedToken(res.expectedToken);
+              setDictatorTypedToken(res.typedToken || "");
+              setDictatorFeedback(res.message);
+              if (res.dictatorMessage) {
+                setCurrentDictatorMessage(res.dictatorMessage);
+              }
+
+              if (res.status === "completed") {
+                setDictatorCompleted(true);
+                setDictatorStep(currentUnits.length);
+                setDictatorCurrentUnit(currentUnits.length - 1);
+              } else if (res.status === "correct" && res.nextUnitIndex !== undefined) {
+                setDictatorCurrentUnit(res.nextUnitIndex);
+                setDictatorStep(res.nextUnitIndex + 1);
+                currentUnitRef.current = res.nextUnitIndex;
+              } else if (res.status === "error") {
+                setDictatorErrorExplanation(res.message);
+                // Do NOT advance unit index on error
+              }
+
+              // Voice guidance with deduplication - speaking the SAME synchronized message
+              const speechText = res.dictatorMessage?.speechText || res.speech;
+              if (
+                speechText &&
+                speechText !== lastSpokenHashRef.current &&
+                typeof window !== "undefined" &&
+                "speechSynthesis" in window
+              ) {
+                lastSpokenHashRef.current = speechText;
+                window.speechSynthesis.cancel();
+                const cleaned = cleanTextForSpeech(speechText);
+                const speech = new SpeechSynthesisUtterance(cleaned);
+                speech.rate = 0.95;
+                speech.pitch = 1;
+                speech.volume = 1;
+                window.speechSynthesis.speak(speech);
+              }
+            }, 120);
+          }
+
+          // =========================
+          // LIVE COMPILER CHECK
+          // =========================
+          debounceCompile(() => {
+            compileCode(
+              code,
+              (errors: CompilerError[]) => {
+                setTabDiagnostics(
+                  activeTab.id,
+                  errors
+                );
+                setDiagnostics(errors);
+              },
+              activeTab.language || language?.id || "java",
+              activeTab.name
+            );
+          });
+        }}
+      />
+    </div>
+  );
 }

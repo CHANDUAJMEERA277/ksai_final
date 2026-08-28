@@ -5,10 +5,10 @@ import { Play, Loader2 } from "lucide-react";
 
 import { useTabs } from "./tabs/TabContext";
 import { useTerminal } from "./terminal/TerminalContext";
-
 import { useEditor } from "./EditorContext";
 import { useLanguage } from "./languages/LanguageContext";
-import { parseJavaCompilerError } from "./monaco/ErrorParser";
+import { parseCompilerError } from "./monaco/ErrorParser";
+import { validateCodeBeforeRun } from "./runner/CodeValidator";
 
 export default function RunButton() {
   const { activeTab } = useTabs();
@@ -16,67 +16,95 @@ export default function RunButton() {
   const { setDiagnostics } = useEditor();
 
   const {
-    appendOutput,
+    setOutput,
+    setProblemsText,
     setActivePanel,
+    setShowTerminal,
+    isRunning: terminalRunning,
+    startExecution,
   } = useTerminal();
 
-  const [running, setRunning] = useState(false);
+  const [runningLocal, setRunningLocal] = useState(false);
+  const running = runningLocal || terminalRunning;
 
   async function runCode() {
     if (running) return;
 
-    setRunning(true);
+    const selectedLang = activeTab?.language || language?.id || "java";
+    const currentCode = activeTab?.content || "";
+    const fileName = activeTab?.name || activeTab?.path || "";
+
+    // =========================================================
+    // PRE-EXECUTION VALIDATION (Language, File Match & Syntax)
+    // =========================================================
+    const validation = validateCodeBeforeRun({
+      language: selectedLang,
+      fileName,
+      code: currentCode,
+    });
+
+    if (!validation.valid) {
+      const errorMsg = validation.errorMessage;
+      const parsedErrors = validation.diagnostics && validation.diagnostics.length > 0
+        ? validation.diagnostics.map((d) => ({
+            file: d.file || fileName || "Main",
+            line: d.line,
+            column: d.column,
+            message: d.message,
+            severity: d.severity,
+            type: d.type,
+            explanation: d.explanation,
+            correction: d.correction,
+            code: d.code,
+          }))
+        : parseCompilerError(errorMsg, selectedLang);
+
+      setDiagnostics(parsedErrors);
+      setProblemsText(errorMsg);
+      setActivePanel("problems");
+      setShowTerminal(true);
+      return;
+    }
+
+    setRunningLocal(true);
+    setDiagnostics([]);
+    setProblemsText("");
 
     try {
-      const response = await fetch("/api/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      await startExecution({
+        code: currentCode,
+        language: selectedLang,
+        fileName,
+        onValidationError: (err) => {
+          const parsedErrors = err.diagnostics && err.diagnostics.length > 0
+            ? err.diagnostics.map((d: any) => ({
+                file: d.file || fileName || "Main",
+                line: d.line,
+                column: d.column,
+                message: d.message,
+                severity: d.severity,
+                type: d.type,
+                explanation: d.explanation,
+                correction: d.correction,
+                code: d.code,
+              }))
+            : parseCompilerError(err.message, selectedLang);
+
+          setDiagnostics(parsedErrors);
+          setProblemsText(err.message);
+          setActivePanel("problems");
+          setShowTerminal(true);
         },
-        body: JSON.stringify({
-          code: activeTab?.content,
-          language: activeTab?.language || language?.id || "java",
-        }),
       });
-
-      const result = await response.json();
-
-      if (result.success) {
-
-    setDiagnostics([]);
-
-    setActivePanel("output");
-
-    appendOutput(
-`========================================
-KnowledgeStream AI Execution
-========================================
-
-${result.output}
-
-Execution Time : ${result.executionTime} ms
-Exit Code      : ${result.exitCode}
-
-========================================`
-    );
-
-} else {
-
-    const errors =
-        parseJavaCompilerError(result.output);
-
-    setDiagnostics(errors);
-
-    setActivePanel("problems");
-
-    appendOutput(result.output);
-
-}
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = `Execution Error: ${error?.message || "Unable to connect to execution server."}`;
+      const errors = parseCompilerError(errorMsg, selectedLang);
+      setDiagnostics(errors);
+      setProblemsText(errorMsg);
       setActivePanel("problems");
-      appendOutput("Unable to connect to the execution server.");
+      setShowTerminal(true);
     } finally {
-      setRunning(false);
+      setRunningLocal(false);
     }
   }
 

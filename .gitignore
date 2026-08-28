@@ -48,16 +48,17 @@ next-env.d.ts
 
 # Python virtual environment
 backend/venv/
+backend/.venv/
+.venv/
+venv/
+scratch/
 
-# Python virtual environment
-backend/venv/
-
-backend/venv/
 backend/__pycache__/
 **/__pycache__/
 *.pyc
 backend/db.sqlite3
 .env
 .env.*
+.env.local
 .next/
 node_modules/

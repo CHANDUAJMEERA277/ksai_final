@@ -9,38 +9,28 @@ from .views import (
 from .guide_views import guide
 from .teach_views import teach
 from .interview_views import evaluate_interview
+from .dictator_views import dictate
 
 
 urlpatterns = [
+    path("explain/", explain_code),
+    path("explain", explain_code),
 
-    path(
-        "explain/",
-        explain_code,
-    ),
+    path("chat/", chat_code),
+    path("chat", chat_code),
 
-    path(
-        "chat/",
-        chat_code,
-    ),
+    path("guide/", guide),
+    path("guide", guide),
 
-    path(
-        "guide/",
-        guide,
-    ),
+    path("teach/", teach),
+    path("teach", teach),
 
-    path(
-        "teach/",
-        teach,
-    ),
+    path("autocode/", autocode_code),
+    path("autocode", autocode_code),
 
-    path(
-        "autocode/",
-        autocode_code,
-    ),
+    path("dictate/", dictate),
+    path("dictate", dictate),
 
-    path(
-        "interview/evaluate/",
-        evaluate_interview,
-    ),
-
+    path("interview/evaluate/", evaluate_interview),
+    path("interview/evaluate", evaluate_interview),
 ]

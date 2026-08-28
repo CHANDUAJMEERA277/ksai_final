@@ -160,13 +160,15 @@ export function CourseDetailsModal({
     };
   }, []);
 
-  const langKey = course.category.toLowerCase().includes("c++")
-    ? "cpp"
-    : course.category.toLowerCase().includes("java")
-    ? "java"
-    : course.category.toLowerCase().includes("python")
-    ? "python"
-    : "c";
+  const rawLang = (course.language || course.category || "").toLowerCase().trim();
+  const langKey =
+    rawLang === "cpp" || rawLang === "c++" || rawLang.includes("c++")
+      ? "cpp"
+      : rawLang === "c" || rawLang === "c programming"
+      ? "c"
+      : rawLang === "java" || rawLang.includes("java")
+      ? "java"
+      : "python";
 
   const syllabus = LANGUAGE_SYLLABUS[langKey] || LANGUAGE_SYLLABUS.python;
 

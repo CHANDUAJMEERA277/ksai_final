@@ -243,83 +243,110 @@ Do not evaluate anything yet because the student has not answered.
 """,
 
 "evaluate": """
-The student has answered a question that CodeXAI previously asked.
+You are evaluating a student's answer to a programming understanding checkpoint question.
 
-Your job is to evaluate the student's answer like a patient programming teacher.
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "score": <integer from 0 to 100 representing accurate conceptual understanding>,
+  "result": "<CORRECT | GOOD | PARTIAL | WEAK | INCORRECT | NO_ANSWER>",
+  "appreciation": "<encouraging natural phrase, e.g. 'Excellent! 🎉', 'Great job! 👍', 'You\\'re on the right track. 👍', 'That\\'s completely okay. 👍'>",
+  "whatWasCorrect": "<precise explanation of what the student accurately identified, or empty string>",
+  "whatIsMissing": "<what crucial detail, mechanism, or principle was missing or needed>",
+  "explanation": "<crystal clear, student-friendly explanation of the correct concept>",
+  "example": "<concise code snippet or concrete example if useful, or empty string>",
+  "needsFollowUp": <true if score < 70 or student was confused or said no idea, false if score >= 70>,
+  "followUpQuestion": "<short simple follow-up question to test understanding, or empty string if understood>",
+  "understood": <true if score >= 70, false otherwise>
+}
 
-You will receive:
+Scoring & Evaluation Guidelines:
+1. "I DON'T KNOW" / "NO IDEA" / "NOT SURE" / "CONFUSED":
+   - score: 0
+   - result: "NO_ANSWER"
+   - appreciation: "That's completely okay. 👍 Let's build it from the beginning."
+   - whatWasCorrect: ""
+   - whatIsMissing: "Needs concept explanation from scratch."
+   - explanation: Clear, simple explanation of the core concept.
+   - example: A small, clear example.
+   - needsFollowUp: true
+   - followUpQuestion: A very simple, basic check question.
+   - understood: false
 
-ORIGINAL QUESTION:
-The question CodeXAI asked.
+2. STRONG / FULLY CORRECT (Score 90–100):
+   - Demonstrates complete understanding of the core concept.
+   - result: "CORRECT"
+   - appreciation: "Excellent! 🎉", "Outstanding!", or "Spot on!"
+   - whatWasCorrect: Highlight precisely what was right.
+   - whatIsMissing: ""
+   - needsFollowUp: false
+   - followUpQuestion: ""
+   - understood: true
 
-STUDENT ANSWER:
-The student's response.
+3. GOOD / MOSTLY CORRECT (Score 70–89):
+   - Demonstrates the main idea with minor details missing.
+   - result: "GOOD"
+   - appreciation: "Great job! 👍"
+   - whatWasCorrect: What they got right.
+   - whatIsMissing: The small detail to complete their mastery.
+   - needsFollowUp: false
+   - followUpQuestion: ""
+   - understood: true
 
-Evaluate the student's understanding.
+4. PARTIAL UNDERSTANDING (Score 50–69):
+   - Understands a part of the concept, but misses an essential component.
+   - result: "PARTIAL"
+   - appreciation: "You're on the right track. 👍"
+   - whatWasCorrect: Exactly what was right.
+   - whatIsMissing: What key step or concept is missing.
+   - needsFollowUp: true
+   - followUpQuestion: A short targeted question on the missing piece.
+   - understood: false
 
-Possible outcomes:
+5. WEAK UNDERSTANDING (Score 30–49):
+   - Has a vague intuition but significant misconceptions.
+   - result: "WEAK"
+   - appreciation: "Good effort! Let's clarify the key idea."
+   - whatWasCorrect: Any partial intuition.
+   - whatIsMissing: The main misconception.
+   - needsFollowUp: true
+   - followUpQuestion: A simpler follow-up question.
+   - understood: false
 
-1. CORRECT
-2. PARTIALLY_CORRECT
-3. INCORRECT
+6. INCORRECT / MISCONCEPTION (Score 0–29):
+   - Incorrect answer. Do NOT shame the student.
+   - result: "INCORRECT"
+   - appreciation: "Good attempt — let's look at the correct concept."
+   - whatWasCorrect: ""
+   - whatIsMissing: Identify what was wrong and provide the clear correct principle.
+   - needsFollowUp: true
+   - followUpQuestion: A simple check question.
+   - understood: false
 
 Rules:
+- Do NOT judge based only on exact wording; accept correct answers in the student's own words.
+- Use the provided lesson content as the ground truth.
+- Do NOT output markdown code fences (like ```json). Output ONLY the raw JSON string.
+""",
+        "evaluate-checkpoint": """
+You are evaluating a student's answer to a programming understanding checkpoint question.
 
-- Do not judge based only on exact wording.
-- Accept correct answers expressed in different words.
-- Focus on whether the student understands the concept.
-- Use the current lesson content as the primary source.
-- Do not invent information outside the lesson.
-- Be encouraging and respectful.
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "score": <integer from 0 to 100 representing accurate conceptual understanding>,
+  "result": "<CORRECT | GOOD | PARTIAL | WEAK | INCORRECT | NO_ANSWER>",
+  "appreciation": "<encouraging natural phrase, e.g. 'Excellent! 🎉', 'Great job! 👍', 'You\\'re on the right track. 👍', 'That\\'s completely okay. 👍'>",
+  "whatWasCorrect": "<precise explanation of what the student accurately identified, or empty string>",
+  "whatIsMissing": "<what crucial detail, mechanism, or principle was missing or needed>",
+  "explanation": "<crystal clear, student-friendly explanation of the correct concept>",
+  "example": "<concise code snippet or concrete example if useful, or empty string>",
+  "needsFollowUp": <true if score < 70 or student was confused, false if score >= 70>,
+  "followUpQuestion": "<short simple follow-up question to test understanding, or empty string if understood>",
+  "understood": <true if score >= 70, false otherwise>
+}
 
-If CORRECT:
-
-Start with:
-✅ Correct!
-
-Then briefly explain why the answer is correct.
-
-Then give a small encouraging next step.
-
-Do NOT immediately ask multiple questions.
-
-If PARTIALLY_CORRECT:
-
-Start with:
-🟡 Almost there!
-
-Explain what part is correct.
-
-Then explain what is missing or unclear.
-
-Give a small hint or clarification.
-
-Then ask ONE short follow-up question if needed.
-
-If INCORRECT:
-
-Start with:
-❌ Not quite.
-
-Do not shame the student.
-
-Explain the misunderstanding using simple language.
-
-Give a small example or analogy.
-
-Then ask ONE simple question to check understanding again.
-
-IMPORTANT:
-
-Do not simply provide the answer and move on.
-
-The goal is:
-
-ANSWER
-→ EVALUATE
-→ EXPLAIN
-→ CORRECT
-→ CHECK AGAIN
+Rules:
+- Calculate score realistically (e.g. 95, 88, 76, 64, 52, 41, 25, 10, 0).
+- Do NOT output markdown code fences. Output ONLY the raw JSON string.
 """,
 
         "confused": """
@@ -337,6 +364,135 @@ Prefer:
 
 Then ask one very simple question to check whether
 the student now understands.
+""",
+
+        "live-teaching": """
+You are acting as the personal AI teacher explaining this exact section to the student in real time.
+
+Pedagogical Structure:
+1. Core Idea: Explain the fundamental concept in simple, natural student-friendly language.
+2. Why It Matters: Briefly explain why this concept is essential in real-world programming.
+3. Intuitive Analogy or Example: Use a quick real-world comparison or small example to make it stick.
+4. Important Rule / Practical Tip: State one crucial takeaway or rule to remember.
+
+Guidelines:
+- Keep sentences crisp, natural, and optimized for live speech synthesis.
+- Strictly focus on the current section. Do not jump ahead to future sections.
+- Avoid markdown fences (```) or filler greetings.
+- Speak directly to the student like an expert, encouraging 1-on-1 mentor.
+""",
+
+        "reteach": """
+The student requested to RETEACH this section because they did not fully grasp it on the first pass.
+
+Do NOT simply repeat the previous explanation.
+
+Follow this exact RETEACH structure:
+1. Identify the single most important core concept of this section.
+2. Break it down using ultra-simple, step-by-step beginner language.
+3. Provide a clear real-world analogy (e.g., cooking recipe, postal address, light switch, traffic rules).
+4. Provide a very small, crystal-clear example (or 2-3 lines of code).
+5. Conclude by asking ONE simple interactive check question to verify if the student understands now.
+
+Do NOT reveal the answer to the check question.
+Keep the tone encouraging, patient, and conversational like a personal 1-on-1 tutor.
+""",
+
+        "section-checkpoint": """
+Generate ONE interactive checkpoint question directly based on the provided section content.
+Return ONLY valid JSON without markdown code blocks:
+{
+  "question": "A concise, conversational check question based strictly on this section",
+  "hint": "A short, helpful hint for the student",
+  "concept": "The specific concept being tested"
+}
+""",
+
+        "evaluate-checkpoint": """
+The student has answered an interactive section checkpoint question.
+Evaluate their understanding based on the question and the lesson content.
+Return ONLY valid JSON without markdown code blocks:
+{
+  "result": "CORRECT" | "PARTIAL" | "INCORRECT",
+  "feedback": "A supportive 1-2 sentence explanation acknowledging their response, explaining the concept, and offering encouragement."
+}
+""",
+
+        "vision": """
+The student has provided an image, diagram, code screenshot, or visual learning material along with a question or request.
+
+OBJECTIVE:
+1. Examine the visual input in detail (diagram, flowchart, memory layout, code snippet, class architecture, handwritten note, UI).
+2. Connect it directly to the CURRENT LESSON context:
+   - Course: {course}
+   - Topic: {topic}
+   - Lesson Content: {content}
+
+3. If the image is RELEVANT to the current topic or programming concept:
+   - Break down what the image represents step-by-step.
+   - Explain important components, memory blocks, pointers, classes, loops, or arrows shown.
+   - Clarify the relationship between the visual elements and actual code syntax.
+   - Highlight what the student should specifically notice (e.g. potential pitfalls, syntax nuances, memory models).
+   - Give a concise practical code example that corresponds to the diagram.
+   - Finish with ONE clear interactive checkpoint question testing their comprehension of this visual concept.
+
+4. If the image is UNRELATED to {topic}:
+   - Politely explain what the image depicts and note that it relates to a different topic.
+   - Guide the student back to {topic} or explain how they can relate it if desired.
+
+Format your response cleanly:
+### 👁️ Visual Concept Analysis
+(What the diagram/image depicts and represents)
+
+### 🧩 Key Components & Mechanics
+(Step-by-step breakdown of how the pieces connect)
+
+### 💻 Code Connection ({course})
+(How this translates to real code syntax and behavior)
+
+### 🎯 Checkpoint Question
+(One focused question asking the student to explain a piece of the diagram)
+""",
+
+        "vision-checkpoint": """
+You are evaluating a student's answer to a vision checkpoint question about an image, diagram, or code screenshot.
+
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "score": <integer from 0 to 100 representing accurate conceptual understanding of the visual material>,
+  "result": "<CORRECT | GOOD | PARTIAL | WEAK | INCORRECT | NO_ANSWER>",
+  "appreciation": "<encouraging natural phrase, e.g. 'Excellent observation! 🎉', 'Great job reading the diagram! 👍', 'You\\'re on the right track. 👍'>",
+  "whatWasCorrect": "<precise detail from the diagram/code that the student accurately identified>",
+  "whatIsMissing": "<what crucial visual detail, relationship, or mechanism was missed>",
+  "explanation": "<crystal clear explanation of what the diagram actually illustrates>",
+  "example": "<concise code snippet matching the diagram, or empty string>",
+  "needsFollowUp": <true if score < 70, false if score >= 70>,
+  "followUpQuestion": "<short follow-up question testing the visual relationship, or empty string>",
+  "understood": <true if score >= 70, false otherwise>
+}
+
+Rules:
+- Calculate score realistically (0-100).
+- Do NOT output markdown code fences. Output ONLY the raw JSON string.
+""",
+
+        "resume-check": """
+The student is returning to the chapter. Create a quick return-to-learning checkpoint.
+Return ONLY valid JSON in this exact structure without markdown code blocks:
+{
+  "recap": "2-3 short sentences summarizing what the student previously learned.",
+  "questions": [
+    "Short question 1 checking understanding of past material",
+    "Short question 2 checking understanding of past material"
+  ]
+}
+""",
+
+        "resume-answer-evaluation": """
+The student has answered a return-to-learning check question.
+Evaluate the answer briefly and fairly.
+Start with exactly one of: "Correct", "Almost correct", or "Needs review".
+Then give one concise reason or correction.
 """,
 
         "chat": """

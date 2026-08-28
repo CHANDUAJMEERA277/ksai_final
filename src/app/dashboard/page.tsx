@@ -213,32 +213,45 @@ export default function DashboardPage() {
   }, []);
 
   // Fetch dashboard metrics
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/dashboard");
-      if (!res.ok) throw new Error("Failed to load dashboard metrics");
+      const res = await fetch("/api/dashboard", { signal });
+      if (!res.ok) {
+        if (!signal?.aborted) {
+          setError("Failed to load dashboard metrics");
+        }
+        return;
+      }
       const json = await res.json();
-      if (json.success) {
+      if (json.success && !signal?.aborted) {
         setData(json);
-      } else {
+      } else if (!signal?.aborted) {
         setError(json.error || "Failed to load dashboard metrics");
       }
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Network error loading dashboard.");
+      if (err.name !== "AbortError" && !signal?.aborted) {
+        console.warn("Dashboard fetch warning:", err.message);
+        setError(err.message || "Network error loading dashboard.");
+      }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     if (!isPending) {
       if (!session) {
         router.push("/auth");
       } else {
-        fetchDashboardData();
+        fetchDashboardData(controller.signal);
       }
     }
+    return () => {
+      controller.abort();
+    };
   }, [session, isPending, router]);
 
   // Continue Learning Autoplay Control
@@ -476,16 +489,6 @@ export default function DashboardPage() {
       {/* Left Sidebar */}
       <LeftSidebar 
         activeTab="Dashboard" 
-        onTabChange={(tab) => {
-          if (tab === "Explore Courses") router.push("/courses/catalog");
-          else if (tab === "Courses") router.push("/courses");
-          else if (tab === "Leaderboard") router.push("/leaderboard");
-          else if (tab === "AI Quiz Generator") router.push("/quiz-generator");
-          else if (tab === "Editor" || tab === "Workspace") router.push("/editor");
-          else if (tab === "Certificates") router.push("/certificates");
-          else if (tab === "Interview Prep") router.push("/interview");
-          else if (tab === "Settings") router.push("/settings");
-        }} 
         userProfile={activeUser}
         isLight={false}
         fullHeight={true}
@@ -1109,7 +1112,10 @@ export default function DashboardPage() {
                       {/* Action Buttons */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
                         <button 
-                          onClick={() => router.push(`/courses/${course.courseLanguage}/chapter/${course.currentChapter?.orderNumber ?? 1}`)}
+                          onClick={() => {
+                            const startOrder = course.currentChapter?.orderNumber ?? ((course.courseLanguage === "c" || course.courseLanguage === "python") ? 0 : 1);
+                            router.push(`/courses/${course.courseLanguage}/chapter/${startOrder}`);
+                          }}
                           className="py-2.5 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 hover:opacity-95 transition-all text-center cursor-pointer shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 active:scale-[0.98]"
                         >
                           <span>Resume Learning</span>

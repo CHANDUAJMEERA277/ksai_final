@@ -21,33 +21,27 @@ def guide(request):
     try:
         data = json.loads(request.body)
 
-        language = data.get(
-            "language",
-            "",
-        )
-
-        code = data.get(
-            "code",
-            "",
-        )
-
-        errors = data.get(
-            "errors",
-            [],
-        )
+        language = data.get("language", "")
+        code = data.get("code", "")
+        errors = data.get("errors", [])
+        output = data.get("output", "")
+        file_name = data.get("fileName", "") or data.get("file_name", "")
 
         orchestrator = AIOrchestrator()
 
         result = orchestrator.guide(
-            language,
-            code,
-            errors,
+            language=language,
+            code=code,
+            errors=errors,
+            output=output,
+            file_name=file_name,
         )
 
         return JsonResponse(
             {
                 "success": True,
                 "data": result,
+                "response": result.get("response", ""),
             }
         )
 

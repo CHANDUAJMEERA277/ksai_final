@@ -21,11 +21,11 @@ export function CourseSwitcher({
   // Detect current course from pathname if not explicitly passed
   const activeLang = (
     currentLanguage ||
-    (pathname?.includes("/cpp")
+    (pathname?.startsWith("/courses/cpp") || pathname?.includes("/cpp")
       ? "cpp"
-      : pathname?.includes("/java")
+      : pathname?.startsWith("/courses/java") || pathname?.includes("/java")
       ? "java"
-      : pathname?.includes("/courses/c/") || pathname?.endsWith("/courses/c")
+      : pathname?.startsWith("/courses/c/") || pathname === "/courses/c" || pathname?.includes("/courses/c")
       ? "c"
       : "python")
   ).toLowerCase();
@@ -39,7 +39,7 @@ export function CourseSwitcher({
     } else if (lang === "java") {
       router.push(isChapter ? "/courses/java/chapter/1" : "/courses/java");
     } else if (lang === "c") {
-      router.push(isChapter ? "/courses/c/chapter/1" : "/courses/c");
+      router.push(isChapter ? "/courses/c/chapter/0" : "/courses/c");
     } else {
       router.push(isChapter ? "/courses/python/chapter/0" : "/courses/python");
     }
@@ -82,7 +82,7 @@ export function CourseSwitcher({
     {
       id: "c",
       name: "C",
-      chapters: "6 Ch.",
+      chapters: "11 Ch.",
       icon: Terminal,
       activeBg: "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400/50 scale-[1.03]",
       iconActive: "text-emerald-200",

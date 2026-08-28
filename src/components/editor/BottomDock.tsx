@@ -13,6 +13,9 @@ import {
 import { useEditorTheme } from "./EditorTheme";
 import { useTabs } from "./tabs/TabContext";
 import { useAIResult } from "./AIResultContext";
+import { useTerminal } from "./terminal/TerminalContext";
+import { useLanguage } from "./languages/LanguageContext";
+import { validateCodeBeforeRun } from "./runner/CodeValidator";
 
 const buttons = [
     {
@@ -37,108 +40,89 @@ const buttons = [
 ];
 
 export default function BottomDock() {
-
-    const { darkMode } =
-        useEditorTheme();
-
-    const {
-        activeTab,
-        diagnosticsByTab,
-    } = useTabs();
-
-    const {
-        setResult,
-        setLoading,
-        setMode,
-    } = useAIResult();
+    const { darkMode } = useEditorTheme();
+    const { activeTab, diagnosticsByTab } = useTabs();
+    const { setResult, setLoading, setMode } = useAIResult();
+    const { output: terminalOutput } = useTerminal();
+    const { language } = useLanguage();
 
     async function handleAIGuide() {
-
         if (!activeTab) {
-
             setMode("guide");
-
-            setResult(
-                "Please open a code file before using AI Guide."
-            );
-
+            setResult("Please open a code file before using AI Guide.");
             return;
         }
 
-        const diagnostics =
-            diagnosticsByTab[
-                activeTab.id
-            ] ?? [];
+        let diagnostics = diagnosticsByTab[activeTab.id] ?? [];
+        const activeLang = activeTab.language || language?.id || "java";
+
+        if (!diagnostics || diagnostics.length === 0) {
+            const val = validateCodeBeforeRun({
+                language: activeLang,
+                fileName: activeTab.name || "Main",
+                code: activeTab.content,
+            });
+            if (val.diagnostics && val.diagnostics.length > 0) {
+                diagnostics = val.diagnostics.map((d) => ({
+                    file: d.file || activeTab.name || "Main",
+                    line: d.line,
+                    column: d.column,
+                    message: d.message,
+                    severity: d.severity,
+                    type: d.type,
+                    explanation: d.explanation,
+                    correction: d.correction,
+                    code: d.code,
+                }));
+            }
+        }
 
         setMode("guide");
         setLoading(true);
         setResult("");
 
         try {
-
-            const response =
-                await fetch(
-                    "/api/ai/guide",
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-                        },
-
-                        body: JSON.stringify({
-                            language:
-                                activeTab.language,
-
-                            code:
-                                activeTab.content,
-
-                            errors:
-                                diagnostics,
-                        }),
-                    }
-                );
+            const response = await fetch("/api/ai/guide", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    language: activeLang,
+                    code: activeTab.content,
+                    errors: diagnostics,
+                    output: terminalOutput || "",
+                    fileName: activeTab.name || "Main",
+                }),
+            });
 
             if (!response.ok) {
-
+                const errorData = await response.json().catch(() => ({}));
                 throw new Error(
-                    `Guide request failed: ${response.status}`
+                    errorData.message || `Guide request failed with status ${response.status}`
                 );
             }
 
-            const data =
-                await response.json();
-
+            const data = await response.json();
             const guideResponse =
                 data?.data?.response ??
                 data?.response ??
+                data?.data?.guide?.explanation ??
                 "";
 
             if (!guideResponse) {
-
-                throw new Error(
-                    "AI Guide returned an empty response."
-                );
+                throw new Error("AI Guide returned an empty response.");
             }
 
+            setResult(guideResponse);
+        } catch (error: any) {
+            console.error("AI Guide Error:", error);
             setResult(
-                guideResponse
+                error.message
+                    ? `⚠️ Codenthra AI Guide: ${error.message}`
+                    : "⚠️ Codenthra AI Guide could not process your code. Please try again."
             );
-
-        } catch (error) {
-
-            console.error(
-                "AI Guide Error:",
-                error
-            );
-
-            setResult(
-                "⚠️ Codenthra AI Guide could not process your code. Please try again."
-            );
-
         } finally {
-
             setLoading(false);
         }
     }

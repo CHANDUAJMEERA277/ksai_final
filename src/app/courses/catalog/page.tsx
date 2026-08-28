@@ -111,17 +111,6 @@ export default function ExploreCoursesCatalogPage() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "Dashboard") {
-      router.push("/dashboard");
-    } else if (tab === "Courses") {
-      router.push("/courses");
-    } else if (tab === "Leaderboard") {
-      router.push("/leaderboard");
-    } else if (tab === "AI Mentor") {
-      router.push("/codexai");
-    } else if (tab === "AI Quiz Generator") {
-      router.push("/quiz-generator");
-    }
   };
 
   const handleBuyCourse = async (course: CourseCatalogItem) => {
@@ -347,7 +336,11 @@ export default function ExploreCoursesCatalogPage() {
                           
                           {isEnrolled ? (
                             <button
-                              onClick={() => router.push(`/courses/${course.language.toLowerCase()}`)}
+                              onClick={() => {
+                                const langClean = (course.language || "").toLowerCase().trim();
+                                const targetSlug = langClean === "c++" || langClean === "cpp" ? "cpp" : langClean === "c" ? "c" : langClean === "java" ? "java" : "python";
+                                router.push(`/courses/${targetSlug}`);
+                              }}
                               className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 shadow-xs flex items-center gap-1 transition-all cursor-pointer"
                             >
                               <CheckCircle size={12} />

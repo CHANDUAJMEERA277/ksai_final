@@ -15,6 +15,7 @@ import {
 
 import { useEditorTheme } from "./EditorTheme";
 import { useTabs } from "./tabs/TabContext";
+import { useLanguage } from "./languages/LanguageContext";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -26,6 +27,7 @@ type SpeechRecognitionType = any;
 export default function AIChatPanel() {
   const { darkMode } = useEditorTheme();
   const { activeTab } = useTabs();
+  const { language } = useLanguage();
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -162,7 +164,15 @@ useEffect(() => {
         },
 
         body: JSON.stringify({
-          language: activeTab.language,
+          language:
+            language?.name ||
+            (activeTab.language === "cpp"
+              ? "C++"
+              : activeTab.language === "c"
+              ? "C"
+              : activeTab.language === "python"
+              ? "Python"
+              : "Java"),
           code: activeTab.content,
 
           history: messages,

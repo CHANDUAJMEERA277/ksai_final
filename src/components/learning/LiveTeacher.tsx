@@ -4,6 +4,7 @@ import React, {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -15,61 +16,137 @@ import {
   VolumeX,
   ChevronRight,
   Sparkles,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Award,
+  Zap,
+  Mic,
+  MicOff,
+  BookOpen,
+  ArrowRight,
+  RefreshCw,
+  ThumbsUp,
+  MessageSquare,
+  Layers,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  TeachingInstruction,
+  parseTeachingInstruction,
+  ProgrammingLanguage,
+  CheckpointEvaluation,
+  parseCheckpointEvaluation,
+} from "@/types/teaching-types";
+import { VisualTeachingRenderer } from "./visuals/VisualTeachingRenderer";
+import {
+  generateCheckpointQuestionForTopic,
+  CHAPTER_RECAP_BANK,
+} from "@/lib/recap-bank";
+
+export interface SectionPerformance {
+  topic: string;
+  understanding: "Strong" | "Good" | "Needs Practice" | "Weak";
+  strengths: string[];
+  needsImprovement: string[];
+  recommendation: string;
+  attempts: number;
+  isCorrect: boolean;
+  score?: number;
+  reteachCount: number;
+  timeSpentSeconds: number;
+}
+
+export interface ChapterSummary {
+  overallUnderstanding: "Strong" | "Good" | "Needs Practice";
+  strongAreas: string[];
+  weakAreas: string[];
+  masteredCount: number;
+  needingPracticeCount: number;
+  totalSections: number;
+  learningTrend: "Improving 📈" | "Stable ⚡" | "Needs Attention 🎯";
+  recommendedNextStep: string;
+}
+
+export interface SessionLearningData {
+  topic: string;
+  explanations: string[];
+  whatILearned: string;
+  coreConcepts: string[];
+  importantPoints: string[];
+  examples: Array<{ title: string; lang?: string; code?: string }>;
+  codeSnippets: Array<{ title: string; lang?: string; code?: string }>;
+  teacherQuestions: Array<{
+    question: string;
+    answer?: string;
+    feedback?: string;
+    result?: string;
+    score?: number;
+    whatWasCorrect?: string;
+    whatIsMissing?: string;
+  }>;
+  diagram?: { title: string; steps: string[] } | null;
+  reteachNotes?: string[];
+}
 
 interface LiveTeacherProps {
   contentRef: React.RefObject<HTMLElement | null>;
-
   chapterTitle: string;
   chapterContent: string;
-
   course: string;
   courseId: string;
   chapterId: string;
   userEmail: string;
 
   activeTopic?: string;
-activeTopicContent?: string;
+  activeTopicContent?: string;
 
   onExplain: (
-  content: string,
-  title: string,
-  learningMemory?: string
-) => Promise<string>;
+    content: string,
+    title: string,
+    learningMemory?: string
+  ) => Promise<string>;
 
-  onResumeRecap?: (
-    resumeTitle: string
-  ) => Promise<{
-    recap: string;
-    questions: string[];
-  }>;
-
-    onEvaluateResumeAnswer?: (
-    question: string,
-    answer: string
+  onReteach?: (
+    content: string,
+    title: string,
+    adaptiveContext?: string
   ) => Promise<string>;
 
   onEvaluateCheckpoint?: (
     question: string,
     answer: string
-  ) => Promise<{
-    result: "CORRECT" | "PARTIAL" | "INCORRECT";
+  ) => Promise<CheckpointEvaluation | {
+    result: "CORRECT" | "PARTIAL" | "INCORRECT" | "GOOD" | "WEAK" | "NO_ANSWER";
     feedback: string;
+    score?: number;
+    whatWasCorrect?: string;
+    whatIsMissing?: string;
+    appreciation?: string;
+    explanation?: string;
   }>;
 
-  onEvaluateChapter?: (
-    answers: Array<{
-      question: string;
-      answer: string;
-    }>
-  ) => Promise<string>;
+  onSectionPerformance?: (performance: SectionPerformance) => void;
+  onReviewWeakSection?: (topic: string) => void;
 
   onLessonStart?: (title: string) => void;
-  onLessonComplete?: (title: string) => void;
+  onLessonComplete?: (
+    title: string,
+    performance?: SectionPerformance,
+    sessionData?: SessionLearningData
+  ) => void;
+  onChapterComplete?: (summary?: ChapterSummary) => void;
 
-  onChapterComplete?: () => void;
+  allTopics?: string[];
+  isFinalTopic?: boolean;
+  onNextTopic?: () => void;
+  onActiveTopicChange?: (topic: string) => void;
+  onResumeRecap?: (topic: string) => Promise<{ recap: string; questions: string[] } | string>;
+  onEvaluateResumeAnswer?: (question: string, answer: string) => Promise<string | boolean>;
+  autoResumeTopic?: string;
 }
-
 
 export interface LiveTeacherHandle {
   pause: () => void;
@@ -82,2711 +159,1634 @@ type TeacherState =
   | "READING"
   | "THINKING"
   | "EXPLAINING"
-  | "WAITING"
+  | "CHECKPOINT"
+  | "RETEACHING"
+  | "QUICK_RECAP"
+  | "CHAPTER_RECAP"
   | "PAUSED"
+  | "SECTION_COMPLETED"
   | "COMPLETED";
 
-const LiveTeacher = forwardRef<
-  LiveTeacherHandle,
-  LiveTeacherProps
->( ({
-  contentRef,
-chapterTitle,
-chapterContent,
-course,
-courseId,
-chapterId,
-userEmail,
-onExplain,
-    onResumeRecap,
+type UnderstandingStep =
+  | "EXPLAINING"
+  | "KNOWLEDGE_CHECK"
+  | "EVALUATION_RESULT"
+  | "ASK_UNDERSTANDING"
+  | "RETEACHING"
+  | "QUICK_RECAP_CHECK"
+  | "CHAPTER_RECAP_CHECK";
+
+export const LiveTeacher = forwardRef<LiveTeacherHandle, LiveTeacherProps>(
+  (
+    {
+      contentRef,
+      chapterTitle,
+      chapterContent,
+      course,
+      courseId,
+      chapterId,
+      userEmail,
       activeTopic,
-  onEvaluateResumeAnswer,
-  onEvaluateCheckpoint,
-  onEvaluateChapter,
-  onLessonStart,
-  onLessonComplete,
-  onChapterComplete,
-}, ref) => {
-  const [state, setState] = useState<TeacherState>("IDLE");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [totalUnits, setTotalUnits] = useState(0);
-  const [teacherText, setTeacherText] = useState("");
-  const [visibleText, setVisibleText] = useState("");
-  const [currentTitle, setCurrentTitle] = useState("");
-  const [checkpointQuestion, setCheckpointQuestion] =
-  useState("");
+      onExplain,
+      onReteach,
+      onEvaluateCheckpoint,
+      onSectionPerformance,
+      onReviewWeakSection,
+      onLessonStart,
+      onLessonComplete,
+      onChapterComplete,
+      allTopics,
+      isFinalTopic,
+      onNextTopic,
+      onActiveTopicChange,
+      onResumeRecap,
+      onEvaluateResumeAnswer,
+      autoResumeTopic,
+    },
+    ref
+  ) => {
+    // Core Teacher Execution State
+    const [state, setState] = useState<TeacherState>("IDLE");
+    const [teacherText, setTeacherText] = useState<string>("");
+    const [currentTitle, setCurrentTitle] = useState<string>("");
+    const [voiceEnabled, setVoiceEnabled] = useState<boolean>(true);
+    const [speed, setSpeed] = useState<number>(1);
 
-const [checkpointAnswer, setCheckpointAnswer] =
-  useState("");
+    // Sentence-level Streaming State
+    const [currentUnitSentences, setCurrentUnitSentences] = useState<string[]>([]);
+    const [activeSentenceIndex, setActiveSentenceIndex] = useState<number>(-1);
+    const [currentInstruction, setCurrentInstruction] = useState<TeachingInstruction | null>(null);
 
-const [showCheckpoint, setShowCheckpoint] =
-  useState(false);
+    // Interactive Checkpoint State
+    const [understandingStep, setUnderstandingStep] = useState<UnderstandingStep>("EXPLAINING");
+    const [checkpointQuestion, setCheckpointQuestion] = useState<string>("");
+    const [checkpointAnswer, setCheckpointAnswer] = useState<string>("");
+    const [checkpointLoading, setCheckpointLoading] = useState<boolean>(false);
+    const [checkpointEvaluation, setCheckpointEvaluation] = useState<CheckpointEvaluation | null>(null);
+    const [checkpointError, setCheckpointError] = useState<string | null>(null);
+    const [checkpointAttempts, setCheckpointAttempts] = useState<number>(0);
+    const [reteachCount, setReteachCount] = useState<number>(0);
+    const [isListening, setIsListening] = useState<boolean>(false);
 
-const [checkpointFeedback, setCheckpointFeedback] =
-  useState("");
+    // Follow-Up State
+    const [followUpAnswer, setFollowUpAnswer] = useState<string>("");
+    const [followUpLoading, setFollowUpLoading] = useState<boolean>(false);
 
-  const [completedUnits, setCompletedUnits] = useState(0);
-const [completedCheckpoints, setCompletedCheckpoints] = useState(0);
+    // Session Analytics & Summaries
+    const [sectionStartTime, setSectionStartTime] = useState<number>(Date.now());
+    const [sectionPerformances, setSectionPerformances] = useState<Record<string, SectionPerformance>>({});
+    const [currentPerformance, setCurrentPerformance] = useState<SectionPerformance | null>(null);
+    const [chapterSummary, setChapterSummary] = useState<ChapterSummary | null>(null);
 
-const [hasSavedProgress, setHasSavedProgress] = useState(false);
-const [showResumePrompt, setShowResumePrompt] = useState(false);
-const [resumeIndex, setResumeIndex] = useState(0);
-const [resumeTitle, setResumeTitle] = useState("");
-const [resumeRecap, setResumeRecap] = useState("");
-const [resumeQuestions, setResumeQuestions] = useState<string[]>([]);
-const [resumeInstantRecap, setResumeInstantRecap] = useState("");
-const [resumeQuestionIndex, setResumeQuestionIndex] = useState(0);
-const [resumeAnswer, setResumeAnswer] = useState("");
-const [resumeFeedback, setResumeFeedback] = useState("");
-const [resumeLoading, setResumeLoading] = useState(false);
-const [resumeAnswers, setResumeAnswers] = useState<
-  Array<{ question: string; answer: string }>
->([]);
-const [chapterEvaluation, setChapterEvaluation] = useState("");
-const [chapterEvaluationLoading, setChapterEvaluationLoading] =
-  useState(false);
-const [resumeListening, setResumeListening] = useState(false);
-const [showResumeCheck, setShowResumeCheck] = useState(false);
+    // Mutable References for execution flow
+    const isMountedRef = useRef<boolean>(true);
+    const stopRef = useRef<boolean>(false);
+    const pauseRef = useRef<boolean>(false);
+    const nextRequestedRef = useRef<boolean>(false);
+    const voiceEnabledRef = useRef<boolean>(true);
+    const speedRef = useRef<number>(1);
+    const speedChangeRequestedRef = useRef<boolean>(false);
+    const activeSessionKeyRef = useRef<string>("");
+    const checkpointContinueRef = useRef<boolean>(false);
+    const hasTriggeredAutoResumeRef = useRef<boolean>(false);
 
+    // Safe In-Memory Deduplication & Cache (scoped to course + chapter + topic)
+    const topicCacheRef = useRef<Record<string, string>>({});
+    const pendingRequestRef = useRef<Record<string, Promise<string>>>({});
 
-  const [pointerPosition, setPointerPosition] = useState<{
-  top: number;
-  left: number;
-  visible: boolean;
-}>({
-  top: 0,
-  left: 0,
-  visible: false,
-});
+    // Elements & UI refs
+    const explanationContainerRef = useRef<HTMLDivElement | null>(null);
+    const sentenceSpanRefs = useRef<(HTMLSpanElement | null)[]>([]);
+    const sessionExplanationsRef = useRef<string[]>([]);
+    const sessionCheckpointsRef = useRef<
+      Array<{
+        question: string;
+        answer: string;
+        feedback: string;
+        result?: string;
+        score?: number;
+        whatWasCorrect?: string;
+        whatIsMissing?: string;
+      }>
+    >([]);
+    const sessionReteachRef = useRef<string[]>([]);
 
-  // 🔊 Voice is ON by default
-const [voiceEnabled, setVoiceEnabled] = useState(true);
-const voiceEnabledRef = useRef(true);
+    useEffect(() => {
+      isMountedRef.current = true;
+      voiceEnabledRef.current = voiceEnabled;
+      speedRef.current = speed;
+      return () => {
+        isMountedRef.current = false;
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+      };
+    }, [voiceEnabled, speed]);
 
-  type TeachingUnitType =
-  | "heading"
-  | "paragraph"
-  | "code"
-  | "list"
-  | "quote"
-  | "table"
-  | "example";
+    // Fast Normalized Topic Extractor from Lesson Source
+    const extractTopicSourceContent = (topicName: string): string => {
+      if (!chapterContent?.trim()) return "";
+      const source = chapterContent.trim();
+      const normTopic = topicName.replace(/^[\d\.\-\s:]+/, "").trim().toLowerCase();
 
-interface TeachingUnit {
-  anchor: HTMLElement;
-  elements: HTMLElement[];
-  title: string;
-  content: string;
-  type: TeachingUnitType;
-}
-
-const unitsRef = useRef<TeachingUnit[]>([]);
-const progressStorageKey =
-  `ksai-live-teacher-progress-${course}-${chapterTitle}`;
-const stopRef = useRef(false);
-const pauseRef = useRef(false);
-const checkpointContinueRef =
-  useRef(false);
-const nextRequestedRef = useRef(false);
-
-useImperativeHandle(ref, () => ({
-  pause: () => {
-    pauseRef.current = true;
-
-    if (
-      typeof window !== "undefined" &&
-      "speechSynthesis" in window
-    ) {
-      window.speechSynthesis.pause();
-    }
-
-    setState("PAUSED");
-  },
-
-  resume: () => {
-    pauseRef.current = false;
-
-    if (
-      voiceEnabledRef.current &&
-      typeof window !== "undefined" &&
-      "speechSynthesis" in window
-    ) {
-      window.speechSynthesis.resume();
-    }
-
-    setState("READING");
-  },
-
-  stop: () => {
-    stopRef.current = true;
-    pauseRef.current = false;
-
-    if (
-      typeof window !== "undefined" &&
-      "speechSynthesis" in window
-    ) {
-      window.speechSynthesis.cancel();
-    }
-
-    setState("IDLE");
-  },
-}));
-
-const saveTeachingProgress = (
-  index: number,
-  title: string,
-  completedCount: number,
-  lastExplanation = ""
-) => {
-  if (typeof window === "undefined") return;
-
-  try {
-    localStorage.setItem(
-      progressStorageKey,
-      JSON.stringify({
-        currentIndex: index,
-        currentTitle: title,
-        completedUnits: completedCount,
-        totalUnits: unitsRef.current.length,
-        completedCheckpoints,
-        lastExplanation: lastExplanation.trim(),
-        savedAt: new Date().toISOString(),
-        completed: false,
-      })
-    );
-  } catch (error) {
-    console.error(
-      "Failed to save Live Teacher progress:",
-      error
-    );
-  }
-};
-
-useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  try {
-    const saved = localStorage.getItem(
-      progressStorageKey
-    );
-
-    if (!saved) return;
-
-    const data = JSON.parse(saved);
-
-    if (
-      typeof data.currentIndex !== "number" ||
-      !data.currentTitle
-    ) {
-      return;
-    }
-
-    if (data.completed) {
-      return;
-    }
-
-    setHasSavedProgress(true);
-    setResumeIndex(data.currentIndex);
-    setResumeTitle(data.currentTitle);
-    setResumeInstantRecap(
-      typeof data.lastExplanation === "string"
-        ? data.lastExplanation.trim()
-        : ""
-    );
-  } catch (error) {
-    console.error(
-      "Failed to restore Live Teacher progress:",
-      error
-    );
-  }
-}, [progressStorageKey]);
-
-  // --------------------------------------------------
-  // Collect actual chapter elements
-  // --------------------------------------------------
-
-  const extractSourceSection = (
-  title: string
-): string => {
-  if (!chapterContent?.trim()) {
-    return "";
-  }
-
-  const source = chapterContent.trim();
-
-  const normalizedTitle = title
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-
-  const normalizedSource = source
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-
-  const titleIndex =
-    normalizedSource.indexOf(normalizedTitle);
-
-  if (titleIndex === -1) {
-    return "";
-  }
-
-  const sourceStart = titleIndex;
-
-  const afterTitle =
-    source.slice(
-      sourceStart + title.length
-    );
-
-  /*
-   * Find the next Markdown heading.
-   *
-   * Example:
-   *
-   * ## Introduction
-   *
-   * content...
-   *
-   * ## Variables
-   *
-   * content...
-   */
-  const nextHeadingMatch =
-    afterTitle.match(
-      /\n#{1,6}\s+.+/m
-    );
-
-  if (!nextHeadingMatch?.index) {
-    return source.slice(sourceStart).trim();
-  }
-
-  const endIndex =
-    sourceStart +
-    title.length +
-    nextHeadingMatch.index;
-
-  return source
-    .slice(sourceStart, endIndex)
-    .trim();
-};
-
-
-  const collectUnits = (): TeachingUnit[] => {
-  const root = contentRef.current;
-
-  if (!root) {
-    console.error(
-      "❌ LiveTeacher: contentRef is NULL"
-    );
-
-    return [];
-  }
-
-  console.log(
-    "🔎 LiveTeacher DOM text:",
-    root.innerText
-  );
-
-  const elements = Array.from(
-    root.querySelectorAll(
-      "h1, h2, h3, h4, h5, h6, p, blockquote, pre, ul, ol, table"
-    )
-  ) as HTMLElement[];
-
-  console.log(
-    "🔎 LiveTeacher elements found:",
-    elements.length
-  );
-
-  const filtered = elements.filter(
-    (element) => {
-      const text =
-        element.innerText?.trim();
-
-      if (!text) return false;
-
-      if (text.length < 2) return false;
-
-      /*
-       * Ignore paragraphs inside list items.
-       */
-      if (
-        element.tagName === "P" &&
-        element.closest("li")
-      ) {
-        return false;
+      let idx = source.toLowerCase().indexOf(topicName.toLowerCase());
+      if (idx === -1) {
+        idx = source.toLowerCase().indexOf(normTopic);
+      }
+      if (idx === -1) {
+        return source.slice(0, 1500);
       }
 
-      return true;
-    }
-  );
+      const afterTopic = source.slice(idx);
+      const nextHeadingMatch = afterTopic.slice(topicName.length).match(/\n#{1,4}\s+.+/m);
+      if (nextHeadingMatch && nextHeadingMatch.index !== undefined) {
+        return afterTopic.slice(0, topicName.length + nextHeadingMatch.index).trim();
+      }
+      return afterTopic.slice(0, 1800).trim();
+    };
 
-  const units: TeachingUnit[] = [];
+    // Fast Cached Topic Explanation Fetcher (Single optimized request per topic)
+    const getFastTopicExplanation = async (
+      topicName: string,
+      sessionKey: string
+    ): Promise<string> => {
+      const cacheKey = `${course || "course"}_${chapterTitle || "chapter"}_${topicName}`.toLowerCase();
 
-let currentUnit: TeachingUnit | null = null;
-
-
-  /*
-   * --------------------------------------------------
-   * OPTIONAL ACTIVE TOPIC FILTER
-   * --------------------------------------------------
-   */
-
-  const topicHeading = activeTopic
-    ? Array.from(
-        root.querySelectorAll(
-          "h1, h2, h3, h4, h5, h6"
-        )
-      ).find(
-        (heading) =>
-          heading.textContent
-            ?.trim()
-            .toLowerCase() ===
-          activeTopic
-            .trim()
-            .toLowerCase()
-      ) as HTMLElement | undefined
-    : undefined;
-
-  if (activeTopic && !topicHeading) {
-    console.warn(
-      "⚠️ LiveTeacher: active topic heading not found:",
-      activeTopic
-    );
-  }
-
-  let insideActiveTopic =
-    !activeTopic;
-
-  const activeHeadingLevel =
-    topicHeading
-      ? Number(
-          topicHeading.tagName.substring(1)
-        )
-      : null;
-
-  filtered.forEach((element) => {
-    const isHeading =
-      /^H[1-6]$/.test(
-        element.tagName
-      );
-
-    /*
-     * --------------------------------------------------
-     * ACTIVE TOPIC SCOPING
-     * --------------------------------------------------
-     */
-
-    if (activeTopic) {
-      if (element === topicHeading) {
-        insideActiveTopic = true;
-      } else if (
-        insideActiveTopic &&
-        isHeading &&
-        activeHeadingLevel !== null &&
-        Number(
-          element.tagName.substring(1)
-        ) <= activeHeadingLevel
-      ) {
-        insideActiveTopic = false;
+      const cached = topicCacheRef.current[cacheKey];
+      if (typeof cached === "string" && cached.length > 0) {
+        return cached;
       }
 
-      if (!insideActiveTopic) {
-        return;
+      const pending = pendingRequestRef.current[cacheKey];
+      if (pending) {
+        return pending;
       }
-    }
 
-    const text =
-      element.innerText.trim();
-
-    let type: TeachingUnitType =
-      "paragraph";
-
-    if (isHeading) {
-      type = "heading";
-    } else if (
-      element.tagName === "PRE"
-    ) {
-      type = "code";
-    } else if (
-      element.tagName === "BLOCKQUOTE"
-    ) {
-      type = "quote";
-    } else if (
-      element.tagName === "UL" ||
-      element.tagName === "OL"
-    ) {
-      type = "list";
-    } else if (
-      element.tagName === "TABLE"
-    ) {
-      type = "table";
-    }
-
-    /*
-     * --------------------------------------------------
-     * NEW SECTION
-     * --------------------------------------------------
-     */
-
-    if (isHeading) {
-      if (currentUnit) {
-        if (
-          currentUnit.content.trim() ===
-          currentUnit.title.trim()
-        ) {
-          const sourceContent =
-            extractSourceSection(
-              currentUnit.title
-            );
-
-          if (sourceContent) {
-            currentUnit.content =
-              sourceContent;
+      const topicContent = extractTopicSourceContent(topicName);
+      const requestPromise = (async () => {
+        try {
+          const explanation = await onExplain(
+            topicContent,
+            topicName,
+            `COURSE: ${course}\nCHAPTER: ${chapterTitle}`
+          );
+          if (explanation && explanation.trim()) {
+            topicCacheRef.current[cacheKey] = explanation;
           }
+          return explanation || `Let's understand ${topicName} step by step.`;
+        } catch (err) {
+          console.error("Live teacher explanation fetch error:", err);
+          return `Let's break down ${topicName} with a clear practical example.`;
+        } finally {
+          delete pendingRequestRef.current[cacheKey];
+        }
+      })();
+
+      pendingRequestRef.current[cacheKey] = requestPromise;
+      return requestPromise;
+    };
+
+    // --------------------------------------------------
+    // Speech & Text Splitting & Synchronized Speaking
+    // --------------------------------------------------
+    const splitIntoSentences = (text: string): string[] => {
+      if (!text?.trim()) return [];
+      const clean = text.trim();
+      const raw = clean.match(/[^.!?\n]+[.!?]+(?:\s+|\n+|$)|[^.!?\n]+(?:\n+|$)/g);
+      if (!raw || raw.length === 0) return [clean];
+      return raw.map((s) => s.trim()).filter(Boolean);
+    };
+
+    const speakSentenceAuthoritative = (sentenceText: string, sessionKey: string): Promise<boolean> => {
+      return new Promise((resolve) => {
+        if (
+          stopRef.current ||
+          !isMountedRef.current ||
+          nextRequestedRef.current ||
+          activeSessionKeyRef.current !== sessionKey
+        ) {
+          resolve(false);
+          return;
         }
 
-        units.push(currentUnit);
+        const cleanText = sentenceText
+          .replace(/```[\s\S]*?```/g, "code example")
+          .replace(/[#*_>`]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if (!cleanText) {
+          resolve(true);
+          return;
+        }
+
+        if (
+          !voiceEnabledRef.current ||
+          typeof window === "undefined" ||
+          !("speechSynthesis" in window)
+        ) {
+          const readTime = Math.min(3500, Math.max(1200, (cleanText.length * 45) / (speedRef.current || 1)));
+          setTimeout(() => resolve(true), readTime);
+          return;
+        }
+
+        try {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = "en-US";
+          utterance.rate = Math.min(2, Math.max(0.5, speedRef.current || 1));
+          utterance.pitch = 1.0;
+
+          utterance.onend = () => resolve(true);
+          utterance.onerror = (e) => {
+            if (e.error === "interrupted" || e.error === "canceled") {
+              resolve(false);
+            } else {
+              resolve(true);
+            }
+          };
+
+          window.speechSynthesis.speak(utterance);
+        } catch {
+          resolve(true);
+        }
+      });
+    };
+
+    const deliverExplanation = async (
+      explanationText: string,
+      sessionKey: string
+    ): Promise<boolean> => {
+      const sentences = splitIntoSentences(explanationText);
+      if (sentences.length === 0) return true;
+
+      setCurrentUnitSentences(sentences);
+      setActiveSentenceIndex(-1);
+      sentenceSpanRefs.current = [];
+
+      let sIdx = 0;
+      while (sIdx < sentences.length) {
+        if (
+          stopRef.current ||
+          !isMountedRef.current ||
+          nextRequestedRef.current ||
+          activeSessionKeyRef.current !== sessionKey
+        ) {
+          return false;
+        }
+
+        while (
+          pauseRef.current &&
+          !stopRef.current &&
+          isMountedRef.current &&
+          !nextRequestedRef.current &&
+          activeSessionKeyRef.current === sessionKey
+        ) {
+          await new Promise((r) => setTimeout(r, 100));
+        }
+
+        if (
+          stopRef.current ||
+          !isMountedRef.current ||
+          nextRequestedRef.current ||
+          activeSessionKeyRef.current !== sessionKey
+        ) {
+          return false;
+        }
+
+        const sentence = sentences[sIdx];
+
+        if (isMountedRef.current) {
+          setActiveSentenceIndex(sIdx);
+        }
+
+        setTimeout(() => {
+          if (!isMountedRef.current) return;
+          const container = explanationContainerRef.current;
+          const activeEl = sentenceSpanRefs.current[sIdx];
+          if (container && activeEl) {
+            const containerRect = container.getBoundingClientRect();
+            const elRect = activeEl.getBoundingClientRect();
+            const relTop = elRect.top - containerRect.top + container.scrollTop;
+            container.scrollTo({
+              top: Math.max(0, relTop - container.clientHeight / 2 + elRect.height / 2),
+              behavior: "smooth",
+            });
+          }
+        }, 30);
+
+        speedChangeRequestedRef.current = false;
+        const ok = await speakSentenceAuthoritative(sentence, sessionKey);
+
+        if (speedChangeRequestedRef.current) {
+          speedChangeRequestedRef.current = false;
+          continue;
+        }
+
+        if (
+          !ok ||
+          stopRef.current ||
+          !isMountedRef.current ||
+          nextRequestedRef.current ||
+          activeSessionKeyRef.current !== sessionKey
+        ) {
+          return false;
+        }
+
+        sIdx++;
+
+        if (
+          sIdx < sentences.length &&
+          !stopRef.current &&
+          isMountedRef.current &&
+          !nextRequestedRef.current &&
+          activeSessionKeyRef.current === sessionKey
+        ) {
+          const pauseDelay = Math.max(50, Math.round(150 / (speedRef.current || 1)));
+          await new Promise((r) => setTimeout(r, pauseDelay));
+        }
       }
 
-      currentUnit = {
-        anchor: element,
-        elements: [element],
-        title: text,
-        content: text,
-        type,
-      };
-
-      return;
-    }
-
-    /*
-     * --------------------------------------------------
-     * CONTENT BELONGS TO CURRENT SECTION
-     * --------------------------------------------------
-     */
-
-    if (currentUnit) {
-      currentUnit.elements.push(
-        element
-      );
-
-      currentUnit.content +=
-        `\n\n${text}`;
-
-      return;
-    }
-
-    /*
-     * --------------------------------------------------
-     * CONTENT BEFORE FIRST HEADING
-     * --------------------------------------------------
-     */
-
-    currentUnit = {
-      anchor: element,
-      elements: [element],
-      title: "Introduction",
-      content: text,
-      type,
+      setActiveSentenceIndex(sentences.length);
+      return true;
     };
-  });
 
-  /*
-   * --------------------------------------------------
-   * FINAL SECTION
-   * --------------------------------------------------
-   */
-// --------------------------------------------------
-// FINAL SECTION
-// --------------------------------------------------
+    const speakText = (text: string) => {
+      if (
+        !voiceEnabledRef.current ||
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window)
+      ) {
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/```[\s\S]*?```/g, "").replace(/[#*_>`]/g, "").trim();
+      if (!clean) return;
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.lang = "en-US";
+      utterance.rate = Math.min(2, Math.max(0.5, speedRef.current || 1));
+      window.speechSynthesis.speak(utterance);
+    };
 
-const finalUnit = currentUnit as TeachingUnit | null;
-
-if (finalUnit) {
-  if (
-    finalUnit.content.trim() ===
-    finalUnit.title.trim()
-  ) {
-    const sourceContent =
-      extractSourceSection(finalUnit.title);
-
-    if (sourceContent) {
-      finalUnit.content = sourceContent;
-    }
-  }
-
-  // Only add it if it has not already been added.
-  const alreadyAdded = units.includes(finalUnit);
-
-  if (!alreadyAdded) {
-    units.push(finalUnit);
-  }
-}
-
-  console.log(
-    "📚 LiveTeacher teaching units:",
-    units.map((unit) => ({
-      title: unit.title,
-      type: unit.type,
-      contentLength:
-        unit.content.length,
-      contentPreview:
-        unit.content.slice(0, 180),
-    }))
-  );
-
-  return units;
-};
-
-  
-  // --------------------------------------------------
-  // Highlight current teaching element
-  // --------------------------------------------------
-
-  const clearHighlight = () => {
-    document
-      .querySelectorAll("[data-live-teacher-active='true']")
-      .forEach((node) => {
+    // --------------------------------------------------
+    // Highlight Target Topic in DOM
+    // --------------------------------------------------
+    const clearHighlight = () => {
+      document.querySelectorAll("[data-live-teacher-active='true']").forEach((node) => {
         const el = node as HTMLElement;
-
         el.removeAttribute("data-live-teacher-active");
-
         el.style.removeProperty("outline");
         el.style.removeProperty("box-shadow");
         el.style.removeProperty("border-radius");
         el.style.removeProperty("transition");
         el.style.removeProperty("background-color");
       });
-  };
-
-  const moveTeacherPointer = (element: HTMLElement | undefined) => {
-  if (!element) return;
-
-  const rect = element.getBoundingClientRect();
-
-  const pointerWidth = 34;
-
-  // Prefer placing the teacher hand on the left side
-  // of the current learning element.
-  let left = rect.left - pointerWidth - 14;
-
-  // If there is not enough room on the left,
-  // place it on the right.
-  if (left < 10) {
-    left = rect.right + 14;
-  }
-
-  // Keep pointer inside the viewport.
-  left = Math.max(
-    10,
-    Math.min(left, window.innerWidth - pointerWidth - 10)
-  );
-
-  const top = Math.max(
-    10,
-    Math.min(
-      rect.top + rect.height / 2 - 17,
-      window.innerHeight - 50
-    )
-  );
-
-  setPointerPosition({
-    top,
-    left,
-    visible: true,
-  });
-};
-
-  const highlightElement = (element: HTMLElement | undefined) => {
-    if (!element) return;
-
-    clearHighlight();
-
-    element.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-
-    // Move AI teacher pointer after smooth scrolling settles
-requestAnimationFrame(() => {
-  requestAnimationFrame(() => {
-    moveTeacherPointer(element);
-  });
-});
-
-    element.setAttribute(
-      "data-live-teacher-active",
-      "true"
-    );
-
-    element.style.transition =
-      "all 0.4s ease";
-
-    element.style.outline =
-      "3px solid rgba(59,130,246,0.45)";
-
-    element.style.boxShadow =
-      "0 0 0 8px rgba(59,130,246,0.08)";
-
-    element.style.borderRadius = "8px";
-
-    // Very subtle background emphasis
-    element.style.backgroundColor =
-      "rgba(59,130,246,0.035)";
-  };
-
-  // --------------------------------------------------
-  // Voice
-  // --------------------------------------------------
-
-  const speakText = (text: string) => {
-  if (!voiceEnabledRef.current) return;
-
-  if (
-    typeof window === "undefined" ||
-    !("speechSynthesis" in window)
-  ) {
-    return;
-  }
-
-    window.speechSynthesis.cancel();
-
-    const cleanText = text
-      .replace(/```[\s\S]*?```/g, "code example")
-      .replace(/[#*_>`]/g, "")
-      .replace(/\n+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if (!cleanText) return;
-
-    const utterance =
-      new SpeechSynthesisUtterance(cleanText);
-
-    utterance.lang = "en-US";
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const toggleVoice = () => {
-  const next = !voiceEnabledRef.current;
-
-  voiceEnabledRef.current = next;
-  setVoiceEnabled(next);
-
-  if (!next) {
-    if (
-      typeof window !== "undefined" &&
-      "speechSynthesis" in window
-    ) {
-      window.speechSynthesis.cancel();
-    }
-
-    return;
-  }
-
-  // Speak a small confirmation immediately after
-  // the student's click, helping the browser activate TTS.
-  if (
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window
-  ) {
-    const utterance = new SpeechSynthesisUtterance(
-      "Voice enabled."
-    );
-
-    utterance.lang = "en-US";
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  }
-};
-
-  // --------------------------------------------------
-  // Type teacher explanation
-  // --------------------------------------------------
-
-  const typeText = async (text: string) => {
-  setVisibleText("");
-
-  if (!text?.trim()) {
-    return true;
-  }
-
-  let output = "";
-
-  for (let i = 0; i < text.length; i++) {
-  if (stopRef.current) {
-    return false;
-  }
-
-  if (nextRequestedRef.current) {
-    return false;
-  }
-
-  // Respect pause button while typing
-
-    // Respect pause button while typing
-    while (pauseRef.current && !stopRef.current) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, 100)
-      );
-    }
-
-    if (stopRef.current) {
-      return false;
-    }
-
-    const character = text[i];
-
-    output += character;
-
-    setVisibleText(output);
-
-    // Natural typing speed
-    let delay = 24;
-
-    // Slight pause after commas
-    if (character === ",") {
-      delay = 140;
-    }
-
-    // Natural pause after sentence endings
-    if (
-      character === "." ||
-      character === "!" ||
-      character === "?"
-    ) {
-      delay = 420;
-    }
-
-    // Slight pause after colon
-    if (character === ":") {
-      delay = 260;
-    }
-
-    // Slightly longer pause after line breaks
-    if (character === "\n") {
-      delay = 300;
-    }
-
-    await new Promise((resolve) =>
-      setTimeout(resolve, delay)
-    );
-  }
-
-  return true;
-};
-
-const startCheckpoint = async (
-  title: string
-) => {
-  setCheckpointAnswer("");
-  setCheckpointFeedback("");
-
-  const question =
-    `In your own words, what is ${title}?`;
-
-  setCheckpointQuestion(question);
-
-  await recordLearningEvent(
-    "QUESTION",
-    title,
-    question,
-    {
-      source: "live-teacher-checkpoint",
-    }
-  );
-
-  setShowCheckpoint(true);
-};
-
-const submitCheckpoint = async () => {
-  const answer = checkpointAnswer.trim();
-
-  if (!answer) {
-    return;
-  }
-
-  let result:
-    | "CORRECT"
-    | "PARTIAL"
-    | "INCORRECT" = "PARTIAL";
-
-  let feedback =
-    "Your answer has been recorded.";
-
-  // -----------------------------------------
-  // AI CHECKPOINT EVALUATION
-  // -----------------------------------------
-
-  if (onEvaluateCheckpoint) {
-    try {
-      const evaluation = await onEvaluateCheckpoint(
-        checkpointQuestion,
-        answer
-      );
-
-      result =
-        evaluation?.result || "PARTIAL";
-
-      feedback =
-        evaluation?.feedback ||
-        feedback;
-    } catch (error) {
-      console.error(
-        "Checkpoint evaluation error:",
-        error
-      );
-    }
-  }
-
-  const isCorrect = result === "CORRECT";
-
-  // -----------------------------------------
-  // SAVE ANSWER
-  // -----------------------------------------
-
-  await recordLearningEvent(
-    "ANSWER",
-    currentTitle || "Checkpoint",
-    answer,
-    {
-      question: checkpointQuestion,
-      source: "live-teacher-checkpoint",
-      evaluation: result,
-      isCorrect,
-    }
-  );
-
-  // -----------------------------------------
-  // SAVE MISTAKE
-  // -----------------------------------------
-
-  if (result === "INCORRECT") {
-    await recordLearningEvent(
-      "MISTAKE",
-      currentTitle || "Checkpoint",
-      answer,
-      {
-        question: checkpointQuestion,
-        source: "live-teacher-checkpoint",
-        evaluation: result,
-      }
-    );
-  }
-
-  // -----------------------------------------
-  // SAVE CORRECTION
-  // -----------------------------------------
-
-  if (
-    result === "CORRECT" ||
-    result === "PARTIAL"
-  ) {
-    await recordLearningEvent(
-      "CORRECTION",
-      currentTitle || "Checkpoint",
-      feedback,
-      {
-        question: checkpointQuestion,
-        studentAnswer: answer,
-        evaluation: result,
-        source: "live-teacher-checkpoint",
-      }
-    );
-  }
-
-  setCheckpointFeedback(feedback);
-};
-
-const continueAfterCheckpoint = () => {
-  checkpointContinueRef.current = true;
-
-  setCompletedCheckpoints((previous) => previous + 1);
-
-  setShowCheckpoint(false);
-  setCheckpointAnswer("");
-  setCheckpointFeedback("");
-};
-
-  // --------------------------------------------------
-  // Start live class
-  // --------------------------------------------------
-
-  // --------------------------------------------------
-  // Smart return-to-learning
-  // --------------------------------------------------
-
-  const beginResumeCheck = async () => {
-    if (!hasSavedProgress || !resumeTitle) {
-      startTeaching();
-      return;
-    }
-
-    setResumeFeedback("");
-    setResumeAnswer("");
-    setResumeQuestionIndex(0);
-    setResumeAnswers([]);
-    setChapterEvaluation("");
-    setChapterEvaluationLoading(false);
-    setShowResumePrompt(false);
-    setShowResumeCheck(true);
-
-    // FAST PATH: show the saved recap immediately.
-    const instantRecap =
-      resumeInstantRecap ||
-      `Welcome back! Last time we were learning "${resumeTitle}". Let's quickly check what you remember before we continue.`;
-
-    setResumeRecap(instantRecap);
-    setResumeQuestions([
-      `What do you remember about ${resumeTitle}?`,
-    ]);
-    setResumeLoading(false);
-
-    speakText(instantRecap);
-
-    // BACKGROUND PATH: refine the recap with Gemini/DeepSeek
-    // without blocking the student.
-    if (onResumeRecap) {
-      try {
-        const result = await onResumeRecap(resumeTitle);
-
-        if (result?.recap?.trim()) {
-          setResumeRecap(result.recap.trim());
-        }
-
-        const questions = (result?.questions || [])
-          .map((q) => q.trim())
-          .filter(Boolean)
-          .slice(0, 3);
-
-        if (questions.length) {
-          setResumeQuestions(questions);
-        }
-      } catch (error) {
-        console.error("Background resume recap error:", error);
-        // Keep the instant recap if AI is slow/unavailable.
-      }
-    }
-  };
-
-  const startResumeListening = () => {
-    if (typeof window === "undefined") return;
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setResumeFeedback("Voice input is not supported in this browser. You can type your answer instead.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.continuous = false;
-
-    recognition.onstart = () => setResumeListening(true);
-    recognition.onresult = (event: any) => {
-      let transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      setResumeAnswer(transcript.trim());
     };
-    recognition.onerror = () => setResumeListening(false);
-    recognition.onend = () => setResumeListening(false);
 
-    try {
-      recognition.start();
-    } catch (error) {
-      console.error("Resume voice input error:", error);
-      setResumeListening(false);
-    }
-  };
+    const highlightTopicElement = (topicName: string) => {
+      clearHighlight();
+      const root = contentRef.current;
+      if (!root) return;
 
-  const submitResumeAnswer = async () => {
-    const answer = resumeAnswer.trim();
-    const question = resumeQuestions[resumeQuestionIndex];
+      const allHeadings = Array.from(root.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
+      const target = topicName.trim().toLowerCase();
+      const normTarget = target.replace(/^[0-9]+[.\s\-)]*/, "").replace(/[^a-z0-9]/g, "").trim();
 
-    if (!answer || !question || resumeLoading) return;
-
-    // IMPORTANT:
-    // Do NOT call Gemini/DeepSeek here.
-    // Resume answers are collected instantly and evaluated once
-    // after the chapter is completed.
-    setResumeAnswers((previous) => {
-      const withoutCurrent = previous.filter(
-        (item) => item.question !== question
-      );
-
-      return [
-        ...withoutCurrent,
-        {
-          question,
-          answer,
-        },
-      ];
-    });
-
-    setResumeFeedback(
-      "✓ Answer saved. We'll evaluate your overall understanding after you complete the chapter."
-    );
-    setResumeLoading(false);
-  };
-
-  const continueResumeCheck = () => {
-    if (!resumeFeedback) return;
-
-    if (resumeQuestionIndex < resumeQuestions.length - 1) {
-      const nextIndex = resumeQuestionIndex + 1;
-      setResumeQuestionIndex(nextIndex);
-      setResumeAnswer("");
-      setResumeFeedback("");
-      speakText(resumeQuestions[nextIndex]);
-      return;
-    }
-
-    setShowResumeCheck(false);
-    setResumeAnswer("");
-    setResumeFeedback("");
-    startTeaching();
-  };
-
-  const loadLearningMemory = async () => {
-  if (!userEmail) {
-    return [];
-  }
-
-  try {
-    const response = await fetch(
-      `/api/learning-memory?userEmail=${encodeURIComponent(
-        userEmail
-      )}&courseId=${encodeURIComponent(
-        courseId
-      )}&chapterId=${encodeURIComponent(
-        chapterId
-      )}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      }
-    );
-
-    if (!response.ok) {
-      console.error(
-        "Failed to load learning memory:",
-        await response.text()
-      );
-      return [];
-    }
-
-    const data = await response.json();
-
-    if (Array.isArray(data.memories)) {
-      return data.memories;
-    }
-
-    return [];
-  } catch (error) {
-    console.error(
-      "Learning memory loading error:",
-      error
-    );
-
-    return [];
-  }
-};
-
-const [learningMemory, setLearningMemory] = useState<
-  Array<{
-    topic: string;
-    memoryType: string;
-    key: string;
-    content: string;
-    confidence: number;
-    priority: number;
-    occurrences: number;
-  }>
->([]);
-
-type AdaptiveLevel =
-  | "BEGINNER"
-  | "DEVELOPING"
-  | "CONFIDENT"
-  | "MASTERED";
-
-interface AdaptiveProfile {
-  level: AdaptiveLevel;
-  masteryScore: number;
-  strengths: string[];
-  weaknesses: string[];
-  mistakes: number;
-  reviewsNeeded: number;
-  preferredStyle:
-    | "SIMPLE"
-    | "EXAMPLE_FIRST"
-    | "DETAILED"
-    | "CHALLENGE";
-}
-
-const [adaptiveProfile, setAdaptiveProfile] =
-  useState<AdaptiveProfile>({
-    level: "BEGINNER",
-    masteryScore: 0,
-    strengths: [],
-    weaknesses: [],
-    mistakes: 0,
-    reviewsNeeded: 0,
-    preferredStyle: "SIMPLE",
-  });
-
-  const buildAdaptiveProfile = (
-  topic?: string
-): AdaptiveProfile => {
-  const normalizedTopic =
-    topic?.trim().toLowerCase();
-
-  const topicMemory = normalizedTopic
-    ? learningMemory.filter(
-        (item) =>
-          item.topic.trim().toLowerCase() ===
-          normalizedTopic
-      )
-    : learningMemory;
-
-  const strengths = topicMemory.filter(
-    (item) =>
-      item.memoryType === "STRENGTH" ||
-      item.memoryType === "MASTERY"
-  );
-
-  const weaknesses = topicMemory.filter(
-    (item) =>
-      item.memoryType === "STRUGGLE" ||
-      item.memoryType === "MISTAKE" ||
-      item.memoryType === "REVIEW"
-  );
-
-  const mistakes = topicMemory.filter(
-    (item) =>
-      item.memoryType === "MISTAKE"
-  );
-
-  const reviews = topicMemory.filter(
-    (item) =>
-      item.memoryType === "REVIEW"
-  );
-
-  const confidenceValues = topicMemory
-    .map((item) => item.confidence)
-    .filter(
-      (value) =>
-        typeof value === "number"
-    );
-
-  const masteryScore =
-    confidenceValues.length > 0
-      ? Math.round(
-          confidenceValues.reduce(
-            (sum, value) => sum + value,
-            0
-          ) / confidenceValues.length
-        )
-      : 0;
-
-  let level: AdaptiveLevel = "BEGINNER";
-
-  if (masteryScore >= 85) {
-    level = "MASTERED";
-  } else if (masteryScore >= 70) {
-    level = "CONFIDENT";
-  } else if (masteryScore >= 40) {
-    level = "DEVELOPING";
-  }
-
-  let preferredStyle:
-    | "SIMPLE"
-    | "EXAMPLE_FIRST"
-    | "DETAILED"
-    | "CHALLENGE" =
-    "SIMPLE";
-
-  if (weaknesses.length >= 2) {
-    preferredStyle = "EXAMPLE_FIRST";
-  }
-
-  if (reviews.length >= 2) {
-    preferredStyle = "DETAILED";
-  }
-
-  if (
-    masteryScore >= 80 &&
-    weaknesses.length === 0
-  ) {
-    preferredStyle = "CHALLENGE";
-  }
-
-  return {
-    level,
-    masteryScore,
-    strengths: strengths
-      .slice(0, 5)
-      .map((item) => item.content),
-
-    weaknesses: weaknesses
-      .slice(0, 5)
-      .map((item) => item.content),
-
-    mistakes: mistakes.length,
-    reviewsNeeded: reviews.length,
-    preferredStyle,
-  };
-};
-
-useEffect(() => {
-  const profile =
-    buildAdaptiveProfile(
-      activeTopic
-    );
-
-  setAdaptiveProfile(profile);
-
-  console.log(
-    "🧠 PHASE 14 Adaptive Profile:",
-    profile
-  );
-}, [
-  learningMemory,
-  activeTopic,
-]);
-
-const saveLearningMemory = async ({
-  topic,
-  memoryType,
-  key,
-  content,
-  confidence = 50,
-  priority = 1,
-}: {
-  topic: string;
-  memoryType:
-    | "STRUGGLE"
-    | "STRENGTH"
-    | "PREFERENCE"
-    | "MISTAKE"
-    | "MASTERY"
-    | "REVIEW";
-  key: string;
-  content: string;
-  confidence?: number;
-  priority?: number;
-}) => {
-  if (!courseId || !chapterId) {
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      "/api/learning-memory",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          courseId,
-          chapterId,
-          topic,
-          memoryType,
-          learningMemory,
-          key,
-          content,
-          confidence,
-          priority,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      console.error(
-        "Failed to save learning memory:",
-        await response.text()
-      );
-
-      return;
-    }
-
-    const data = await response.json();
-
-    if (data.memory) {
-      setLearningMemory((previous) => {
-        const withoutCurrent = previous.filter(
-          (item) =>
-            !(
-              item.topic === data.memory.topic &&
-              item.memoryType === data.memory.memoryType &&
-              item.key === data.memory.key
-            )
-        );
-
-        return [
-          ...withoutCurrent,
-          data.memory,
-        ];
+      const matchedHeading = allHeadings.find((h) => {
+        const text = h.textContent?.trim().toLowerCase() || "";
+        if (text === target) return true;
+        const normH = text.replace(/^[0-9]+[.\s\-)]*/, "").replace(/[^a-z0-9]/g, "").trim();
+        return normH && normTarget && (normH === normTarget || normH.includes(normTarget) || normTarget.includes(normH));
       });
-    }
-  } catch (error) {
-    console.error(
-      "Learning memory save error:",
-      error
-    );
-  }
-};
 
-useEffect(() => {
-  let cancelled = false;
+      if (matchedHeading) {
+        matchedHeading.scrollIntoView({ behavior: "smooth", block: "center" });
+        matchedHeading.setAttribute("data-live-teacher-active", "true");
+        matchedHeading.style.transition = "all 0.3s ease";
+        matchedHeading.style.outline = "3px solid rgba(59,130,246,0.65)";
+        matchedHeading.style.boxShadow = "0 0 0 8px rgba(59,130,246,0.12)";
+        matchedHeading.style.borderRadius = "8px";
+        matchedHeading.style.backgroundColor = "rgba(59,130,246,0.06)";
+      }
+    };
 
-  const refreshLearningMemory = async () => {
-    const memories = await loadLearningMemory();
+    // --------------------------------------------------
+    // Speech Recognition (Real Student Voice Input)
+    // --------------------------------------------------
+    const toggleSpeechInput = () => {
+      if (typeof window === "undefined") return;
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    if (!cancelled) {
-      setLearningMemory(memories);
-    }
-  };
-
-  void refreshLearningMemory();
-
-  return () => {
-    cancelled = true;
-  };
-}, [courseId, chapterId]);
-
-
-const buildLearningMemoryContext = (
-  topic?: string
-) => {
-  if (!learningMemory.length) {
-    return "";
-  }
-
-  const topicMemory = topic
-  ? learningMemory.filter(
-      (item) =>
-        item.topic.trim().toLowerCase() ===
-        topic.trim().toLowerCase()
-    )
-  : learningMemory;
-
-  const strengths = topicMemory.filter(
-    (item) =>
-      item.memoryType === "STRENGTH" ||
-      item.memoryType === "MASTERY"
-  );
-
-  const struggles = topicMemory.filter(
-    (item) =>
-      item.memoryType === "STRUGGLE" ||
-      item.memoryType === "MISTAKE" ||
-      item.memoryType === "REVIEW"
-  );
-
-  return `
-STUDENT LEARNING MEMORY:
-
-STRENGTHS:
-${
-  strengths.length
-    ? strengths
-        .slice(0, 8)
-        .map(
-          (item) =>
-            `- ${item.topic}: ${item.content}`
-        )
-        .join("\n")
-    : "- No recorded strengths yet."
-}
-
-AREAS NEEDING IMPROVEMENT:
-${
-  struggles.length
-    ? struggles
-        .slice(0, 8)
-        .map(
-          (item) =>
-            `- ${item.topic}: ${item.content}`
-        )
-        .join("\n")
-    : "- No recorded difficulties yet."
-}
-
-TEACHING INSTRUCTIONS:
-
-Use this information to personalize the teaching.
-
-If the student is strong in a topic:
-- avoid unnecessary repetition
-- gradually increase difficulty
-
-If the student struggles with a topic:
-- slow down
-- explain using another approach
-- use a simpler example
-- check understanding again
-
-If the student repeatedly makes a mistake:
-- address the underlying misunderstanding
-- provide a targeted explanation
-
-Never tell the student that you are using learning memory.
-
-Do not say:
-"According to your learning memory..."
-
-Adapt naturally.
-`;
-};
-
-  const recordLearningEvent = async (
-  eventType: string,
-  topic: string,
-  content: string,
-  metadata?: Record<string, unknown>
-) => {
-  if (
-    !userEmail ||
-    !courseId ||
-    !chapterId ||
-    !topic ||
-    !content
-  ) {
-    return;
-  }
-
-  try {
-    const response = await fetch("/api/learning-events", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userEmail,
-        courseId,
-        chapterId,
-        topic,
-        eventType,
-        content,
-        metadata: {
-          course,
-          chapterTitle,
-          ...metadata,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      console.error(
-        "Learning event failed:",
-        await response.text()
-      );
-    }
-  } catch (error) {
-    console.error(
-      "Learning event recording error:",
-      error
-    );
-  }
-};
-
-  const startTeaching = async () => {
-    const units = collectUnits();
-
-    if (!units.length) {
-      setTeacherText(
-        "I couldn't find any chapter content to teach."
-      );
-      return;
-    }
-
-    unitsRef.current = units;
-
-    setTotalUnits(units.length);
-
-    
-
-    stopRef.current = false;
-pauseRef.current = false;
-nextRequestedRef.current = false;
-
-checkpointContinueRef.current = false;
-
-setShowCheckpoint(false);
-setCheckpointAnswer("");
-setCheckpointFeedback("");
-setCheckpointQuestion("");
-
-    const startIndex =
-  hasSavedProgress && resumeIndex >= 0
-    ? resumeIndex
-    : 0;
-
-setCurrentIndex(startIndex);
-setTeacherText("");
-setVisibleText("");
-setCurrentTitle("");
-
-setCompletedUnits(
-  hasSavedProgress
-    ? Math.min(resumeIndex, units.length)
-    : 0
-);
-
-setCompletedCheckpoints(0);
-
-setShowResumePrompt(false);
-
-    setState("READING");
-
-    for (
-  let i = startIndex;
-  i < units.length;
-  i++
-) {
-      if (stopRef.current) break;
-
-      while (
-        pauseRef.current &&
-        !stopRef.current
-      ) {
-        setState("PAUSED");
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, 100)
-        );
+      if (!SpeechRecognition) {
+        alert("Voice recognition is not supported in this browser. Please type your answer.");
+        return;
       }
 
-      if (stopRef.current) break;
-
-      setState("READING");
-
-setCurrentIndex(i);
-
-const unit = units[i];
-
-const element = unit.anchor;
-
-highlightElement(element);
-
-const title = unit.title;
-
-const text = unit.content;
-
-setCurrentTitle(title);
-
-onLessonStart?.(title);
+      if (isListening) {
+        setIsListening(false);
+        return;
+      }
 
       try {
-  // Give the browser a moment to finish scrolling
-  await new Promise((resolve) =>
-    setTimeout(resolve, 700)
-  );
+        const recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.continuous = false;
 
-  if (stopRef.current) break;
-
-  // Teacher is preparing the explanation
-  setState("THINKING");
-
-  await new Promise((resolve) =>
-    setTimeout(resolve, 700)
-  );
-
-  if (stopRef.current) {
-    break;
-  }
-
-  const topic =
-  activeTopic || unit.title;
-
-const adaptive =
-  buildAdaptiveProfile(topic);
-
-const adaptiveContext = `
-PHASE 14 — ADAPTIVE TEACHER PROFILE
-
-CURRENT TOPIC:
-${topic}
-
-STUDENT LEVEL:
-${adaptive.level}
-
-MASTERY SCORE:
-${adaptive.masteryScore}/100
-
-STRENGTHS:
-${
-  adaptive.strengths.length
-    ? adaptive.strengths
-        .map((item) => `- ${item}`)
-        .join("\n")
-    : "- None recorded yet."
-}
-
-WEAKNESSES:
-${
-  adaptive.weaknesses.length
-    ? adaptive.weaknesses
-        .map((item) => `- ${item}`)
-        .join("\n")
-    : "- None recorded yet."
-}
-
-MISTAKES:
-${adaptive.mistakes}
-
-REVISION ITEMS:
-${adaptive.reviewsNeeded}
-
-TEACHING STYLE:
-${adaptive.preferredStyle}
-
-ADAPTIVE RULES:
-
-If BEGINNER:
-- explain slowly
-- use very simple language
-- introduce one idea at a time
-- use a small example
-
-If DEVELOPING:
-- explain clearly
-- connect the concept to the previous idea
-- use one practical example
-- ask for understanding when appropriate
-
-If CONFIDENT:
-- reduce repetition
-- explain more efficiently
-- introduce a slightly harder example
-
-If MASTERED:
-- do not repeat basic material unnecessarily
-- use a challenging practical example
-- connect this concept to real programming
-
-If the student has weaknesses:
-- slow down
-- use another explanation
-- use an easier example
-- focus only on the current topic
-
-If the student has repeated mistakes:
-- identify the underlying misunderstanding
-- explain that misunderstanding directly
-
-IMPORTANT:
-Never mention this adaptive profile to the student.
-Never say "according to your learning memory".
-Adapt naturally.
-`;
-
-const explanation =
-  await onExplain(
-    `${unit.content}
-
-CONTENT TYPE: ${unit.type}`,
-    unit.title,
-    `
-${buildLearningMemoryContext(topic)}
-
-${adaptiveContext}
-`
-  );
-
-  
-if (stopRef.current) {
-  break;
-}
-
-await recordLearningEvent(
-  "PRACTICE",
-  title,
-  `Completed learning unit: ${title}`,
-  {
-    source: "live-teacher",
-    unitIndex: i,
-    totalUnits: units.length,
-  }
-);
-
-onLessonComplete?.(title);
-
-  // Teacher starts explaining
-setState("EXPLAINING");
-
-setTeacherText(explanation);
-
-// 🔊 Speak automatically
-speakText(explanation);
-
-// Type the explanation naturally
-const completed = await typeText(explanation);
-
-if (nextRequestedRef.current) {
-  nextRequestedRef.current = false;
-  continue;
-}
-
-if (!completed) {
-  break;
-}
-
-if (nextRequestedRef.current) {
-  nextRequestedRef.current = false;
-  continue;
-}
-
-if (!completed) {
-  break;
-}
-
-setCompletedUnits((previous) => {
-  const nextCompleted = previous + 1;
-
-  saveTeachingProgress(
-    i + 1,
-    title,
-    nextCompleted,
-    explanation
-  );
-
-  return nextCompleted;
-});
-
-onLessonComplete?.(title);
-
-// Teacher pauses so the student can absorb the explanation
-setState("WAITING");
-
-await new Promise((resolve) =>
-  setTimeout(resolve, 1400)
-);
-
-// 🧠 Checkpoint after every 3 teaching units
-const shouldCheckpoint =
-  (i + 1) % 3 === 0 &&
-  i < units.length - 1;
-
-if (shouldCheckpoint) {
-  checkpointContinueRef.current = false;
-
-  await startCheckpoint(title);
-
-  while (
-    !checkpointContinueRef.current &&
-    !stopRef.current
-  ) {
-    await new Promise((resolve) =>
-      setTimeout(resolve, 200)
-    );
-  }
-
-  if (stopRef.current) {
-    break;
-  }
-}
-
-      } catch (error) {
-        console.error(
-          "Live Teacher explanation error:",
-          error
-        );
-
-        const fallback =
-          "Let's understand this section step by step. Focus on the highlighted part first.";
-
-        setTeacherText(fallback);
-
-        speakText(fallback);
-
-        await typeText(fallback);
+        recognition.onstart = () => setIsListening(true);
+        recognition.onresult = (event: any) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          setCheckpointAnswer((prev) =>
+            prev ? `${prev} ${transcript.trim()}` : transcript.trim()
+          );
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+        recognition.start();
+      } catch (err) {
+        console.error("Speech recognition error:", err);
+        setIsListening(false);
       }
-    }
+    };
 
-    if (!stopRef.current) {
-  clearHighlight();
+    // --------------------------------------------------
+    // Intelligent Understanding Checkpoint Evaluator
+    // --------------------------------------------------
+    const submitCheckpointAnswer = async () => {
+      const answer = checkpointAnswer.trim();
+      if (!answer || checkpointLoading) return;
 
-  setPointerPosition({
-    top: 0,
-    left: 0,
-    visible: false,
-  });
+      setCheckpointLoading(true);
+      setCheckpointError(null);
+      setCheckpointAttempts((prev) => prev + 1);
 
-  setState("COMPLETED");
-  setCurrentTitle("Chapter completed");
+      try {
+        let evalResult: CheckpointEvaluation;
 
-  if (typeof window !== "undefined") {
-  localStorage.removeItem(progressStorageKey);
-}
+        if (onEvaluateCheckpoint) {
+          const raw = await onEvaluateCheckpoint(checkpointQuestion, answer);
+          if (typeof raw === "object" && "score" in raw && typeof (raw as any).score === "number") {
+            evalResult = raw as CheckpointEvaluation;
+          } else {
+            const rawText = (raw as any).feedback || "";
+            evalResult = parseCheckpointEvaluation(rawText, checkpointQuestion, answer);
+          }
+        } else {
+          evalResult = parseCheckpointEvaluation("", checkpointQuestion, answer);
+        }
 
-setHasSavedProgress(false);
-setResumeIndex(0);
-setResumeTitle("");
+        setCheckpointEvaluation(evalResult);
+        setUnderstandingStep("ASK_UNDERSTANDING");
 
-  onChapterComplete?.();
-
-    // Evaluate all resume answers once, AFTER teaching is complete.
-    // This is intentionally non-blocking so chapter completion appears immediately.
-    if (onEvaluateChapter && resumeAnswers.length > 0) {
-      const answersForEvaluation = [...resumeAnswers];
-
-      setChapterEvaluationLoading(true);
-
-      void onEvaluateChapter(answersForEvaluation)
-        .then((result) => {
-          setChapterEvaluation(
-            result?.trim() ||
-              "Chapter evaluation completed. Your overall performance has been recorded."
-          );
-        })
-        .catch((error) => {
-          console.error("Chapter evaluation error:", error);
-          setChapterEvaluation(
-            "Your chapter is complete. Overall performance evaluation could not be generated right now."
-          );
-        })
-        .finally(() => {
-          setChapterEvaluationLoading(false);
+        // Record for Notes Notebook
+        sessionCheckpointsRef.current.push({
+          question: checkpointQuestion,
+          answer: answer,
+          feedback: evalResult.feedback,
+          result: evalResult.result,
+          score: evalResult.score,
+          whatWasCorrect: evalResult.whatWasCorrect,
+          whatIsMissing: evalResult.whatIsMissing,
         });
-    }
-}
-  };
 
-  // --------------------------------------------------
-  // Stop
-  // --------------------------------------------------
+        // Feed Learning Evidence into Knowledge Graph
+        if (userEmail) {
+          void fetch("/api/knowledge-graph/evidence", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userEmail,
+              course: (course || "python").toLowerCase(),
+              chapterId: chapterId || "general",
+              topic: activeTopic || currentTitle,
+              source: "CHECKPOINT",
+              score: evalResult.score,
+              summary: `${evalResult.appreciation} ${evalResult.feedback}`,
+              mistakes: evalResult.whatIsMissing ? [evalResult.whatIsMissing] : [],
+              question: checkpointQuestion,
+              answer,
+            }),
+          }).catch((err) => console.error("Knowledge Graph checkpoint evidence error:", err));
+        }
 
-  const stopTeaching = () => {
-    if (
-  unitsRef.current.length > 0 &&
-  currentIndex < unitsRef.current.length
-) {
-  saveTeachingProgress(
-    currentIndex,
-    currentTitle || unitsRef.current[currentIndex]?.title || "",
-    completedUnits,
-    teacherText || visibleText
-  );
-}
+        speakText(`${evalResult.appreciation} ${evalResult.feedback} Have you understood this topic clearly?`);
+      } catch (error) {
+        console.error("Checkpoint evaluation error:", error);
+        setCheckpointError("I couldn't check your answer right now. Please check your connection and click retry.");
+      } finally {
+        setCheckpointLoading(false);
+      }
+    };
 
+    // Follow-Up Answer Evaluator
+    const submitFollowUpAnswer = async () => {
+      const answer = followUpAnswer.trim();
+      if (!answer || followUpLoading || !checkpointEvaluation?.followUpQuestion) return;
 
-    stopRef.current = true;
-    pauseRef.current = false;
+      setFollowUpLoading(true);
+      try {
+        let evalResult: CheckpointEvaluation;
+        if (onEvaluateCheckpoint) {
+          const raw = await onEvaluateCheckpoint(checkpointEvaluation.followUpQuestion, answer);
+          if (typeof raw === "object" && "score" in raw && typeof (raw as any).score === "number") {
+            evalResult = raw as CheckpointEvaluation;
+          } else {
+            evalResult = parseCheckpointEvaluation((raw as any).feedback || "", checkpointEvaluation.followUpQuestion, answer);
+          }
+        } else {
+          evalResult = parseCheckpointEvaluation("", checkpointEvaluation.followUpQuestion, answer);
+        }
 
-    clearHighlight();
+        setCheckpointEvaluation(evalResult);
+        sessionCheckpointsRef.current.push({
+          question: checkpointEvaluation.followUpQuestion,
+          answer: answer,
+          feedback: evalResult.feedback,
+          result: evalResult.result,
+          score: evalResult.score,
+        });
 
-    setPointerPosition({
-  top: 0,
-  left: 0,
-  visible: false,
-});
+        // Feed Learning Evidence into Knowledge Graph
+        if (userEmail) {
+          void fetch("/api/knowledge-graph/evidence", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userEmail,
+              course: (course || "python").toLowerCase(),
+              chapterId: chapterId || "general",
+              topic: activeTopic || currentTitle,
+              source: "CHECKPOINT",
+              score: evalResult.score,
+              summary: `${evalResult.appreciation} ${evalResult.feedback}`,
+              question: checkpointEvaluation.followUpQuestion,
+              answer,
+            }),
+          }).catch((err) => console.error("Knowledge Graph follow-up evidence error:", err));
+        }
 
-    if (
-      typeof window !== "undefined" &&
-      "speechSynthesis" in window
-    ) {
-      window.speechSynthesis.cancel();
-    }
+        speakText(`${evalResult.appreciation} ${evalResult.feedback}`);
+      } catch (err) {
+        console.error("Follow-up evaluation error:", err);
+      } finally {
+        setFollowUpLoading(false);
+      }
+    };
 
-    setState("IDLE");
-    setVisibleText("");
-    setTeacherText("");
-    setCurrentIndex(0);
-    setCurrentTitle("");
-  };
+    const handleUserUnderstandsYes = () => {
+      if (state === "QUICK_RECAP" || state === "CHAPTER_RECAP") {
+        if (typeof window !== "undefined") {
+          const recapKey = `ksai_quick_recap_${userEmail}_${(course || "python").toLowerCase()}_${chapterId}_${activeTopic || currentTitle}`;
+          sessionStorage.setItem(recapKey, "done");
+        }
+      }
+      setUnderstandingStep("EXPLAINING");
+      checkpointContinueRef.current = true;
+    };
 
-  const nextTeachingUnit = () => {
-  if (state === "IDLE" || state === "COMPLETED") {
-    return;
-  }
-
-  nextRequestedRef.current = true;
-  pauseRef.current = false;
-
-  if (
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window
-  ) {
-    window.speechSynthesis.cancel();
-  }
-
-  setState("READING");
-};
-
-  // --------------------------------------------------
-  // Pause
-  // --------------------------------------------------
-
-  const togglePause = () => {
-    pauseRef.current =
-      !pauseRef.current;
-
-    if (pauseRef.current) {
-      if (
-        typeof window !== "undefined" &&
-        "speechSynthesis" in window
-      ) {
-        window.speechSynthesis.pause();
+    const handleReteachAgain = async () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
       }
 
-      setState("PAUSED");
-    } else {
-      if (
-  voiceEnabledRef.current &&
-  typeof window !== "undefined" &&
-  "speechSynthesis" in window
-) {
-  window.speechSynthesis.resume();
-}
+      const topicTitle = activeTopic || currentTitle || "Current Topic";
+      const sessionKey = `${course || "course"}_${chapterTitle || "chapter"}_${topicTitle}_reteach_${Date.now()}`;
+      activeSessionKeyRef.current = sessionKey;
 
-      setState("READING");
-    }
-  };
+      setReteachCount((prev) => prev + 1);
+      setState("RETEACHING");
+      setUnderstandingStep("RETEACHING");
+      setCurrentUnitSentences([]);
+      setActiveSentenceIndex(-1);
 
-  useEffect(() => {
-  const updatePointerOnScroll = () => {
-    const unit =
-      unitsRef.current[currentIndex];
+      const sourceContent = extractTopicSourceContent(topicTitle);
 
-    if (!unit || !pointerPosition.visible) {
-      return;
-    }
+      try {
+        let simplifiedExplanation = "";
+        if (onReteach) {
+          simplifiedExplanation = await onReteach(sourceContent, topicTitle);
+        } else {
+          simplifiedExplanation = `Let's make ${topicTitle} super simple.\n\nThink of it from first principles: step by step with a concrete example, everything connects easily!`;
+        }
 
-    moveTeacherPointer(unit.anchor);
-  };
+        if (activeSessionKeyRef.current !== sessionKey) return;
+        setTeacherText(simplifiedExplanation);
+        sessionReteachRef.current.push(simplifiedExplanation);
+        sessionExplanationsRef.current.push(simplifiedExplanation);
+        await deliverExplanation(simplifiedExplanation, sessionKey);
 
-  window.addEventListener(
-    "scroll",
-    updatePointerOnScroll,
-    true
-  );
+        if (activeSessionKeyRef.current !== sessionKey) return;
+        setUnderstandingStep("ASK_UNDERSTANDING");
+        speakText("Have you understood this topic clearly now?");
+      } catch (err) {
+        console.error("Reteach error:", err);
+        if (activeSessionKeyRef.current !== sessionKey) return;
+        const fallback = `Let's trace ${topicTitle} with a clear intuition and example.`;
+        setTeacherText(fallback);
+        await deliverExplanation(fallback, sessionKey);
+        setUnderstandingStep("ASK_UNDERSTANDING");
+      }
+    };
 
-  window.addEventListener(
-    "resize",
-    updatePointerOnScroll
-  );
+    // --------------------------------------------------
+    // Performance and Chapter Evaluation
+    // --------------------------------------------------
+    const evaluateSectionPerformance = (topicTitle: string): SectionPerformance => {
+      const timeSpent = Math.round((Date.now() - sectionStartTime) / 1000);
+      const score = checkpointEvaluation?.score ?? 85;
+      const isCorrect = score >= 70;
 
-  return () => {
-    window.removeEventListener(
-      "scroll",
-      updatePointerOnScroll,
-      true
-    );
+      let understanding: "Strong" | "Good" | "Needs Practice" | "Weak" = "Strong";
+      if (score >= 90) understanding = "Strong";
+      else if (score >= 70) understanding = "Good";
+      else if (score >= 50) understanding = "Needs Practice";
+      else understanding = "Weak";
 
-    window.removeEventListener(
-      "resize",
-      updatePointerOnScroll
-    );
-  };
-}, [
-  currentIndex,
-  pointerPosition.visible
-]);
+      const strengths = [
+        `Mastered core concepts of ${topicTitle}`,
+        checkpointEvaluation?.whatWasCorrect
+          ? checkpointEvaluation.whatWasCorrect
+          : "Demonstrated accurate conceptual understanding in checkpoint evaluation",
+      ];
 
-  // --------------------------------------------------
-  // Cleanup
-  // --------------------------------------------------
+      const needsImprovement =
+        checkpointEvaluation?.whatIsMissing
+          ? [checkpointEvaluation.whatIsMissing]
+          : understanding === "Needs Practice" || understanding === "Weak"
+          ? [`Review deeper step-by-step logic in ${topicTitle}`]
+          : [];
 
-  useEffect(() => {
-    return () => {
-      stopRef.current = true;
+      const recommendation =
+        understanding === "Strong"
+          ? "Mastered! Ready to advance to the next topic."
+          : understanding === "Good"
+          ? "Good progress! Continue to next section."
+          : "Consider a quick review before taking the chapter quiz.";
+
+      const perf: SectionPerformance = {
+        topic: topicTitle,
+        understanding,
+        strengths,
+        needsImprovement,
+        recommendation,
+        attempts: Math.max(1, checkpointAttempts),
+        isCorrect,
+        score,
+        reteachCount,
+        timeSpentSeconds: timeSpent,
+      };
+
+      setSectionPerformances((prev) => ({ ...prev, [topicTitle]: perf }));
+      setCurrentPerformance(perf);
+      onSectionPerformance?.(perf);
+      return perf;
+    };
+
+    const computeChapterSummary = (
+      allPerfs: Record<string, SectionPerformance>
+    ): ChapterSummary => {
+      const perfsList = Object.values(allPerfs);
+      const totalSections = allTopics && allTopics.length > 0 ? allTopics.length : perfsList.length || 1;
+
+      const strongAreas = perfsList
+        .filter((p) => p.understanding === "Strong" || p.understanding === "Good")
+        .map((p) => p.topic);
+
+      const weakAreas = perfsList
+        .filter((p) => p.understanding === "Needs Practice" || p.understanding === "Weak")
+        .map((p) => p.topic);
+
+      const masteredCount = strongAreas.length;
+      const needingPracticeCount = weakAreas.length;
+
+      let overallUnderstanding: "Strong" | "Good" | "Needs Practice" = "Strong";
+      if (needingPracticeCount >= 2 || masteredCount < totalSections * 0.5) {
+        overallUnderstanding = "Needs Practice";
+      } else if (needingPracticeCount > 0) {
+        overallUnderstanding = "Good";
+      }
+
+      return {
+        overallUnderstanding,
+        strongAreas,
+        weakAreas,
+        masteredCount,
+        needingPracticeCount,
+        totalSections,
+        learningTrend: needingPracticeCount === 0 ? "Improving 📈" : "Stable ⚡",
+        recommendedNextStep:
+          weakAreas.length > 0
+            ? "Review weak areas before starting the Chapter Assessment Quiz."
+            : "Mastered all topics! Ready for the Chapter Assessment Quiz.",
+      };
+    };
+
+    // --------------------------------------------------
+    // AUTOMATIC QUICK RECAP FLOW
+    // --------------------------------------------------
+    const executeQuickRecap = async (resumeTopicTitle: string) => {
+      if (!isMountedRef.current) return;
+      const sessionKey = `${course}_quick_recap_${resumeTopicTitle}_${Date.now()}`;
+      activeSessionKeyRef.current = sessionKey;
+
+      setState("QUICK_RECAP");
+      setUnderstandingStep("QUICK_RECAP_CHECK");
+      setCurrentTitle(`Resume Checkpoint: ${resumeTopicTitle}`);
+
+      let recapText = `Welcome back! You were learning ${resumeTopicTitle}. Let's quickly review where you left off.`;
+      let recapQuestion = `What is the key takeaway from ${resumeTopicTitle}?`;
+
+      if (onResumeRecap) {
+        try {
+          const res = await onResumeRecap(resumeTopicTitle);
+          if (typeof res === "object" && res.recap) {
+            recapText = res.recap;
+            if (res.questions && res.questions.length > 0) {
+              recapQuestion = res.questions[0];
+            }
+          } else if (typeof res === "string" && res) {
+            recapText = res;
+          }
+        } catch (e) {
+          console.error("Resume recap error:", e);
+        }
+      }
+
+      setTeacherText(recapText);
+      await deliverExplanation(recapText, sessionKey);
+
+      if (activeSessionKeyRef.current !== sessionKey || stopRef.current) return;
+
+      // Ask recap checkpoint question
+      setCheckpointQuestion(recapQuestion);
+      setCheckpointAnswer("");
+      setCheckpointEvaluation(null);
+      setCheckpointError(null);
+      speakText(`Let's check what you remember before we continue: ${recapQuestion}`);
+
+      // Wait for real student answer
+      checkpointContinueRef.current = false;
+      while (
+        !checkpointContinueRef.current &&
+        !stopRef.current &&
+        isMountedRef.current &&
+        activeSessionKeyRef.current === sessionKey
+      ) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+
+      if (activeSessionKeyRef.current !== sessionKey || stopRef.current) return;
+
+      // Transition to normal teaching of the current topic
+      setState("IDLE");
+      void startTeaching();
+    };
+
+    // --------------------------------------------------
+    // AUTOMATIC CHAPTER RECAP FLOW
+    // --------------------------------------------------
+    const executeChapterRecap = async () => {
+      if (!isMountedRef.current) return;
+      const sessionKey = `${course}_chapter_recap_${chapterTitle}_${Date.now()}`;
+      activeSessionKeyRef.current = sessionKey;
+
+      setState("CHAPTER_RECAP");
+      setUnderstandingStep("CHAPTER_RECAP_CHECK");
+      setCurrentTitle(`Chapter Recap: ${chapterTitle}`);
+
+      const langKey = (course || "python").toLowerCase();
+      const orderNum = parseInt(chapterId.replace(/[^0-9]/g, ""), 10) || 0;
+      const bankData = CHAPTER_RECAP_BANK[langKey]?.[orderNum];
+
+      const recapText =
+        bankData?.summary ||
+        `Congratulations on completing all topics in ${chapterTitle}! Let's do a brief recap of key principles and syntax before your assessment.`;
+
+      setTeacherText(recapText);
+      await deliverExplanation(recapText, sessionKey);
+
+      if (activeSessionKeyRef.current !== sessionKey || stopRef.current) return;
+
+      const q =
+        bankData?.revisionPoints?.[0] ||
+        `How do the concepts in ${chapterTitle} connect together to solve real problems?`;
+
+      setCheckpointQuestion(q);
+      setCheckpointAnswer("");
+      setCheckpointEvaluation(null);
+      setCheckpointError(null);
+      speakText(`Chapter check: ${q}`);
+
+      checkpointContinueRef.current = false;
+      while (
+        !checkpointContinueRef.current &&
+        !stopRef.current &&
+        isMountedRef.current &&
+        activeSessionKeyRef.current === sessionKey
+      ) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+
+      if (activeSessionKeyRef.current !== sessionKey || stopRef.current) return;
+
+      // Final complete state
+      setState("COMPLETED");
+      const summary = computeChapterSummary(sectionPerformances);
+      setChapterSummary(summary);
+      onChapterComplete?.(summary);
+    };
+
+    // --------------------------------------------------
+    // Core Topic Teaching Execution (Optimized, Single-Request)
+    // --------------------------------------------------
+    const startTeaching = async () => {
+      if (!isMountedRef.current) return;
+
+      const topicTitle = activeTopic || (allTopics && allTopics[0]) || chapterTitle || "Core Concept";
+      const sessionKey = `${course}_${chapterTitle}_${topicTitle}_${Date.now()}`;
+      activeSessionKeyRef.current = sessionKey;
+
+      stopRef.current = false;
+      pauseRef.current = false;
+      nextRequestedRef.current = false;
+      checkpointContinueRef.current = false;
+
+      sessionExplanationsRef.current = [];
+      sessionCheckpointsRef.current = [];
+      sessionReteachRef.current = [];
+
+      setCurrentUnitSentences([]);
+      setActiveSentenceIndex(-1);
+      setTeacherText("");
+      setCurrentTitle(topicTitle);
+      setSectionStartTime(Date.now());
+      setCheckpointAttempts(0);
+      setReteachCount(0);
+      setCheckpointEvaluation(null);
+      setCheckpointError(null);
+
+      onLessonStart?.(topicTitle);
+      highlightTopicElement(topicTitle);
+
+      // STEP 1: Fast Single-Request AI Explanation
+      setState("THINKING");
+      const explanation = await getFastTopicExplanation(topicTitle, sessionKey);
+      if (stopRef.current || !isMountedRef.current || activeSessionKeyRef.current !== sessionKey) return;
+
+      const courseLang = (course || "general").toLowerCase() as ProgrammingLanguage;
+      const parsedInstruction = parseTeachingInstruction(explanation, topicTitle, courseLang, "BEGINNER");
+      setCurrentInstruction(parsedInstruction);
+
+      // STEP 2: Spoken Teaching with Synchronous Visuals & Highlighting
+      setState("EXPLAINING");
+      setTeacherText(parsedInstruction.spokenExplanation);
+      sessionExplanationsRef.current.push(parsedInstruction.spokenExplanation);
+
+      const delivered = await deliverExplanation(parsedInstruction.spokenExplanation, sessionKey);
+      if (!delivered || stopRef.current || !isMountedRef.current || activeSessionKeyRef.current !== sessionKey) {
+        return;
+      }
+
+      // STEP 3: Mandatory Interactive Understanding Checkpoint
+      setState("CHECKPOINT");
+      setUnderstandingStep("KNOWLEDGE_CHECK");
+      const q = generateCheckpointQuestionForTopic(course || "python", topicTitle);
+      setCheckpointQuestion(q);
+      setCheckpointAnswer("");
+      setCheckpointEvaluation(null);
+      setCheckpointError(null);
+      speakText(`Let's check your understanding. ${q}`);
+
+      // Wait for student's real answer and understanding confirmation
+      checkpointContinueRef.current = false;
+      while (
+        !checkpointContinueRef.current &&
+        !stopRef.current &&
+        isMountedRef.current &&
+        activeSessionKeyRef.current === sessionKey
+      ) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+
+      if (stopRef.current || !isMountedRef.current || activeSessionKeyRef.current !== sessionKey) return;
 
       clearHighlight();
 
-      if (
-        typeof window !== "undefined" &&
-        "speechSynthesis" in window
-      ) {
-        window.speechSynthesis.cancel();
+      // Evaluate performance
+      const perf = evaluateSectionPerformance(topicTitle);
+      const sessionLearningData: SessionLearningData = {
+        topic: topicTitle,
+        explanations: sessionExplanationsRef.current,
+        whatILearned: sessionExplanationsRef.current.join("\n\n") || teacherText,
+        coreConcepts: [topicTitle],
+        importantPoints: perf.strengths || [],
+        examples: [],
+        codeSnippets: [],
+        teacherQuestions: sessionCheckpointsRef.current.map((c) => ({
+          question: c.question,
+          answer: c.answer,
+          feedback: c.feedback,
+          result: c.result,
+          score: c.score,
+          whatWasCorrect: c.whatWasCorrect,
+          whatIsMissing: c.whatIsMissing,
+        })),
+        reteachNotes: sessionReteachRef.current,
+      };
+
+      onLessonComplete?.(topicTitle, perf, sessionLearningData);
+
+      // STEP 4: Check if final topic -> triggers Automatic Chapter Recap
+      const isLastTopic = Boolean(
+        isFinalTopic ||
+        (allTopics && allTopics.length > 0 && allTopics.indexOf(topicTitle) === allTopics.length - 1)
+      );
+
+      if (isLastTopic) {
+        void executeChapterRecap();
+      } else {
+        setState("SECTION_COMPLETED");
+        setCurrentTitle(`${topicTitle} completed`);
       }
     };
-  }, []);
 
-  // --------------------------------------------------
-  // Progress
-  // --------------------------------------------------
+    // Auto-start teaching on topic change
+    const prevActiveTopicRef = useRef<string | undefined>(undefined);
+    useEffect(() => {
+      if (activeTopic && prevActiveTopicRef.current && prevActiveTopicRef.current !== activeTopic) {
+        stopRef.current = true;
+        activeSessionKeyRef.current = "";
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        clearHighlight();
+        setCurrentUnitSentences([]);
+        setActiveSentenceIndex(-1);
+        setTeacherText("");
+        setUnderstandingStep("EXPLAINING");
 
-  const progress =
-    totalUnits > 0
-      ? Math.round(
-          ((currentIndex + 1) /
-            totalUnits) *
-            100
-        )
-      : 0;
+        const timer = setTimeout(() => {
+          if (isMountedRef.current) {
+            stopRef.current = false;
+            void startTeaching();
+          }
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+      prevActiveTopicRef.current = activeTopic;
+    }, [activeTopic]);
 
-  const isRunning =
-  state === "READING" ||
-  state === "THINKING" ||
-  state === "EXPLAINING" ||
-  state === "WAITING" ||
-  state === "PAUSED";
+    // Auto-trigger Quick Recap if returning to previous learning point
+    useEffect(() => {
+      if (
+        autoResumeTopic &&
+        !hasTriggeredAutoResumeRef.current &&
+        allTopics &&
+        allTopics.length > 0
+      ) {
+        hasTriggeredAutoResumeRef.current = true;
+        const timer = setTimeout(() => {
+          if (isMountedRef.current && (state === "IDLE" || state === "EXPLAINING")) {
+            void executeQuickRecap(autoResumeTopic);
+          }
+        }, 200);
+        return () => clearTimeout(timer);
+      }
+    }, [autoResumeTopic, allTopics, state]);
 
-  // --------------------------------------------------
-  // UI
-  // --------------------------------------------------
+    // Imperative methods for external controls
+    useImperativeHandle(ref, () => ({
+      pause: () => {
+        pauseRef.current = true;
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.pause();
+        }
+        setState("PAUSED");
+      },
+      resume: () => {
+        pauseRef.current = false;
+        if (voiceEnabledRef.current && typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.resume();
+        }
+        setState("EXPLAINING");
+      },
+      stop: () => {
+        stopRef.current = true;
+        pauseRef.current = false;
+        activeSessionKeyRef.current = "";
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        clearHighlight();
+        setState("IDLE");
+        setUnderstandingStep("EXPLAINING");
+        setCurrentUnitSentences([]);
+        setActiveSentenceIndex(-1);
+        setTeacherText("");
+      },
+    }));
 
-  return (
-  <>
-    {/* ========================================= */}
-    {/* AI TEACHER POINTER */}
-    {/* ========================================= */}
+    const togglePlayPause = () => {
+      if (state === "PAUSED") {
+        pauseRef.current = false;
+        if (voiceEnabledRef.current && typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.resume();
+        }
+        setState("EXPLAINING");
+      } else if (state === "EXPLAINING" || state === "READING") {
+        pauseRef.current = true;
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.pause();
+        }
+        setState("PAUSED");
+      } else if (state === "IDLE") {
+        void startTeaching();
+      }
+    };
 
-    {pointerPosition.visible && (
-      <div
-        className="fixed z-[9999] pointer-events-none"
-        style={{
-          top: pointerPosition.top,
-          left: pointerPosition.left,
-          transition:
-            "top 0.45s cubic-bezier(0.22, 1, 0.36, 1), left 0.45s cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
-      >
-        <div className="relative flex items-center justify-center">
-          
-          {/* soft glow */}
-          <div className="absolute w-12 h-12 rounded-full bg-blue-400/20 animate-pulse" />
+    const handleReplayUnit = () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      activeSessionKeyRef.current = "";
+      setTimeout(() => {
+        void startTeaching();
+      }, 50);
+    };
 
-          {/* teacher hand */}
-          <div className="relative w-9 h-9 rounded-full bg-white border border-blue-200 shadow-lg flex items-center justify-center text-xl">
-            👆
-          </div>
+    const handleStopTeaching = () => {
+      stopRef.current = true;
+      pauseRef.current = false;
+      activeSessionKeyRef.current = "";
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      clearHighlight();
+      setState("IDLE");
+      setUnderstandingStep("EXPLAINING");
+      setCurrentUnitSentences([]);
+      setActiveSentenceIndex(-1);
+      setTeacherText("");
+    };
 
-        </div>
-      </div>
-    )}
+    const toggleVoice = () => {
+      setVoiceEnabled((prev) => {
+        const next = !prev;
+        voiceEnabledRef.current = next;
+        if (!next && typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        return next;
+      });
+    };
 
-    
-    <div className="sticky top-3 z-40 mb-5">
-      <div className="rounded-2xl border border-blue-200 bg-white shadow-md shadow-blue-500/10 overflow-visible">
+    const cycleSpeed = () => {
+      const speeds = [0.75, 1, 1.25, 1.5];
+      const nextIdx = (speeds.indexOf(speed) + 1) % speeds.length;
+      const nextSpeed = speeds[nextIdx];
+      setSpeed(nextSpeed);
+      speedRef.current = nextSpeed;
+      speedChangeRequestedRef.current = true;
+    };
 
-        {/* ================= HEADER ================= */}
+    const isRunning =
+      state === "READING" ||
+      state === "THINKING" ||
+      state === "EXPLAINING" ||
+      state === "CHECKPOINT" ||
+      state === "RETEACHING" ||
+      state === "QUICK_RECAP" ||
+      state === "CHAPTER_RECAP" ||
+      state === "PAUSED";
 
-        <div className="relative px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between gap-3">
+    const displayedTopic =
+      activeTopic || currentTitle || (allTopics && allTopics[0]) || chapterTitle || "Interactive Learning";
 
-          <div className="flex items-center gap-3 min-w-0">
+    const score = checkpointEvaluation?.score ?? 0;
+    const scoreColor =
+      score >= 90
+        ? "bg-emerald-500 text-white"
+        : score >= 70
+        ? "bg-blue-500 text-white"
+        : score >= 50
+        ? "bg-amber-500 text-white"
+        : "bg-red-500 text-white";
 
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-              <Sparkles size={17} />
-            </div>
-
-            <div className="min-w-0">
-
-              <div className="text-[9px] uppercase tracking-widest font-bold text-blue-100">
-                Live Teacher
-              </div>
-
-              <div className="text-sm font-extrabold truncate">
-                {chapterTitle}
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Controls */}
-
-          <div className="flex items-center gap-1.5 shrink-0">
-
-            {state === "IDLE" && hasSavedProgress && (
-  <div className="absolute top-full right-0 mt-3 w-80 rounded-2xl border border-blue-200 bg-white shadow-xl p-4 z-50">
-    <div className="flex items-start gap-3">
-      <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-        🧠
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-extrabold text-slate-800">
-          Welcome back!
-        </div>
-
-        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-          You stopped while learning:
-        </p>
-
-        <p className="text-[11px] font-bold text-blue-600 mt-1 truncate">
-          {resumeTitle}
-        </p>
-
-        <div className="flex gap-2 mt-3">
-          <button
-            type="button"
-            onClick={() => {
-              void beginResumeCheck();
-            }}
-            className="flex-1 px-3 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700"
-          >
-            ▶ Resume
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.removeItem(
-                progressStorageKey
-              );
-
-              setHasSavedProgress(false);
-              setResumeIndex(0);
-              setResumeTitle("");
-              setResumeInstantRecap("");
-              setShowResumePrompt(false);
-              setShowResumeCheck(false);
-              startTeaching();
-            }}
-            className="flex-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-[11px] font-bold hover:bg-slate-200"
-          >
-            ↻ Start Again
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-            {showResumeCheck && (
-              <div className="absolute top-full right-0 mt-3 w-[min(92vw,420px)] rounded-2xl border border-blue-200 bg-white shadow-2xl p-4 z-50">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">🧠</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-extrabold text-slate-800">Quick recap before we continue</div>
-                    <div className="text-[10px] text-blue-600 font-bold mt-1 truncate">Resume point: {resumeTitle}</div>
-                  </div>
+    return (
+      <div className="w-full transition-all duration-300 sticky top-0 z-20 pt-1 pb-3">
+        <div className="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center font-bold text-base border border-white/20 shadow-inner">
+                  🎙️
                 </div>
-
-                {resumeLoading && !resumeFeedback ? (
-                  <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-500">
-                    AI Teacher is refining your recap in the background...
-                  </div>
-                ) : (
-                  <>
-                    <div className="mt-3 rounded-xl bg-blue-50/70 border border-blue-100 p-3 text-xs text-slate-700 leading-relaxed whitespace-pre-wrap max-h-32 overflow-y-auto">
-                      {resumeRecap}
-                    </div>
-
-                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-                      <div className="text-[9px] uppercase tracking-wider font-black text-amber-700 mb-1">
-                        Quick Question {resumeQuestionIndex + 1}/{resumeQuestions.length}
-                      </div>
-                      <div className="text-xs font-semibold text-slate-800 leading-relaxed">
-                        {resumeQuestions[resumeQuestionIndex]}
-                      </div>
-
-                      <textarea
-                        value={resumeAnswer}
-                        onChange={(e) => setResumeAnswer(e.target.value)}
-                        placeholder="Type your answer or use the microphone..."
-                        className="mt-2 w-full min-h-[72px] rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none focus:border-amber-400 resize-none"
-                      />
-
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          type="button"
-                          onClick={startResumeListening}
-                          disabled={resumeListening || resumeLoading}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold border ${resumeListening ? "bg-red-50 text-red-600 border-red-200" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
-                        >
-                          {resumeListening ? "🎙 Listening..." : "🎤 Speak"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void submitResumeAnswer()}
-                          disabled={!resumeAnswer.trim() || resumeLoading}
-                          className="flex-1 px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {resumeLoading ? "Checking..." : "Check Answer"}
-                        </button>
-                      </div>
-
-                      {resumeFeedback && (
-                        <div className="mt-3 rounded-xl bg-white border border-emerald-200 p-3">
-                          <div className="text-xs text-emerald-700 font-semibold leading-relaxed whitespace-pre-wrap">
-                            ✓ {resumeFeedback}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={continueResumeCheck}
-                            className="mt-2 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
-                          >
-                            {resumeQuestionIndex < resumeQuestions.length - 1 ? "Next Question →" : "Resume Live Teaching →"}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </>
+                {isRunning && (
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-indigo-600 animate-pulse" />
                 )}
               </div>
-            )}
+              <div className="min-w-0 flex-1">
+                <h3 className="font-extrabold text-sm tracking-tight flex items-center gap-2">
+                  <span>Live AI Teacher</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-mono font-medium shrink-0">
+                    {course || "CodeX"}
+                  </span>
+                </h3>
+                <p
+                  className="text-[11px] text-white/90 font-medium truncate max-w-[280px] sm:max-w-md"
+                  title={displayedTopic}
+                >
+                  <span className="text-white/70 font-normal">Currently teaching: </span>
+                  <span className="font-bold text-white">{displayedTopic}</span>
+                </p>
+              </div>
+            </div>
 
-            {/* Start */}
-
-            {state === "IDLE" && !hasSavedProgress && !showResumeCheck && (
+            {/* Header Controls */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={togglePlayPause}
+                title={state === "PAUSED" ? "Resume teaching" : isRunning ? "Pause teaching" : "Start teaching"}
+                className="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all cursor-pointer"
+              >
+                {state === "PAUSED" ? <Play size={15} /> : isRunning ? <Pause size={15} /> : <Play size={15} />}
+              </button>
 
               <button
                 type="button"
-                onClick={startTeaching}
-                className="px-3.5 py-2 rounded-xl bg-white text-blue-700 text-xs font-extrabold flex items-center gap-1.5 hover:bg-blue-50 transition"
+                onClick={handleReplayUnit}
+                title="Replay this concept"
+                className="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all cursor-pointer"
               >
-                <Play
-                  size={13}
-                  fill="currentColor"
-                />
-                Start
+                <RotateCcw size={15} />
               </button>
-            )}
 
-            {/* Running */}
+              <button
+                type="button"
+                onClick={toggleVoice}
+                title={voiceEnabled ? "Mute voice" : "Enable voice"}
+                className={`p-2 rounded-xl transition-all cursor-pointer ${
+                  voiceEnabled
+                    ? "bg-white/20 hover:bg-white/30 text-white"
+                    : "bg-white/10 text-white/50 hover:bg-white/20"
+                }`}
+              >
+                {voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </button>
 
-            {isRunning && (
-              <>
+              <button
+                type="button"
+                onClick={cycleSpeed}
+                title="Change voice speed"
+                className="px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-mono text-[11px] font-bold transition-all cursor-pointer"
+              >
+                {speed}x
+              </button>
 
-              {/* Next */}
-
-<button
-  type="button"
-  onClick={nextTeachingUnit}
-  className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center transition"
-  title="Next section"
->
-  <ChevronRight size={14} />
-</button>
-
-
-                {/* Pause */}
-
-                <button
-                  type="button"
-                  onClick={togglePause}
-                  className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center transition"
-                  title={
-                    state === "PAUSED"
-                      ? "Resume"
-                      : "Pause"
-                  }
-                >
-                  {state === "PAUSED" ? (
-                    <Play
-                      size={14}
-                      fill="currentColor"
-                    />
-                  ) : (
-                    <Pause size={14} />
-                  )}
-                </button>
-
-                {/* Voice */}
-
-                <button
-                  type="button"
-                  onClick={toggleVoice}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${
-                    voiceEnabled
-                      ? "bg-white text-blue-700"
-                      : "bg-white/15 hover:bg-white/25"
-                  }`}
-                  title={
-                    voiceEnabled
-                      ? "Turn voice off"
-                      : "Turn voice on"
-                  }
-                >
-                  {voiceEnabled ? (
-                    <Volume2 size={14} />
-                  ) : (
-                    <VolumeX size={14} />
-                  )}
-                </button>
-
-                {/* Stop */}
-
-                <button
-                  type="button"
-                  onClick={stopTeaching}
-                  className="w-8 h-8 rounded-lg bg-white/15 hover:bg-red-500/30 flex items-center justify-center transition"
-                  title="Stop"
-                >
-                  <Square
-                    size={13}
-                    fill="currentColor"
-                  />
-                </button>
-              </>
-            )}
-
-            {/* Replay */}
-
-            {state === "COMPLETED" && (
-              <>
-                <button
-                  type="button"
-                  onClick={startTeaching}
-                  className="px-3.5 py-2 rounded-xl bg-white text-blue-700 text-xs font-extrabold flex items-center gap-1.5"
-                >
-                  <Play
-                    size={13}
-                    fill="currentColor"
-                  />
-                  Replay
-                </button>
-
-                <button
-                  type="button"
-                  onClick={toggleVoice}
-                  className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center"
-                  title={
-                    voiceEnabled
-                      ? "Turn voice off"
-                      : "Turn voice on"
-                  }
-                >
-                  {voiceEnabled ? (
-                    <Volume2 size={14} />
-                  ) : (
-                    <VolumeX size={14} />
-                  )}
-                </button>
-              </>
-            )}
-
+              <button
+                type="button"
+                onClick={handleStopTeaching}
+                title="Stop teaching"
+                className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 text-white/80 hover:text-white transition-all cursor-pointer"
+              >
+                <Square size={14} />
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* ================= PROGRESS ================= */}
-
-        {state !== "IDLE" && (
-          <div className="h-1 bg-blue-100">
-
-            <div
-              className="h-full bg-blue-600 transition-all duration-500"
-              style={{
-                width: `${progress}%`,
-              }}
-            />
-
-          </div>
-        )}
-
-        {/* ================= TEACHER AREA ================= */}
-
-        {state !== "IDLE" && (
-          <div className="px-4 py-3">
-
-            <div className="flex items-start gap-3">
-
-              {/* Teacher */}
-
-              <div className="relative shrink-0">
-
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-sm">
-                  👨‍🏫
-                </div>
-
-                {(state === "READING" ||
-  state === "THINKING" ||
-  state === "EXPLAINING" ||
-  state === "WAITING") && (
-                  <span className="absolute -right-0.5 -bottom-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
-                )}
-
-              </div>
-
-              {/* Text */}
-
-              <div className="min-w-0 flex-1">
-
-                <div className="flex items-center gap-2 mb-0.5">
-
-                  <span className="text-[11px] font-extrabold text-slate-800">
-                    AI Teacher
+          {/* Teacher Explanation Content Area */}
+          {isRunning && (
+            <div className="p-4 space-y-3 max-h-[420px] overflow-y-auto custom-scrollbar" ref={explanationContainerRef}>
+              {/* State Pill */}
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                  <span className="text-slate-700 font-bold">
+                    {state === "THINKING"
+                      ? "AI Teacher is preparing explanation..."
+                      : state === "RETEACHING"
+                      ? "Teaching with simpler analogy & intuition..."
+                      : state === "QUICK_RECAP"
+                      ? "Quick Recap: Resume Checkpoint"
+                      : state === "CHAPTER_RECAP"
+                      ? "Chapter Understanding Synthesis"
+                      : state === "CHECKPOINT"
+                      ? "Interactive Understanding Checkpoint"
+                      : "Explaining Concept"}
                   </span>
+                </div>
+                <span className="text-slate-400 font-mono text-[10px]">
+                  Topic: {displayedTopic}
+                </span>
+              </div>
 
-                  {state === "READING" && (
-  <span className="text-[9px] text-blue-600 font-semibold">
-    Reading this section...
-  </span>
-)}
+              {/* Spoken Explanation Body — Sentence-Level Highlighting & Synchronization */}
+              {currentUnitSentences.length > 0 && (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs sm:text-sm text-slate-800 leading-relaxed font-medium space-y-1">
+                  {currentUnitSentences.slice(0, activeSentenceIndex + 1).map((sent, sIdx) => {
+                    const isCurrent = sIdx === activeSentenceIndex;
+                    return (
+                      <span
+                        key={sIdx}
+                        ref={(el) => {
+                          sentenceSpanRefs.current[sIdx] = el;
+                        }}
+                        className={`transition-all duration-200 inline-block mr-1.5 ${
+                          isCurrent
+                            ? "bg-blue-100 text-blue-950 font-bold px-2 py-0.5 rounded-lg border border-blue-300/80 shadow-xs ring-2 ring-blue-500/15"
+                            : "text-slate-700"
+                        }`}
+                      >
+                        {sent}{" "}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
-                    {state === "THINKING" && (
-  <span className="text-[9px] text-amber-600 font-semibold">
-    Preparing an explanation...
-  </span>
-)}
+              {/* Visual Teaching Renderer */}
+              {currentInstruction?.visualType && (
+                <VisualTeachingRenderer
+                  instruction={currentInstruction}
+                  activeSentenceIndex={activeSentenceIndex}
+                  onAnswerSubmit={(isCorrect) => {
+                    if (isCorrect) {
+                      speakText("Excellent! That is exactly right.");
+                    } else {
+                      speakText("Not quite, let's trace this step by step together.");
+                    }
+                  }}
+                />
+              )}
 
-                  {state === "EXPLAINING" && (
-  <span className="text-[9px] text-purple-600 font-semibold">
-    Teaching this section...
-  </span>
-)}
-
-                    {state === "WAITING" && (
-  <span className="text-[9px] text-emerald-600 font-semibold">
-    Letting you absorb this...
-  </span>
-)}
-                    
-
-                  {state === "PAUSED" && (
-                    <span className="text-[9px] text-amber-600 font-semibold">
-                      Paused
+              {/* INTERACTIVE UNDERSTANDING CHECKPOINT */}
+              {(state === "CHECKPOINT" || state === "QUICK_RECAP" || state === "CHAPTER_RECAP") && (
+                <div className="p-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/80 to-indigo-50/40 animate-in fade-in space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shadow-2xs">
+                        🧠
+                      </div>
+                      <div>
+                        <span className="text-xs font-black text-slate-900 block">
+                          {state === "QUICK_RECAP"
+                            ? `Quick Recap Check • ${displayedTopic}`
+                            : state === "CHAPTER_RECAP"
+                            ? `Chapter Recap Check • ${chapterTitle}`
+                            : `Understanding Checkpoint • ${displayedTopic}`}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {understandingStep === "KNOWLEDGE_CHECK" ||
+                          understandingStep === "QUICK_RECAP_CHECK" ||
+                          understandingStep === "CHAPTER_RECAP_CHECK"
+                            ? "Provide your answer via voice or text to verify comprehension"
+                            : "AI Evaluation & Understanding Decision"}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 font-bold">
+                      {course.toUpperCase()}
                     </span>
+                  </div>
+
+                  {/* Question Box */}
+                  <div className="p-3 rounded-xl bg-white border border-blue-200/80 shadow-2xs">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-blue-600 mb-1">
+                      Teacher Question
+                    </div>
+                    <p className="text-xs font-bold text-slate-800 leading-relaxed">
+                      {checkpointQuestion || `What is the key principle of ${displayedTopic}?`}
+                    </p>
+                  </div>
+
+                  {/* Step 1: Real Student Voice or Text Answer */}
+                  {(understandingStep === "KNOWLEDGE_CHECK" ||
+                    understandingStep === "QUICK_RECAP_CHECK" ||
+                    understandingStep === "CHAPTER_RECAP_CHECK") && (
+                    <div className="space-y-2.5">
+                      <div className="relative">
+                        <textarea
+                          value={checkpointAnswer}
+                          onChange={(e) => setCheckpointAnswer(e.target.value)}
+                          disabled={checkpointLoading}
+                          placeholder="Type your explanation or click the microphone to speak your answer..."
+                          className="w-full min-h-[72px] rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 resize-none pr-10 shadow-2xs disabled:bg-slate-50 disabled:opacity-75"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleSpeechInput}
+                          disabled={checkpointLoading}
+                          className={`absolute right-2.5 bottom-2.5 p-2 rounded-lg border transition cursor-pointer disabled:opacity-50 ${
+                            isListening
+                              ? "bg-red-500 text-white border-red-600 animate-pulse shadow-md"
+                              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                          }`}
+                          title={isListening ? "Listening... click to stop" : "Speak your answer"}
+                        >
+                          {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                        </button>
+                      </div>
+
+                      {checkpointError && (
+                        <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center justify-between">
+                          <span>{checkpointError}</span>
+                          <button
+                            type="button"
+                            onClick={submitCheckpointAnswer}
+                            className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] cursor-pointer"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={submitCheckpointAnswer}
+                        disabled={!checkpointAnswer.trim() || checkpointLoading}
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black transition disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 cursor-pointer"
+                      >
+                        {checkpointLoading ? (
+                          <div className="flex items-center gap-2">
+                            <Sparkles size={14} className="animate-spin text-white" />
+                            <span>Checking your understanding...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={14} />
+                            <span>Submit Answer for AI Evaluation</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   )}
 
-                  {state === "COMPLETED" && (
-                    <span className="text-[9px] text-emerald-600 font-semibold">
-                      Completed
-                    </span>
-                  )}
+                  {/* Step 2: Intelligent AI Feedback (Score 0-100%, What was correct, What was missing, Example, Follow-up) */}
+                  {understandingStep === "ASK_UNDERSTANDING" && checkpointEvaluation && (
+                    <div className="space-y-3 animate-in fade-in">
+                      {/* Score Badge & Appreciation */}
+                      <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black tracking-tight ${scoreColor}`}>
+                            Understanding: {checkpointEvaluation.score}% • {checkpointEvaluation.score >= 90 ? "Strong" : checkpointEvaluation.score >= 70 ? "Good" : checkpointEvaluation.score >= 50 ? "Partial" : checkpointEvaluation.score >= 30 ? "Weak" : "Needs Review"}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-700">
+                            {checkpointEvaluation.appreciation}
+                          </span>
+                        </div>
 
+                        {/* Progress Bar */}
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 ${
+                              score >= 90
+                                ? "bg-emerald-500"
+                                : score >= 70
+                                ? "bg-blue-500"
+                                : score >= 50
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                            }`}
+                            style={{ width: `${Math.max(5, checkpointEvaluation.score)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* What was correct */}
+                      {checkpointEvaluation.whatWasCorrect && (
+                        <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-emerald-800 text-[11px]">
+                            <Check size={13} className="text-emerald-600 stroke-[3]" />
+                            <span>What you got right:</span>
+                          </div>
+                          <p className="leading-relaxed pl-5 font-medium">
+                            {checkpointEvaluation.whatWasCorrect}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* What was missing */}
+                      {checkpointEvaluation.whatIsMissing && (
+                        <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-amber-800 text-[11px]">
+                            <AlertTriangle size={13} className="text-amber-600" />
+                            <span>What needs attention:</span>
+                          </div>
+                          <p className="leading-relaxed pl-5 font-medium">
+                            {checkpointEvaluation.whatIsMissing}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Teacher Explanation & Example */}
+                      {checkpointEvaluation.explanation && !checkpointEvaluation.whatWasCorrect && !checkpointEvaluation.whatIsMissing && (
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed font-medium">
+                          {checkpointEvaluation.explanation}
+                        </div>
+                      )}
+
+                      {/* Code Example if provided */}
+                      {checkpointEvaluation.example && (
+                        <div className="p-2.5 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto">
+                          <pre>{checkpointEvaluation.example}</pre>
+                        </div>
+                      )}
+
+                      {/* Optional Follow-Up Question */}
+                      {checkpointEvaluation.needsFollowUp && checkpointEvaluation.followUpQuestion && (
+                        <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-2">
+                          <div className="text-[10px] font-bold uppercase text-indigo-700 tracking-wider">
+                            Follow-Up Check
+                          </div>
+                          <p className="text-xs font-bold text-slate-900">
+                            {checkpointEvaluation.followUpQuestion}
+                          </p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={followUpAnswer}
+                              onChange={(e) => setFollowUpAnswer(e.target.value)}
+                              placeholder="Answer follow-up..."
+                              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 outline-none focus:border-blue-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={submitFollowUpAnswer}
+                              disabled={!followUpAnswer.trim() || followUpLoading}
+                              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition disabled:opacity-50 cursor-pointer"
+                            >
+                              {followUpLoading ? "..." : "Submit"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Final Understanding Confirmation */}
+                      <div className="p-3 rounded-xl bg-white border border-blue-200/80 shadow-2xs text-center space-y-2">
+                        <p className="text-xs font-black text-slate-900">
+                          Have you understood this topic clearly?
+                        </p>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleUserUnderstandsYes}
+                            className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer"
+                          >
+                            <CheckCircle2 size={14} />
+                            <span>✓ Yes, Continue Learning</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleReteachAgain}
+                            className="flex-1 py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                          >
+                            <RotateCcw size={14} />
+                            <span>🔄 No, Teach Again</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Section Completed Summary View */}
+          {state === "SECTION_COMPLETED" && (
+            <div className="p-4 bg-gradient-to-br from-blue-50/60 via-indigo-50/30 to-white border-t border-slate-100 animate-in fade-in space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900">
+                    Section Complete — {displayedTopic}
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    Score: <span className="font-bold text-emerald-700">{currentPerformance?.score ?? 85}%</span> &bull; Understanding:{" "}
+                    <span className="font-bold text-emerald-700">
+                      {currentPerformance?.understanding || "Good"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
+                  <div className="font-bold text-emerald-900 flex items-center gap-1 mb-1">
+                    <span>💪 Strengths</span>
+                  </div>
+                  <ul className="text-emerald-800 space-y-0.5 list-disc list-inside text-[10px]">
+                    {currentPerformance?.strengths && currentPerformance.strengths.length > 0 ? (
+                      currentPerformance.strengths.map((s, idx) => <li key={idx}>{s}</li>)
+                    ) : (
+                      <li>Demonstrated solid grasp of core principles</li>
+                    )}
+                  </ul>
                 </div>
 
-                {currentTitle && (
-                  <div className="text-[10px] font-bold text-blue-600 mb-1.5 flex items-center gap-1">
-
-                    <ChevronRight size={11} />
-
-                    <span className="truncate">
-                      {currentTitle}
-                    </span>
-
-                    <span className="text-slate-400 font-normal ml-auto">
-                      {currentIndex + 1}/{totalUnits}
-                    </span>
-
+                <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/80">
+                  <div className="font-bold text-amber-900 flex items-center gap-1 mb-1">
+                    <span>🎯 Needs Practice</span>
                   </div>
-                )}
-
-                <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/40 overflow-hidden">
-
-  {/* Explanation Header */}
-  <div className="px-3 py-2 border-b border-blue-100 bg-white/70 flex items-center gap-2">
-
-    <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
-      <Sparkles
-        size={12}
-        className="text-blue-600"
-      />
-    </div>
-
-    <div>
-      <div className="text-[10px] font-black uppercase tracking-wider text-blue-700">
-        AI Explanation
-      </div>
-
-      <div className="text-[9px] text-slate-400">
-        Teaching the current section
-      </div>
-    </div>
-
-  </div>
-
-
-  {/* Explanation Content */}
-  <div className="px-3 py-3">
-
-    <div className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto custom-scrollbar">
-      {visibleText ||
-        teacherText ||
-        "Let's learn this together."}
-    </div>
-
-  </div>
-
-  {showCheckpoint && (
-  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-
-    <div className="flex items-center gap-2 mb-2">
-      <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
-        🧠
-      </div>
-
-      <div>
-        <div className="text-[10px] font-black uppercase tracking-wider text-amber-700">
-          Quick Checkpoint
-        </div>
-
-        <div className="text-[9px] text-amber-600">
-          Let's check your understanding
-        </div>
-      </div>
-    </div>
-
-    <p className="text-sm font-semibold text-slate-800 leading-relaxed">
-      {checkpointQuestion}
-    </p>
-
-    <textarea
-      value={checkpointAnswer}
-      onChange={(e) =>
-        setCheckpointAnswer(e.target.value)
-      }
-      placeholder="Write your answer..."
-      className="mt-3 w-full min-h-[80px] rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/10 resize-none"
-    />
-
-    {!checkpointFeedback ? (
-      <button
-        type="button"
-        onClick={submitCheckpoint}
-        disabled={!checkpointAnswer.trim()}
-        className="mt-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold disabled:opacity-50"
-      >
-        Check My Answer
-      </button>
-    ) : (
-      <div className="mt-3 space-y-2">
-        <div className="text-xs text-emerald-700 font-semibold">
-          ✓ {checkpointFeedback}
-        </div>
-
-        <button
-          type="button"
-          onClick={continueAfterCheckpoint}
-          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
-        >
-          Continue Teaching →
-        </button>
-      </div>
-    )}
-
-  </div>
-)}
-
-</div>
-
+                  <ul className="text-amber-800 space-y-0.5 list-disc list-inside text-[10px]">
+                    {currentPerformance?.needsImprovement && currentPerformance.needsImprovement.length > 0 ? (
+                      currentPerformance.needsImprovement.map((w, idx) => <li key={idx}>{w}</li>)
+                    ) : (
+                      <li>No critical difficulties recorded</li>
+                    )}
+                  </ul>
+                </div>
               </div>
 
-              {state === "COMPLETED" && (
-  <div className="mt-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-blue-50 p-4">
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleReteachAgain}
+                  className="flex-1 py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <RotateCcw size={13} />
+                  <span>🔄 Reteach Again</span>
+                </button>
 
-    <div className="flex items-start gap-3">
-
-      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-xl shrink-0">
-        🎓
-      </div>
-
-      <div className="min-w-0 flex-1">
-
-        <div className="text-sm font-black text-slate-900">
-          Chapter Complete
-        </div>
-
-        <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-          Excellent work! You completed the live teaching session
-          for this chapter.
-        </p>
-
-      </div>
-
-    </div>
-
-    <div className="mt-4 grid grid-cols-2 gap-2">
-
-      <div className="rounded-xl bg-white border border-emerald-100 p-3">
-        <div className="text-[9px] uppercase tracking-wider font-bold text-slate-400">
-          Sections Taught
-        </div>
-
-        <div className="text-lg font-black text-emerald-600 mt-1">
-          {completedUnits}/{totalUnits}
-        </div>
-      </div>
-
-      <div className="rounded-xl bg-white border border-blue-100 p-3">
-        <div className="text-[9px] uppercase tracking-wider font-bold text-slate-400">
-          Checkpoints
-        </div>
-
-        <div className="text-lg font-black text-blue-600 mt-1">
-          {completedCheckpoints}
-        </div>
-      </div>
-
-    </div>
-
-    {(chapterEvaluationLoading || chapterEvaluation) && (
-      <div className="mt-3 rounded-xl bg-white/90 border border-blue-100 px-3 py-3">
-        <div className="text-[9px] uppercase tracking-wider font-black text-blue-600">
-          Overall AI Evaluation
-        </div>
-
-        {chapterEvaluationLoading ? (
-          <p className="text-[10px] text-slate-500 mt-1">
-            Reviewing your answers in the background...
-          </p>
-        ) : (
-          <p className="text-[10px] text-slate-700 mt-1 leading-relaxed whitespace-pre-wrap">
-            {chapterEvaluation}
-          </p>
-        )}
-      </div>
-    )}
-
-    <div className="mt-3 rounded-xl bg-white/80 border border-slate-200 px-3 py-2">
-
-      <div className="flex items-center gap-2">
-
-        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-
-        <span className="text-[10px] font-bold text-slate-600">
-          Live teaching coverage: 100%
-        </span>
-
-      </div>
-
-      <p className="text-[9px] text-slate-400 mt-1">
-        Mastery will be calculated from your learning performance
-        and assessments.
-      </p>
-
-    </div>
-
-  </div>
-)}
-
-              {/* Voice status */}
-
-              <div className="shrink-0 pt-1">
-
-                {voiceEnabled ? (
-                  <Volume2
-                    size={14}
-                    className="text-blue-500"
-                  />
-                ) : (
-                  <VolumeX
-                    size={14}
-                    className="text-slate-300"
-                  />
+                {onNextTopic && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setState("IDLE");
+                      onNextTopic();
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+                  >
+                    <span>{isFinalTopic ? "🚀 Final Chapter Recap →" : "✓ Continue to Next Section"}</span>
+                    <ChevronRight size={13} />
+                  </button>
                 )}
+              </div>
+            </div>
+          )}
 
+          {/* Chapter Completed Card */}
+          {state === "COMPLETED" && (
+            <div className="p-4 bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white border-t border-emerald-100 animate-in fade-in space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-emerald-500/20">
+                  🎓
+                </div>
+                <div>
+                  <div className="text-sm font-black text-slate-900">
+                    Chapter Completed 🎉
+                  </div>
+                  <div className="text-[11px] text-slate-600">
+                    Overall Understanding:{" "}
+                    <span className="font-bold text-emerald-700">
+                      {chapterSummary?.overallUnderstanding || "Strong"}
+                    </span>
+                  </div>
+                </div>
               </div>
 
+              <div className="flex items-center gap-2 pt-1">
+                {chapterSummary && chapterSummary.weakAreas.length > 0 && onReviewWeakSection && (
+                  <button
+                    type="button"
+                    onClick={() => onReviewWeakSection(chapterSummary.weakAreas[0])}
+                    className="flex-1 py-2 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <BookOpen size={13} />
+                    <span>Review Weak Areas</span>
+                  </button>
+                )}
+
+                {onNextTopic && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setState("IDLE");
+                      onNextTopic();
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer"
+                  >
+                    <span>Take Chapter Assessment Quiz →</span>
+                  </button>
+                )}
+              </div>
             </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+);
 
-          </div>
-        )}
-
-            </div>
-    </div>
-  </>
-  );
-});
-
+LiveTeacher.displayName = "LiveTeacher";
 export default LiveTeacher;

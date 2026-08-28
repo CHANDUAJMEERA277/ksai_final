@@ -74,12 +74,18 @@ function extractLessonTitles(content: string): string[] {
   if (!content?.trim()) return [];
 
   const headings: string[] = [];
-  const headingRegex = /^\\s{0,3}#{1,6}\\s+(.+?)\\s*#*\\s*$/gm;
+  const headingRegex = /^\s{0,3}#{1,4}\s+(.+?)\s*#*\s*$/gm;
   let match: RegExpExecArray | null;
 
   while ((match = headingRegex.exec(content)) !== null) {
     const title = stripMarkdown(match[1]).trim();
-    if (title && !/^quiz( assessment)?$/i.test(title)) {
+    if (
+      title &&
+      /^\d+[\.\)]\s+/.test(title) &&
+      !/^quiz( assessment)?$/i.test(title) &&
+      !/^chapter assessment/i.test(title) &&
+      !/^by the end of this chapter/i.test(title)
+    ) {
       headings.push(title);
     }
   }
@@ -127,7 +133,7 @@ export default function JavaChapterPage() {
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const lessonContentRef = useRef<HTMLElement | null>(null);
   const liveTeacherRef = useRef<LiveTeacherHandle | null>(null);
-  
+  const topicChatMapRef = useRef<Record<string, Array<{ question: string; answer: string }>>>({});
 
   const router = useRouter();
   const params = useParams();
@@ -278,6 +284,90 @@ Keep the entire explanation concise enough for live classroom teaching.
     );
 
     return "Let's understand this section step by step. Focus on the highlighted part first, and then we'll connect it to the bigger concept.";
+  }
+};
+
+const reteachLiveTeacherSection = async (
+  content: string,
+  title: string
+): Promise<string> => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course: "Java",
+        chapter: currentChapter?.title || "Java Chapter",
+        topic: title,
+        content: content || getLessonContent(),
+        question: `Reteach this section simply with a real-world analogy, step-by-step breakdown, and a small clear example.`,
+        mode: "reteach",
+        history: [],
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Reteaching failed.");
+    }
+
+    return (
+      data.data?.response ||
+      data.response ||
+      `Let's understand ${title} from a fresh, intuitive perspective with a simple analogy.`
+    );
+  } catch (error) {
+    console.error("Live teacher reteach error:", error);
+    return `Let's break down ${title} using an intuitive real-world analogy and step-by-step thinking.`;
+  }
+};
+
+const evaluateCheckpointAnswer = async (
+  question: string,
+  answer: string
+): Promise<{ result: "CORRECT" | "PARTIAL" | "INCORRECT"; feedback: string }> => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/ai/teach/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course: "Java",
+        chapter: currentChapter?.title || "Java Chapter",
+        topic: currentLesson || currentChapter?.title || "Java Lesson",
+        content: getLessonContent(),
+        question: `
+QUESTION:
+${question}
+
+STUDENT ANSWER:
+${answer}
+`,
+        mode: "evaluate",
+        history: [],
+      }),
+    });
+
+    const data = await response.json();
+    const rawText = data.data?.response || data.response || "";
+
+    let result: "CORRECT" | "PARTIAL" | "INCORRECT" = "CORRECT";
+    const lower = rawText.toLowerCase();
+    if (lower.includes("not quite") || lower.includes("incorrect") || lower.includes("❌")) {
+      result = "INCORRECT";
+    } else if (lower.includes("almost") || lower.includes("partial") || lower.includes("🟡")) {
+      result = "PARTIAL";
+    }
+
+    return {
+      result,
+      feedback: rawText || "Good answer! That captures the core concept.",
+    };
+  } catch (error) {
+    console.error("Checkpoint evaluation error:", error);
+    return {
+      result: "CORRECT",
+      feedback: "Great effort! Your explanation demonstrates understanding of the material.",
+    };
   }
 };
 
@@ -555,6 +645,16 @@ ${getLessons()
       },
     ]);
 
+    // Attach to active topic notes
+    const activeLessonKey = currentLesson || currentChapter?.title || "General";
+    if (!topicChatMapRef.current[activeLessonKey]) {
+      topicChatMapRef.current[activeLessonKey] = [];
+    }
+    topicChatMapRef.current[activeLessonKey].push({
+      question,
+      answer: aiResponse,
+    });
+
     
 
   } catch (error) {
@@ -670,9 +770,13 @@ const loadLessonProgress = async () => {
       )}`
     );
 
+    if (!response.ok) {
+      return;
+    }
+
     const data = await response.json();
 
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       console.error(
         "Failed to load lesson progress:",
         data.error
@@ -803,6 +907,27 @@ const saveLessonProgress = async (
       lesson,
       payload.status
     );
+
+    // Save/update structured study note in day-wise notebook
+    try {
+      if (courseId && currentChapter?.id) {
+        await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            courseId,
+            chapterId: currentChapter.id,
+            topic: lesson,
+            title: lesson,
+            type: "NOTEBOOK",
+            content: `Core concepts and syntax for ${lesson} in ${currentChapter.title}.`,
+            saveEvent: true,
+          }),
+        });
+      }
+    } catch (noteErr) {
+      console.warn("Auto-note save notice:", noteErr);
+    }
   } catch (error) {
     console.error(
       "Lesson progress save error:",
@@ -814,6 +939,15 @@ const saveLessonProgress = async (
   // Expandable chapters state
   const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({ [chapterOrder]: true });
 
+
+  // Stop speech / mentor speaking immediately on page unmount or route change
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
   if (!chatScrollRef.current) return;
@@ -858,9 +992,20 @@ const saveLessonProgress = async (
     try {
       // 1. Fetch Notes & Metadata
       const chapterRes = await fetch(`/api/courses/java/chapters/${chapterOrder}`);
+      if (!chapterRes.ok) {
+        let errMsg = "Failed to load chapter contents.";
+        try {
+          const errData = await chapterRes.json();
+          errMsg = errData.error || errMsg;
+        } catch {}
+        setError(errMsg);
+        setLoading(false);
+        return;
+      }
+
       const chapterData = await chapterRes.json();
 
-      if (!chapterRes.ok || !chapterData.success) {
+      if (!chapterData.success) {
         setError(chapterData.error || "Failed to load chapter contents.");
         setLoading(false);
         return;
@@ -884,11 +1029,16 @@ const saveLessonProgress = async (
       setProgresses(chapterData.progresses);
 
       // 2. Fetch Quiz Questions to check if a quiz exists
-      const quizRes = await fetch(`/api/courses/java/chapters/${chapterOrder}/quiz`);
-      const quizData = await quizRes.json();
-
-      if (quizRes.ok && quizData.success) {
-        setQuizQuestions(quizData.questions || []);
+      try {
+        const quizRes = await fetch(`/api/courses/java/chapters/${chapterOrder}/quiz`);
+        if (quizRes.ok) {
+          const quizData = await quizRes.json();
+          if (quizData.success) {
+            setQuizQuestions(quizData.questions || []);
+          }
+        }
+      } catch (quizErr) {
+        console.warn("Quiz load notice:", quizErr);
       }
     } catch (e) {
       console.error(e);
@@ -1288,7 +1438,21 @@ const startMentorListening = () => {
     
     if (order > 1 && !isEnrolled) return false;
 
-    return !!prevProgress?.isCompleted;
+    return !!prevProgress?.isCompleted && (prevProgress.quizScore ?? 0) >= 75;
+  };
+
+  const isTopicUnlocked = (secIdx: number, sectionsList: string[]) => {
+    if (secIdx === 0) return true;
+    const prevSec = sectionsList[secIdx - 1];
+    if (!prevSec || prevSec === "Quiz Assessment") return true;
+    const prevStatus = lessonProgress[prevSec]?.status;
+    return prevStatus === "MASTERED";
+  };
+
+  const isQuizUnlocked = (sectionsList: string[]) => {
+    const topicsOnly = sectionsList.filter((s) => s !== "Quiz Assessment");
+    if (topicsOnly.length === 0) return true;
+    return topicsOnly.every((s) => lessonProgress[s]?.status === "MASTERED");
   };
 
   return (
@@ -1405,49 +1569,76 @@ const startMentorListening = () => {
                   {/* Expandable nested sections outline */}
                   {isExpanded && (
                     <div className="pl-9 pr-2 py-1 space-y-2 border-l border-slate-200 ml-5">
-                      {getChapterSectionsForSidebar(ch.orderNumber, chapterOrder, currentChapter?.content || "").map((sec, secIdx) => {
+                      {getChapterSectionsForSidebar(ch.orderNumber, chapterOrder, currentChapter?.content || "").map((sec, secIdx, arr) => {
                         const isQuiz = sec === "Quiz Assessment";
                         const status = isQuiz
                           ? "NOT_STARTED"
                           : getLessonStatus(sec);
+                        const isUnlocked = isQuiz
+                          ? isQuizUnlocked(arr)
+                          : isTopicUnlocked(secIdx, arr);
+
                         return (
                           <button
                             key={secIdx}
                             onClick={() => {
-  if (isQuiz) {
-    router.push(`/courses/java/chapter/${ch.orderNumber}/quiz`);
-    return;
-  }
+                              if (!isUnlocked) {
+                                if (isQuiz) {
+                                  alert("🔒 Complete and master all chapter topics with your AI Teacher before taking the Chapter Assessment Quiz.");
+                                } else {
+                                  alert(`🔒 Topic is locked. Please master "${arr[secIdx - 1]}" first.`);
+                                }
+                                return;
+                              }
 
-  setCurrentLesson(sec);
-setCurrentLessonIndex(secIdx);
-}}
+                              if (isQuiz) {
+                                router.push(`/courses/java/chapter/${ch.orderNumber}/quiz`);
+                                return;
+                              }
+
+                              setCurrentLesson(sec);
+                              setCurrentLessonIndex(secIdx);
+                            }}
                             className={`w-full text-left text-[11px] leading-relaxed flex items-center gap-1.5 py-0.5 transition-all ${
-                              isQuiz
+                              !isUnlocked
+                                ? "opacity-50 cursor-not-allowed text-slate-400"
+                                : isQuiz
                                 ? "text-purple-600 font-bold hover:underline"
-                                : "text-slate-500 hover:text-slate-800"
+                                : "text-slate-600 hover:text-slate-900"
                             }`}
                           >
-                            <span
-  className={`w-2 h-2 rounded-full shrink-0 ${
-    status === "MASTERED"
-      ? "bg-emerald-500"
-      : status === "PRACTICED"
-      ? "bg-blue-500"
-      : status === "LEARNING"
-      ? "bg-amber-500"
-      : status === "NEEDS_REVIEW"
-      ? "bg-red-500"
-      : "bg-slate-300"
-  }`}
-/>
+                            {!isUnlocked ? (
+                              <Lock size={11} className="text-slate-400 shrink-0" />
+                            ) : (
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${
+                                  status === "MASTERED"
+                                    ? "bg-emerald-500"
+                                    : status === "PRACTICED"
+                                    ? "bg-blue-500"
+                                    : status === "LEARNING"
+                                    ? "bg-amber-500"
+                                    : status === "NEEDS_REVIEW"
+                                    ? "bg-red-500"
+                                    : isQuiz
+                                    ? "bg-purple-500"
+                                    : "bg-slate-300"
+                                }`}
+                              />
+                            )}
+
                             <span className="truncate flex-1">
                               {sec}
                             </span>
 
                             {!isQuiz && (
                               <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                                {getLessonStatusLabel(sec)}
+                                {isUnlocked ? getLessonStatusLabel(sec) : "Locked"}
+                              </span>
+                            )}
+                            {isQuiz && isUnlocked && (
+                              <span className="text-[9px] font-bold text-purple-600 whitespace-nowrap">
+                                Ready ⭐
                               </span>
                             )}
                           </button>
@@ -1522,42 +1713,64 @@ setCurrentLessonIndex(secIdx);
     courseId={courseId}
 chapterId={currentChapter?.id || ""}
 userEmail={userEmail}
-  onExplain={explainLiveTeacherUnit}
   activeTopic={currentLesson || undefined}
+  allTopics={getLessons()}
+  onActiveTopicChange={(topic) => {
+    setCurrentLesson((prev) => (prev === topic ? prev : topic));
+    const lessons = getLessons();
+    const idx = lessons.indexOf(topic);
+    if (idx >= 0) {
+      setCurrentLessonIndex((prev) => (prev === idx ? prev : idx));
+    }
+  }}
+  isFinalTopic={
+    getLessons().length > 0 &&
+    getLessons().indexOf(currentLesson || "") === getLessons().length - 1
+  }
+  onNextTopic={() => {
+    const lessons = getLessons();
+    const idx = lessons.indexOf(currentLesson || "");
+    if (idx >= 0 && idx < lessons.length - 1) {
+      const next = lessons[idx + 1];
+      setCurrentLesson(next);
+      setCurrentLessonIndex(idx + 1);
+
+      // Smooth scroll to the target heading in textbook
+      setTimeout(() => {
+        const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+        const targetEl = headings.find((h) =>
+          h.textContent?.trim().toLowerCase().includes(next.toLowerCase())
+        );
+        targetEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } else if (idx === lessons.length - 1) {
+      void handleMarkChapterComplete();
+      router.push(`/courses/java/chapter/${chapterOrder}/quiz`);
+    }
+  }}
+  onChapterComplete={() => {
+    void handleMarkChapterComplete();
+  }}
+  onExplain={explainLiveTeacherUnit}
+  onReteach={reteachLiveTeacherSection}
+  onEvaluateCheckpoint={evaluateCheckpointAnswer}
+  onReviewWeakSection={(topic: string) => {
+    setCurrentLesson(topic);
+    const lessons = getLessons();
+    const idx = lessons.indexOf(topic);
+    if (idx >= 0) setCurrentLessonIndex(idx);
+    setTimeout(() => {
+      const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+      const targetEl = headings.find((h) =>
+        h.textContent?.trim().toLowerCase().includes(topic.toLowerCase())
+      );
+      targetEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }}
   chapterContent={currentChapter?.content || ""}
   onResumeRecap={generateResumeRecap}
   onEvaluateResumeAnswer={evaluateResumeAnswer}
   onLessonStart={(title: string) => {
-  const lesson = getLessons().find(
-    (item) =>
-      item.trim().toLowerCase() ===
-      title.trim().toLowerCase()
-  );
-
-  if (!lesson) return;
-
-  setCurrentLesson(lesson);
-
-  setLessonProgress((prev) => ({
-    ...prev,
-    [lesson]: {
-      ...(prev[lesson] || {
-        lesson,
-        status: "NOT_STARTED",
-        score: 0,
-        attempts: 0,
-        questionsAsked: 0,
-        correctAnswers: 0,
-      }),
-      status: "LEARNING",
-    },
-  }));
-
-  void saveLessonProgress(lesson, {
-    status: "LEARNING",
-  });
-}}
-  onLessonComplete={(title: string) => {
     const lesson = getLessons().find(
       (item) =>
         item.trim().toLowerCase() ===
@@ -1579,7 +1792,46 @@ userEmail={userEmail}
           questionsAsked: 0,
           correctAnswers: 0,
         }),
-        status: "PRACTICED",
+        status: "LEARNING",
+      },
+    }));
+
+    void saveLessonProgress(lesson, {
+      status: "LEARNING",
+    });
+  }}
+  onLessonComplete={(title: string, performance, sessionData) => {
+    const lesson = getLessons().find(
+      (item) =>
+        item.trim().toLowerCase() ===
+        title.trim().toLowerCase()
+    );
+
+    if (!lesson) return;
+
+    const calculatedStatus =
+      performance?.understanding === "Strong"
+        ? "MASTERED"
+        : performance?.understanding === "Good"
+        ? "PRACTICED"
+        : performance?.understanding === "Needs Practice"
+        ? "NEEDS_REVIEW"
+        : "PRACTICED";
+
+    setLessonProgress((prev) => ({
+      ...prev,
+      [lesson]: {
+        ...(prev[lesson] || {
+          lesson,
+          status: "NOT_STARTED",
+          score: 0,
+          attempts: 0,
+          questionsAsked: 0,
+          correctAnswers: 0,
+        }),
+        status: calculatedStatus,
+        attempts: performance?.attempts || 1,
+        correctAnswers: performance?.isCorrect ? 1 : 0,
       },
     }));
 
@@ -1592,7 +1844,97 @@ userEmail={userEmail}
     });
 
     void saveLessonProgress(lesson, {
-      status: "PRACTICED",
+      status: calculatedStatus,
+      attempts: performance?.attempts || 1,
+      correctAnswers: performance?.isCorrect ? 1 : 0,
+    });
+
+    // 📝 Persist Completed Topic Note to Learning Notebook
+    const topicStudentChats = topicChatMapRef.current[title] || topicChatMapRef.current[lesson] || [];
+
+    const markdownSections: string[] = [
+      `# ${title}`,
+      ``,
+      `**Status**: ✓ Completed`,
+      ``,
+      `---`,
+      ``,
+      `### WHAT I LEARNED`,
+      sessionData?.whatILearned || `Mastered key concepts in ${title}.`,
+      ``,
+      `---`,
+      ``,
+      `### CORE CONCEPTS`,
+      ...(sessionData?.coreConcepts && sessionData.coreConcepts.length > 0
+        ? sessionData.coreConcepts.map((c) => `• ${c}`)
+        : [`• Core principles covered in ${title}`]),
+      ``,
+      `---`,
+      ``,
+      `### IMPORTANT POINTS`,
+      ...(sessionData?.importantPoints && sessionData.importantPoints.length > 0
+        ? sessionData.importantPoints.map((p) => `• ${p}`)
+        : [`• Demonstrated understanding of ${title}`]),
+      ``,
+    ];
+
+    if (sessionData?.examples && sessionData.examples.length > 0) {
+      markdownSections.push(
+        `---`,
+        ``,
+        `### EXAMPLES`,
+        ...sessionData.examples.map((ex) => `\`\`\`${ex.lang || "java"}\n${ex.code}\n\`\`\``),
+        ``
+      );
+    }
+
+    if (sessionData?.teacherQuestions && sessionData.teacherQuestions.length > 0) {
+      markdownSections.push(
+        `---`,
+        ``,
+        `### TEACHER QUESTIONS`,
+        ...sessionData.teacherQuestions.map((tq) => `**Q**: ${tq.question}\n\n**A**: ${tq.answer || tq.feedback || "Understood"}\n`),
+        ``
+      );
+    }
+
+    if (topicStudentChats.length > 0) {
+      markdownSections.push(
+        `---`,
+        ``,
+        `### MY QUESTIONS (Ask AI)`,
+        ...topicStudentChats.map((sq) => `**Q**: ${sq.question}\n\n**A**: ${sq.answer}\n`),
+        ``
+      );
+    }
+
+    const markdownContent = markdownSections.join("\n");
+
+    void fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        courseId: courseId || "java",
+        chapterId: currentChapter?.id || String(chapterOrder),
+        topic: title,
+        title: title,
+        type: "NOTEBOOK",
+        content: markdownContent,
+        metadata: {
+          whatILearned: sessionData?.whatILearned || "",
+          coreConcepts: sessionData?.coreConcepts || [],
+          importantPoints: sessionData?.importantPoints || [],
+          examples: sessionData?.examples || [],
+          codeSnippets: sessionData?.codeSnippets || [],
+          teacherQuestions: sessionData?.teacherQuestions || [],
+          studentQuestions: topicStudentChats,
+          diagram: sessionData?.diagram || null,
+          understanding: performance?.understanding || "Strong",
+          completedAt: new Date().toISOString(),
+        },
+      }),
+    }).catch((err) => {
+      console.error("Failed to save completed topic note:", err);
     });
   }}
 />
@@ -1676,7 +2018,7 @@ userEmail={userEmail}
       {/* ========================================= */}
       <button
         type="button"
-        onClick={() => router.push("/notes")}
+        onClick={() => router.push("/notes?course=java")}
         className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-blue-300 hover:shadow-md transition-all group"
       >
         <div className="flex items-center gap-3">

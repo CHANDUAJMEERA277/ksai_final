@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthoritativeProgression } from "@/lib/progression";
 
 const VALID_STATUSES = [
   "NOT_STARTED",
@@ -53,18 +54,36 @@ export async function GET(
       );
     }
 
-    const chapter = await prisma.chapter.findFirst({
+    const normSlug = courseSlug.toLowerCase();
+    let chapter = await prisma.chapter.findFirst({
       where: {
         id: chapterId,
         course: {
-          language: courseSlug,
+          language: normSlug,
         },
       },
       select: {
         id: true,
+        orderNumber: true,
         courseId: true,
       },
     });
+
+    if (!chapter && !isNaN(Number(chapterId))) {
+      chapter = await prisma.chapter.findFirst({
+        where: {
+          orderNumber: parseInt(chapterId, 10),
+          course: {
+            language: normSlug,
+          },
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+          courseId: true,
+        },
+      });
+    }
 
     if (!chapter) {
       return NextResponse.json(
@@ -82,13 +101,22 @@ export async function GET(
         chapterId: chapter.id,
       },
       orderBy: {
-        lesson: "asc",
+        lastActivity: "desc",
       },
     });
+
+    // Authoritative progression calculation
+    const authoritative = await getAuthoritativeProgression(
+      user.id,
+      courseSlug,
+      chapter.orderNumber
+    );
 
     return NextResponse.json({
       success: true,
       progress,
+      lastStudiedLesson: progress[0]?.lesson || null,
+      authoritativeProgression: authoritative,
     });
   } catch (error) {
     console.error("Lesson progress GET error:", error);
@@ -159,17 +187,34 @@ export async function POST(
       );
     }
 
-    const chapter = await prisma.chapter.findFirst({
+    const normSlug = courseSlug.toLowerCase();
+    let chapter = await prisma.chapter.findFirst({
       where: {
         id: chapterId,
         course: {
-          language: courseSlug,
+          language: normSlug,
         },
       },
       select: {
         id: true,
+        orderNumber: true,
       },
     });
+
+    if (!chapter && !isNaN(Number(chapterId))) {
+      chapter = await prisma.chapter.findFirst({
+        where: {
+          orderNumber: parseInt(chapterId, 10),
+          course: {
+            language: normSlug,
+          },
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+        },
+      });
+    }
 
     if (!chapter) {
       return NextResponse.json(
@@ -234,9 +279,17 @@ export async function POST(
       },
     });
 
+    // Authoritative progression calculation after update
+    const authoritative = await getAuthoritativeProgression(
+      user.id,
+      courseSlug,
+      chapter.orderNumber
+    );
+
     return NextResponse.json({
       success: true,
       progress,
+      authoritativeProgression: authoritative,
     });
   } catch (error) {
     console.error("Lesson progress POST error:", error);

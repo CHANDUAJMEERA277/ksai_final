@@ -127,7 +127,23 @@ Think of it like translating a speech. A **compiled language** is like translati
 
 ---
 
-### 6. Your First Program: "Hello, World!"
+### 6. Installing Python & Setting Up VS Code
+
+Before you can run Python on your computer, you need two essential tools: the Python interpreter and a code editor.
+
+#### 1. Installing Python
+* **Download** — Visit python.org and download the latest version for your operating system (Windows, macOS, or Linux).
+* **Important for Windows** — During installation, always check the box **"Add Python to PATH"**. This ensures you can run python commands from any terminal window.
+* **Verify Installation** — Open your terminal or Command Prompt and type `python --version` (or `python3 --version`). If it prints `Python 3.x.x`, your installation is complete and ready.
+
+#### 2. Setting Up Visual Studio Code (VS Code)
+* **Install VS Code** — Download and install Visual Studio Code from code.visualstudio.com.
+* **Python Extension** — Open VS Code, click on Extensions (Ctrl+Shift+X or Cmd+Shift+X), search for "Python" by Microsoft, and click Install. This gives you syntax highlighting, autocomplete (IntelliSense), and built-in debugging.
+* **Integrated Terminal** — VS Code includes a built-in terminal (Terminal → New Terminal), allowing you to write, save, and execute scripts in a single unified workspace.
+
+---
+
+### 7. Writing Your Very First Python Program
 
 By tradition, going back over 50 years, the very first program written in any new language simply displays the text "Hello, World!" on the screen. It's a small, almost ceremonial exercise — but it proves that your setup works, from writing the code to actually seeing a result. In Python, this takes a single line:
 

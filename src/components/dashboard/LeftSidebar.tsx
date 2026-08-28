@@ -31,8 +31,9 @@ import { useSession } from "@/lib/auth-client";
 import { usePathname, useRouter } from "next/navigation";
 
 interface LeftSidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+  onChange?: (tab: string) => void;
   userProfile?: {
     name?: string;
     role?: string;
@@ -45,6 +46,23 @@ interface LeftSidebarProps {
   isLight?: boolean;
   fullHeight?: boolean;
 }
+
+export const SIDEBAR_ROUTES: Record<string, string> = {
+  "Explore Courses": "/courses/catalog",
+  "Dashboard": "/dashboard",
+  "Courses": "/courses",
+  "My Courses": "/courses",
+  "AI Mentor": "/codexai",
+  "AI Quiz Generator": "/quiz-generator",
+  "Editor": "/editor",
+  "Workspace": "/editor",
+  "Certificates": "/certificates",
+  "Leaderboard": "/leaderboard",
+  "Resume Builder": "/resume-builder",
+  "Interview Prep": "/interview",
+  "Settings": "/settings",
+  "Contests": "/contests",
+};
 
 const MENU_ITEMS = [
   {
@@ -117,7 +135,14 @@ const MENU_ITEMS = [
   },
 ];
 
-export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = false, fullHeight = false }: LeftSidebarProps) {
+export function LeftSidebar({
+  activeTab = "Dashboard",
+  onTabChange,
+  onChange,
+  userProfile,
+  isLight = false,
+  fullHeight = false,
+}: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -156,23 +181,39 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
   } | null>(null);
 
   useEffect(() => {
-    if (!userProfile) {
-      fetch("/api/dashboard")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.user) {
-            setLocalProfile({
-              name: data.user.name,
-              role: data.user.role,
-              level: data.user.level ?? 1,
-              xp: data.user.xp ?? 0,
-              targetXp: data.user.targetXp ?? 1000,
-              image: data.user.image,
-            });
-          }
-        })
-        .catch(console.error);
+    if (userProfile) return;
+
+    const controller = new AbortController();
+
+    async function loadProfile() {
+      try {
+        const res = await fetch("/api/dashboard", {
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && data.user && !controller.signal.aborted) {
+          setLocalProfile({
+            name: data.user.name,
+            role: data.user.role,
+            level: data.user.level ?? 1,
+            xp: data.user.xp ?? 0,
+            targetXp: data.user.targetXp ?? 1000,
+            image: data.user.image,
+          });
+        }
+      } catch (err: any) {
+        if (err.name !== "AbortError" && !controller.signal.aborted) {
+          console.warn("Could not load sidebar profile data:", err.message);
+        }
+      }
     }
+
+    loadProfile();
+
+    return () => {
+      controller.abort();
+    };
   }, [userProfile]);
 
   const activeProfile = userProfile || localProfile || (session?.user ? {
@@ -244,17 +285,19 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           
-          let isActive = activeTab === item.id;
+          let isActive = activeTab === item.id || activeTab === item.label;
           if (pathname) {
-            if (item.id === "Explore Courses" && pathname.startsWith("/courses/catalog")) {
+            if (item.id === "Explore Courses" && (pathname === "/courses/catalog" || pathname.startsWith("/courses/catalog"))) {
               isActive = true;
             } else if (item.id === "Dashboard" && pathname === "/dashboard") {
               isActive = true;
-            } else if (item.id === "Courses" && pathname.startsWith("/courses") && !pathname.startsWith("/courses/catalog")) {
+            } else if (item.id === "Courses" && (pathname === "/courses" || (pathname.startsWith("/courses") && !pathname.startsWith("/courses/catalog")))) {
               isActive = true;
             } else if (item.id === "AI Mentor" && (pathname.startsWith("/codexai") || pathname.startsWith("/codeai"))) {
               isActive = true;
-            } else if (item.id === "AI Quiz Generator" && pathname.startsWith("/quiz-generator")) {
+            } else if (item.id === "AI Quiz Generator" && (pathname.startsWith("/quiz-generator") || pathname.startsWith("/practice"))) {
+              isActive = true;
+            } else if (item.id === "Editor" && pathname.startsWith("/editor")) {
               isActive = true;
             } else if (item.id === "Leaderboard" && pathname.startsWith("/leaderboard")) {
               isActive = true;
@@ -275,28 +318,24 @@ export function LeftSidebar({ activeTab, onTabChange, userProfile, isLight = fal
             <button
               key={item.id}
               onClick={() => {
-                onTabChange(item.id);
+                if (typeof onTabChange === "function") {
+                  try {
+                    onTabChange(item.id);
+                  } catch (e) {
+                    console.warn("onTabChange error:", e);
+                  }
+                }
+                if (typeof onChange === "function") {
+                  try {
+                    onChange(item.id);
+                  } catch (e) {
+                    console.warn("onChange error:", e);
+                  }
+                }
                 
-                if (item.id === "Explore Courses") {
-                  router.push("/courses/catalog");
-                } else if (item.id === "Dashboard") {
-                  router.push("/dashboard");
-                } else if (item.id === "Courses") {
-                  router.push("/courses");
-                } else if (item.id === "AI Mentor") {
-                  router.push("/codexai");
-                } else if (item.id === "AI Quiz Generator") {
-                  router.push("/quiz-generator");
-                } else if (item.id === "Leaderboard") {
-                  router.push("/leaderboard");
-                } else if (item.id === "Certificates") {
-                  router.push("/certificates");
-                } else if (item.id === "Resume Builder") {
-                  router.push("/resume-builder");
-                } else if (item.id === "Interview Prep") {
-                  router.push("/interview");
-                } else if (item.id === "Settings") {
-                  router.push("/settings");
+                const targetPath = SIDEBAR_ROUTES[item.id] || SIDEBAR_ROUTES[item.label];
+                if (targetPath) {
+                  router.push(targetPath);
                 }
               }}
               title={collapsed ? item.label : undefined}

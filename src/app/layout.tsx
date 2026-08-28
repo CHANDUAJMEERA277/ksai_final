@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     "Futuristic 3D Platform",
     "Developer Tools",
   ],
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

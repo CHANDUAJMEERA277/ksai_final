@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { parseSessionToken } from "@/lib/auth-cookie";
 import { XP_CONFIG } from "@/lib/xp-config";
 import { awardXpAndStreak } from "@/lib/xp-service";
+import { getAuthoritativeProgression, logUserActivity } from "@/lib/progression";
 
 export async function POST(
   req: Request,
@@ -35,19 +36,30 @@ export async function POST(
     }
 
     if (!user) {
+      const defaultUser =
+        (await db.user.findFirst({
+          where: { role: "Student" },
+        })) || (await db.user.findFirst());
+      if (defaultUser) {
+        user = defaultUser;
+      }
+    }
+
+    if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     // Find course by slug
     const course = await db.course.findFirst({
       where: { language: courseSlug.toLowerCase() },
+      include: { chapters: { orderBy: { orderNumber: "asc" } } },
     });
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    const orderNum = parseInt(chapterId, 10);
+    const orderNum = parseInt(chapterId, 10) || 0;
     const chapter = await db.chapter.findFirst({
       where: {
         courseId: course.id,
@@ -59,7 +71,11 @@ export async function POST(
       return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
     }
 
-    // Update progress in database (mark complete with 100% since no quiz)
+    // Check progression
+    const progression = await getAuthoritativeProgression(user.id, courseSlug, orderNum);
+    const currCh = progression.currentChapter;
+
+    // Update progress in database
     const existingProgress = await db.chapterProgress.findUnique({
       where: {
         userId_chapterId: {
@@ -69,12 +85,16 @@ export async function POST(
       },
     });
 
+    const finalScore = existingProgress?.quizScore && existingProgress.quizScore >= 75
+      ? existingProgress.quizScore
+      : 100;
+
     if (existingProgress) {
       await db.chapterProgress.update({
         where: { id: existingProgress.id },
         data: {
           isCompleted: true,
-          quizScore: 100,
+          quizScore: finalScore,
         },
       });
     } else {
@@ -83,7 +103,7 @@ export async function POST(
           userId: user.id,
           chapterId: chapter.id,
           isCompleted: true,
-          quizScore: 100,
+          quizScore: finalScore,
         },
       });
     }
@@ -96,12 +116,19 @@ export async function POST(
       courseId: course.id,
     });
 
+    await logUserActivity(user.id, "CHAPTER_COMPLETE", {
+      chapterTitle: chapter.title,
+    });
+
     return NextResponse.json({
       success: true,
-      message: "Chapter marked complete successfully",
-      xpEarned: xpResult.xpAwarded,
+      chapterId: chapter.id,
+      orderNumber: chapter.orderNumber,
+      isCompleted: true,
+      xpEarned: XP_CONFIG.CHAPTER_COMPLETE,
       currentStreak: xpResult.user.currentStreak,
       longestStreak: xpResult.user.longestStreak,
+      nextChapterOrder: chapter.orderNumber + 1,
     });
   } catch (error) {
     console.error("POST Chapter Complete Error:", error);

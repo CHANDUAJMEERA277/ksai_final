@@ -49,6 +49,8 @@ model User {
   learningEvents             LearningEvent[]
   learningMemories           LearningMemory[]
   topicProgresses            TopicProgress[]
+  dailyRecaps                DailyRecap[]
+  chapterRecaps              ChapterRecap[]
 }
 
 model Contest {
@@ -158,6 +160,7 @@ model Course {
   enrollments    Enrollment[]
   xpTransactions XpTransaction[]
   learningNotes  LearningNote[]
+  chapterRecaps  ChapterRecap[]
 }
 
 model Chapter {
@@ -173,6 +176,7 @@ model Chapter {
   progresses       ChapterProgress[]
   lessonProgresses LessonProgress[]
   learningNotes    LearningNote[]
+  chapterRecaps    ChapterRecap[]
 }
 
 model ChapterProgress {
@@ -408,4 +412,46 @@ model LearningMemory {
   @@index([courseId])
   @@index([chapterId])
   @@index([userId, topic])
+}
+
+model DailyRecap {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            String   // "YYYY-MM-DD" in user's local date
+  summary         String
+  topics          String   // JSON string array of topics studied
+  keyConcepts     String   // JSON string of key concepts
+  importantSyntax String?  // JSON string / text of syntax rules
+  revisionAreas   String?  // JSON string / text of revision suggestions
+  stats           String?  // JSON string of stats: chapters, questions, xp, etc.
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model ChapterRecap {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId          String
+  course            Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapterId         String
+  chapter           Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  summary           String
+  keyConcepts       String   // JSON string of key concepts
+  importantExamples String?  // JSON string of code examples
+  importantSyntax   String?  // JSON string of syntax rules
+  whatYouLearned    String?  // JSON string of learning points
+  revisionPoints    String?  // JSON string of revision notes
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, chapterId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([chapterId])
 }

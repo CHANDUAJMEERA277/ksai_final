@@ -63,41 +63,53 @@ def teach(request):
 )
 
         learning_memory = data.get(
-    "learningMemory",
-    "",
-)
+            "learningMemory",
+            "",
+        )
+
+        image = data.get("image", None)
+        image_mime_type = data.get("imageMimeType", "image/png")
 
         # -----------------------------------------
-        # VALIDATION
+        # VALIDATION & FALLBACKS
         # -----------------------------------------
 
         if not question.strip():
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "Question is required.",
-                },
-                status=400,
-            )
+            if image:
+                question = f"Analyze this diagram/screenshot and explain its concepts in relation to {topic or chapter}."
+            else:
+                question = f"Teach the concept of '{topic or chapter}' clearly and engagingly."
 
         if not content.strip():
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "Lesson content is required.",
-                },
-                status=400,
-            )
+            if topic.strip() or chapter.strip():
+                content = f"Course: {course}\nChapter: {chapter}\nTopic: {topic}\nPlease teach this subject thoroughly based on standard curriculum."
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Lesson content or topic is required.",
+                    },
+                    status=400,
+                )
 
         allowed_modes = {
-    "explain",
-    "example",
-    "visual",
-    "question",
-    "evaluate",
-    "confused",
-    "chat",
-}
+            "explain",
+            "example",
+            "visual",
+            "question",
+            "evaluate",
+            "confused",
+            "chat",
+            "live-teaching",
+            "reteach",
+            "section-checkpoint",
+            "evaluate-checkpoint",
+            "resume-check",
+            "resume-answer-evaluation",
+            "vision",
+            "vision-checkpoint",
+            "vision-teach",
+        }
 
         if mode not in allowed_modes:
             mode = "chat"
@@ -109,16 +121,18 @@ def teach(request):
         orchestrator = AIOrchestrator()
 
         result = orchestrator.teach(
-    course=course,
-    chapter=chapter,
-    topic=topic,
-    content=content,
-    question=question,
-    mode=mode,
-    history=history,
-    asked_question=asked_question,
-    learning_memory=learning_memory,
-)
+            course=course,
+            chapter=chapter,
+            topic=topic,
+            content=content,
+            question=question,
+            mode=mode,
+            history=history,
+            asked_question=asked_question,
+            learning_memory=learning_memory,
+            image=image,
+            image_mime_type=image_mime_type,
+        )
 
         return JsonResponse(
             {
@@ -139,10 +153,13 @@ def teach(request):
 
     except Exception as error:
 
-        print()
-        print("========== AI TEACHING ERROR ==========")
-        print(error)
-        print("=======================================")
+        try:
+            print()
+            print("========== AI TEACHING ERROR ==========")
+            print(str(error).encode("ascii", errors="replace").decode("ascii"))
+            print("=======================================")
+        except Exception:
+            pass
 
         return JsonResponse(
             {
